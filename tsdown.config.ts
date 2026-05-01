@@ -7,7 +7,7 @@
 import {defineConfig} from 'tsdown';
 
 export default defineConfig({
-  name: 'github-api',
+  name: 'digitalpuddle',
   entry: './src/index.ts',
   exports: {devExports: 'development'},
   format: ['esm', 'cjs'], // Keep CJS while `bin/start.cjs` still requires `dist/index.cjs`.
