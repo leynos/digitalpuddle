@@ -89,6 +89,12 @@ ______________________________________________________________________
 
 ## Learn more
 
+- [Users' guide](docs/users-guide.md) — current baseline usage, planned `/v2`
+  usage, scenarios, and admin routes.
+- [Migration from Simulacat Core](docs/migration-from-simulacat-core.md) —
+  breaking changes and transition guidance.
+- [Developers' guide](docs/developers-guide.md) — repository workflow,
+  architecture rules, testing, and observability.
 - [Technical design](docs/digitalpuddle-technical-design.md) — architecture,
   scope, runtime model, and release shape.
 - [Roadmap](docs/roadmap.md) — planned phases, tasks, dependencies, and

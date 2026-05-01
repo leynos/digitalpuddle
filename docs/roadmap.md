@@ -10,8 +10,9 @@ step is a workstream that validates or falsifies part of that idea, and each
 task is an execution unit with explicit dependencies and design citations. The
 primary source is
 [`docs/digitalpuddle-technical-design.md`](digitalpuddle-technical-design.md).
-There are no RFCs or ADRs in this repository yet, so early tasks include the
-decisions that need durable records before implementation broadens.
+Architectural decisions are recorded under `docs/adr/`. There are no RFCs in
+this repository yet, so early tasks still include the unresolved product
+questions that need durable records before implementation broadens.
 
 ## 1. Foundation: make the imported baseline a DigitalPuddle spine
 
@@ -31,7 +32,7 @@ This step answers which design choices are fixed enough to build against and
 which product questions still need explicit deferral. The outcome informs the
 OpenAPI pin, first API slice, and future Droplet or Spaces work.
 
-- [ ] 1.1.1. Record ADRs for the Simulacrum backplane, DigitalOcean OpenAPI
+- [x] 1.1.1. Record ADRs for the Simulacrum backplane, DigitalOcean OpenAPI
       pinning, v1 DOKS scope, and deterministic virtual-time worker.
   - See `digitalpuddle-technical-design.md` §§1-4 and §20.
   - Success: each ADR states the decision, rejected alternatives, and the
@@ -69,6 +70,7 @@ outcome keeps later source moves deliberate instead of cosmetic.
       production surfaces.
   - Requires 1.2.2.
   - See `digitalpuddle-technical-design.md` §§4 and 16.
+  - See `adr/0005-transitional-simulacat-boundaries.md`.
   - Success: any remaining GitHub schemas, GraphQL helpers, or tests are marked
     as transitional fixtures or removed when no longer used by gates.
 

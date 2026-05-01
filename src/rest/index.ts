@@ -10,6 +10,50 @@ import {blobAsBase64, commitStatusResponse, gitTrees} from './utils.ts';
  */
 type SimulationHandler = SimulationHandlers[string];
 
+const errorDetails = (error: unknown) => {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    };
+  }
+
+  return {
+    name: 'NonError',
+    message: String(error)
+  };
+};
+
+const logRestHandlerError = (operationId: string, error: unknown) => {
+  console.error(
+    JSON.stringify({
+      event: 'digitalpuddle.rest.handler.error',
+      operationId,
+      error: errorDetails(error)
+    })
+  );
+};
+
+const withErrorLogging =
+  (operationId: string, handler: SimulationHandler): SimulationHandler =>
+  async (...args) => {
+    try {
+      return await handler(...args);
+    } catch (error) {
+      logRestHandlerError(operationId, error);
+      throw error;
+    }
+  };
+
+const withErrorLoggingForHandlers = (simulationHandlers: SimulationHandlers): SimulationHandlers =>
+  Object.fromEntries(
+    Object.entries(simulationHandlers).map(([operationId, handler]) => [
+      operationId,
+      withErrorLogging(operationId, handler)
+    ])
+  );
+
 const handlers =
   (
     initialState: Record<string, any> | undefined,
@@ -284,10 +328,10 @@ const handlers =
 
     // note for any cases where it `return`s an object,
     //  that will validate the response per the schema
-    return {
+    return withErrorLoggingForHandlers({
       ...baseHandlers,
       ...(extendedHandlers ? extendedHandlers(simulationStore) : {})
-    };
+    });
   };
 
 /**

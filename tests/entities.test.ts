@@ -1,6 +1,8 @@
 /** @file Unit tests for fixture schemas and state-table conversion helpers. */
 import {beforeEach, describe, expect, it} from 'bun:test';
+import fc from 'fast-check';
 import {
+  blobStoreKey,
   githubAppInstallationSchema,
   convertObjByKey,
   convertInitialStateToStoreState,
@@ -38,6 +40,8 @@ const parseGithubInitialStore = (options: BuildGithubInitialStoreOptions = {}) =
   githubInitialStoreSchema.parse(buildGithubInitialStore(options));
 
 type StoreState = ReturnType<typeof convertInitialStateToStoreState>;
+
+const keySegmentArbitrary = fc.string({minLength: 1, maxLength: 12}).filter((value) => /^[a-z][a-z0-9-]*$/.test(value));
 
 const requireStoreState = (store: StoreState) => {
   if (!store) {
@@ -400,6 +404,52 @@ describe('initialState schema transforms', () => {
     expect(secondRepository.url).toContain('/repos/test-org/second-repo');
   });
 
+  it('assigns unique generated repository ids across generated collections', () => {
+    fc.assert(
+      fc.property(fc.uniqueArray(keySegmentArbitrary, {minLength: 1, maxLength: 20}), (repositoryNames) => {
+        resetNextRepositoryId();
+        const parsed = parseGithubInitialStore({
+          storeOverrides: {
+            repositories: repositoryNames.map((name) => ({owner: 'test-org', name})),
+            branches: repositoryNames.map((repo) => ({owner: 'test-org', repo, name: 'main'}))
+          }
+        });
+        const generatedIds = parsed.repositories.map((repository) => repository.id);
+
+        expect(new Set(generatedIds).size).toBe(generatedIds.length);
+        expect(generatedIds).toEqual(repositoryNames.map((_, index) => 3000 + index));
+      })
+    );
+  });
+
+  it('assigns unique installation ids across generated and provided collections', () => {
+    fc.assert(
+      fc.property(
+        fc.uniqueArray(keySegmentArbitrary, {minLength: 1, maxLength: 20}),
+        fc.uniqueArray(fc.integer({min: 1, max: 10_000}), {maxLength: 10}),
+        (organizationNames, providedIds) => {
+          const parsed = parseGithubInitialStore({
+            storeOverrides: {
+              organizations: organizationNames.map((login, index) => ({id: index + 1, login})),
+              installations: providedIds.map((id, index) => ({
+                id,
+                account: `provided-${index}`,
+                target_id: 100_000 + index,
+                target_type: 'Organization'
+              }))
+            }
+          });
+          const installationIds = parsed.installations.map((installation) => installation.id);
+
+          expect(new Set(installationIds).size).toBe(installationIds.length);
+          for (const providedId of providedIds) {
+            expect(installationIds).toContain(providedId);
+          }
+        }
+      )
+    );
+  });
+
   it('rejects duplicate keyed entities instead of overwriting them', () => {
     const parsed = parseGithubInitialStore({
       storeOverrides: {
@@ -424,5 +474,30 @@ describe('convertObjByKey', () => {
 
     expect(Object.getPrototypeOf(keyedObjects)).toBeNull();
     expect(Object.getOwnPropertyDescriptor(keyedObjects, '__proto__')?.value).toEqual({name: 'prototype-guard'});
+  });
+
+  it('preserves generated blob keys across arbitrary unique collections', () => {
+    fc.assert(
+      fc.property(
+        fc.uniqueArray(
+          fc.record({
+            owner: keySegmentArbitrary,
+            repo: keySegmentArbitrary,
+            path: keySegmentArbitrary
+          }),
+          {
+            maxLength: 30,
+            selector: (blob) => `${blob.owner}/${blob.repo}:${blob.path}`
+          }
+        ),
+        (inputBlobs) => {
+          const parsedBlobs = inputBlobs.map((blob) => githubBlobSchema.parse(blob));
+          const keyedBlobs = convertObjByKey(parsedBlobs, blobStoreKey);
+
+          expect(Object.keys(keyedBlobs).sort()).toEqual(parsedBlobs.map(blobStoreKey).sort());
+          expect(Object.values(keyedBlobs)).toHaveLength(parsedBlobs.length);
+        }
+      )
+    );
   });
 });
