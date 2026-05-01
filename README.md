@@ -1,189 +1,102 @@
-# Simulacat Core
+# DigitalPuddle
 
-*A stateful mock GitHub API engine for deterministic tests and local
-automation.*
+*A local DigitalOcean-shaped API simulator for deterministic infrastructure
+tests.*
 
-Simulacat Core extends The Frontside's Simulacrum GitHub API example into a
-reusable library for higher-level test harnesses. It is the engine behind
-[Simulacat](https://github.com/leynos/simulacat), a Python `pytest` fixture for
-stateful GitHub API mocking, and the planned Rust companion Rentaneko.
+DigitalPuddle is being adapted from Simulacat Core, a Simulacrum-based GitHub
+API simulator. Its target is a narrow, hostile, and repeatable DigitalOcean v2
+simulation for Nile Valley and Terratest-driven infrastructure workflows.
 
 ______________________________________________________________________
 
-## Why Simulacat Core?
+## Why DigitalPuddle?
 
-GitHub-heavy tests usually rot in one of two ways: they either hit the real API
-and become brittle, or they rely on static fixtures that cannot express
-stateful behaviour.
+Cloud integration tests are most useful when they behave like the real control
+plane but remain cheap, local, and disposable. DigitalPuddle is designed to
+make that possible for the DigitalOcean workflows Nile Valley needs first.
 
-- **Model GitHub as a testable system**: Seed users, organizations,
-  repositories, branches, blobs, and installations, then query them through
-  REST and GraphQL.
-- **Stay deterministic**: Run the same simulation locally and in CI without
-  rewriting production code around "test mode" flags.
-- **Extend where you need to**: Add store slices, OpenAPI handlers, and Express
-  routes for product-specific behaviour.
-- **Share one engine across languages**: Use the same simulator core from
-  Python fixtures today and Rust fixtures tomorrow.
+- **Stay local**: Run against a simulator instead of real DigitalOcean
+  credentials during ordinary development and CI.
+- **Keep behaviour deterministic**: Drive IDs, clocks, transitions, and faults
+  from a seed and scenario.
+- **Exercise asynchronous clients**: Model action polling, eventual
+  consistency, stale reads, and explicit failure paths.
+- **Use real local substrates where they help**: Back fake DOKS with k3d and
+  Spaces-shaped state workflows with MinIO.
+- **Fail loudly outside the supported slice**: Return DigitalOcean-shaped
+  `501 Not Implemented` responses instead of inventing happy paths.
 
 ______________________________________________________________________
 
 ## Quick start
 
+DigitalPuddle is in its initial repository-shaping phase. The current codebase
+still contains the inherited Simulacrum/Simulacat implementation while the
+DigitalOcean `/v2` surface is built out according to the roadmap.
+
 ### Installation
 
 ```bash
-bun add simulacat-core
+bun install
 ```
 
 ### Basic usage
 
-```ts
-import {simulation, type InitialState} from 'simulacat-core';
+Start the local simulator baseline:
 
-const initialState: InitialState = {
-  users: [{login: 'test', organizations: ['frontside']}],
-  organizations: [{login: 'frontside'}],
-  repositories: [{owner: 'frontside', name: 'test-repo'}],
-  branches: [{owner: 'frontside', repo: 'test-repo', name: 'main'}],
-  blobs: [{owner: 'frontside', repo: 'test-repo', path: 'README.md'}]
-};
-
-const app = simulation({initialState});
-
-app.listen(3300, () => {
-  console.log('Simulacat Core is listening on http://localhost:3300');
-});
+```bash
+PORT=3300 bun run start
 ```
 
-Point your GitHub client at `http://localhost:3300`, then visit
-`http://localhost:3300/simulation` to inspect the available routes.
+In another shell, confirm the server is responding:
 
-______________________________________________________________________
-
-## Configuration
-
-`simulation()` accepts a single `GitHubSimulatorArgs` object.
-
-- `initialState`: Seeds users, organizations, repositories, branches, and
-  blobs. Organizations also generate installation fixtures automatically.
-- `apiUrl`: Changes the mounted REST API root. The default is `/`.
-- `apiSchema`: Uses a bundled schema such as `api.github.com.json` or a custom
-  schema path on disk.
-- `extend.extendStore`: Adds store schema, actions, or selectors alongside the
-  built-in GitHub slices.
-- `extend.openapiHandlers`: Registers extra OpenAPI operation handlers that can
-  read from the shared simulation store.
-- `extend.extendRouter`: Adds plain Express routes next to the built-in health,
-  OAuth, and GraphQL routes.
-
-______________________________________________________________________
-
-## Extending the simulation
-
-You can layer custom routes and handlers on top of the core GitHub behaviour
-without forking the package:
-
-```ts
-import {simulation, type InitialState} from 'simulacat-core';
-
-const initialState: InitialState = {
-  users: [{login: 'test', organizations: []}],
-  organizations: [{login: 'frontside'}],
-  repositories: [{owner: 'frontside', name: 'test-repo'}],
-  branches: [{owner: 'frontside', repo: 'test-repo', name: 'main'}],
-  blobs: []
-};
-
-const app = simulation({
-  initialState,
-  extend: {
-    extendRouter: (router) => {
-      router.get('/hello-world', (_request, response) => {
-        response.json({message: 'hello from simulacat-core'});
-      });
-    },
-    openapiHandlers: (simulationStore) => ({
-      'repos/list-tags': async () => ({
-        status: 200,
-        json: [
-          {
-            name: `v${simulationStore.schema.repositories.selectTableAsList(
-              simulationStore.store.getState()
-            ).length}.0.0`
-          }
-        ]
-      })
-    })
-  }
-});
+```bash
+curl http://localhost:3300/simulation
 ```
 
-______________________________________________________________________
-
-## Supported API surface
-
-| Surface | Coverage today | Notes |
-| --- | --- | --- |
-| REST routes | Installations, repository lists, branches, blobs, trees, commit status, authenticated user, and org memberships | See [`docs/api-reference.md`](docs/api-reference.md) for the exact route list. |
-| GraphQL root queries | `viewer`, `organization`, `organizations`, `repository`, and `repositoryOwner` | Connection pagination uses Relay-style cursors. |
-| GraphQL nested fields | Repository owners, repository topics, languages, and user organizations | Some connections are intentionally stubbed with empty results for now. |
-| Platform routes | `/health`, `/graphql`, OAuth authorize, and OAuth access token endpoints | Useful for local harness bootstrapping and login flows. |
+That bootstraps the inherited simulator today. The planned DigitalPuddle entry
+point will expose DigitalOcean-shaped routes under `/v2` plus private harness
+routes under `/_digitalpuddle`.
 
 ______________________________________________________________________
 
-## Type reference
+## Planned features
 
-The package exports both the simulation factory and the schema helpers used to
-seed fixtures.
-
-- `InitialState`: Alias for the input shape accepted by `simulation()`.
-- `githubUserSchema`: Seeds GitHub users and fills in default names, emails,
-  avatars, and timestamps.
-- `githubOrganizationSchema`: Seeds organizations and derives GitHub-style URLs
-  plus default metadata.
-- `githubRepositorySchema`: Seeds repositories and expands them with canonical
-  REST-style URLs and default visibility metadata.
-- `githubBranchSchema`: Seeds branch data, defaulting to `main`.
-- `githubBlobSchema`: Seeds repository contents. A blob must specify either
-  `path` or `sha`; either lookup style is supported.
+- DigitalOcean-shaped HTTP contract under `/v2`.
+- Pinned DigitalOcean OpenAPI operation registry and capability matrix.
+- Stateful account, region, size, image, SSH key, project, action, Kubernetes,
+  and node-pool models.
+- Deterministic virtual clock, ID allocation, async worker, and transition
+  scheduler.
+- Scenario-driven fault injection for retries, stale reads, rate limits, stuck
+  actions, and explicit failures.
+- First-class JSON Lines request journal for post-run assertions.
+- k3d-backed DOKS simulation and MinIO-backed Spaces/state workflows.
+- Private admin API under `/_digitalpuddle` for health, state, capabilities,
+  scenarios, clock control, journal queries, and leak detection.
+- Terratest helper module and compose-based local test environment.
 
 ______________________________________________________________________
 
-## Features
+## Project status
 
-- Store-backed REST handlers for core GitHub simulator workflows.
-- GraphQL support for repository, owner, and pagination-driven test queries.
-- Typed `InitialState` input for seeding stateful test fixtures quickly.
-- Extension hooks for custom store state, OpenAPI handlers, and router
-  behaviour.
-- Bundled GitHub REST and GraphQL schemas for local simulation.
+DigitalPuddle is not yet a complete DigitalOcean simulator. The repository has
+been imported from Simulacat Core and is being narrowed toward the design in
+review-sized slices. The first useful release focuses on Nile Valley's DOKS
+path rather than broad DigitalOcean emulation.
 
 ______________________________________________________________________
 
 ## Learn more
 
-- [API reference](docs/api-reference.md) — simulation arguments, exported
-  schemas, and supported API operations.
-- [Architecture guide](docs/architecture.md) — how seeded state flows through
-  the store, REST, and GraphQL layers.
-- [Development guide](docs/development.md) — local workflows, quality gates, and
-  schema regeneration.
-- [GitHub REST API audit](docs/github-rest-api-audit.md) — current REST
-  coverage, scriptability, and gaps.
-- [GitHub GraphQL API audit](docs/github-graphql-api-audit.md) — current
-  GraphQL behaviour and limitations.
-- [Roadmap](docs/roadmap.md) — planned delivery slices and priorities.
-- [Schema notes](schema/README.md) — bundled REST and GraphQL schema details.
-
-______________________________________________________________________
-
-## Origins
-
-Simulacat Core is derived from the GitHub API example shipped with
-[Simulacrum by The Frontside](https://frontside.com). This repository keeps
-that "scriptable fake over inert fixtures" spirit, then pushes it towards
-stateful testing for the df12 toolchain.
+- [Technical design](docs/digitalpuddle-technical-design.md) — architecture,
+  scope, runtime model, and release shape.
+- [Roadmap](docs/roadmap.md) — planned phases, tasks, dependencies, and
+  deferred extensions.
+- [Documentation style guide](docs/documentation-style-guide.md) — repository
+  documentation conventions.
+- [Agent instructions](AGENTS.md) — development workflow, gates, and repository
+  standards.
 
 ______________________________________________________________________
 
@@ -195,6 +108,7 @@ ______________________________________________________________________
 
 ## Contributing
 
-Contributions are welcome. Please read [AGENTS.md](AGENTS.md) before making
-changes, so your work matches the repository's build, testing, and commit
-rules.
+Contributions are welcome once the initial shape settles. Please follow
+[AGENTS.md](AGENTS.md), keep changes atomic, run the relevant gates with durable
+logs, and update the design or roadmap whenever implementation decisions
+change.

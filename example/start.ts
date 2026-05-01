@@ -15,6 +15,6 @@ const port = Number(PORT) || 3300;
 
 app.listen(port, () =>
   console.log(
-    `GitHub API Simulation server started at http://localhost:${port}\nVisit http://localhost:${port}/simulation to view all available routes.`
+    `DigitalPuddle baseline server started at http://localhost:${port}\nVisit http://localhost:${port}/simulation to view all available routes.`
   )
 );
