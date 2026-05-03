@@ -19,6 +19,18 @@ const isStructuredRequestLoggingEnabled = () => {
   return requestLog === '1' || requestLog === 'true';
 };
 
+const toRequestPath = (pathFromRequest: string, originalUrl: string | undefined, fallbackUrl: string): string => {
+  if (pathFromRequest) {
+    return pathFromRequest;
+  }
+
+  try {
+    return new URL(originalUrl ?? fallbackUrl, 'http://localhost').pathname;
+  } catch {
+    return '/';
+  }
+};
+
 const registerStructuredRequestLogger = (router: FoundationRouter) => {
   if (!isStructuredRequestLoggingEnabled()) {
     return;
@@ -26,13 +38,14 @@ const registerStructuredRequestLogger = (router: FoundationRouter) => {
 
   router.use((request, response, next) => {
     const startedAt = performance.now();
+    const requestPath = toRequestPath(request.path, request.originalUrl, request.url);
 
     response.on('finish', () => {
       console.info(
         JSON.stringify({
           event: 'digitalpuddle.http.response',
           method: request.method,
-          path: request.originalUrl ?? request.url,
+          path: requestPath,
           status: response.statusCode,
           durationMs: Math.round((performance.now() - startedAt) * 1000) / 1000
         })

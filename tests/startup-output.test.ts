@@ -117,10 +117,11 @@ const stopProcess = async (child: ChildProcessWithoutNullStreams) => {
     return;
   }
 
-  child.kill('SIGTERM');
-  await new Promise<void>((resolve) => {
+  const exitPromise = new Promise<void>((resolve) => {
     child.once('exit', () => resolve());
   });
+  child.kill('SIGTERM');
+  await exitPromise;
 };
 
 describe('startup output', () => {

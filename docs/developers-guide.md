@@ -3,7 +3,7 @@
 This guide explains how to work on DigitalPuddle while it is being adapted from
 Simulacat Core into a DigitalOcean API simulator.
 
-## Repository shape
+## 1. Repository shape
 
 The target repository layout is defined in
 [the technical design](digitalpuddle-technical-design.md#16-repository-layout).
@@ -24,12 +24,14 @@ The inherited GitHub-oriented `src/graphql`, `src/rest`, and store entity files
 are transitional. Do not expand their public surface unless a review task
 explicitly requires keeping the baseline healthy.
 
-## Architectural decisions
+## 2. Architectural decisions
 
 Durable architectural decisions live in `docs/adr/`. Add an ADR when a change
 settles a boundary, rejects a plausible alternative, changes a dependency, or
 defines compatibility policy. Keep ADRs short and link them from the roadmap
 when they unblock implementation.
+
+### 2.1. Current ADRs
 
 Current ADRs cover:
 
@@ -39,7 +41,7 @@ Current ADRs cover:
 - deterministic worker and virtual-time rules;
 - the temporary treatment of inherited Simulacat transport coupling.
 
-## Development workflow
+## 3. Development workflow
 
 Start by checking the branch:
 
@@ -73,7 +75,7 @@ Build the package when changing the CommonJS CLI:
 make build 2>&1 | tee /tmp/build-digitalpuddle-$(git branch --show).out
 ```
 
-## Testing expectations
+## 4. Testing expectations
 
 Use `bun test` for unit and behavioural tests. Keep tests deterministic:
 
@@ -88,7 +90,7 @@ The inherited test suite still validates GitHub-specific behaviour. New
 DigitalPuddle tests should be added alongside the new `/v2`, admin, scenario,
 worker, and journal modules as those modules land.
 
-## Logging and observability
+## 5. Logging and observability
 
 The baseline server supports opt-in structured request logging through:
 
@@ -101,7 +103,7 @@ duration. Future DigitalPuddle route work should also write request, response,
 transition, engine-call, and fault events to the request journal. The journal is
 the assertion surface; operational logs are diagnostic support.
 
-## Transitional architecture rules
+## 6. Transitional architecture rules
 
 The imported Simulacat code embeds GitHub URLs in entities and keeps some HTTP
 details inside handlers. That is acceptable only as a temporary baseline. New

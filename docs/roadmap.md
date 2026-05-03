@@ -1,9 +1,10 @@
 # DigitalPuddle roadmap
 
-This roadmap turns the DigitalPuddle technical design into review-sized delivery
-work. The design document remains the source of truth for the product boundary,
-architecture, runtime model, public API scope, and validation strategy. This
-document records build order only; it does not promise dates or durations.
+This roadmap turns the DigitalPuddle technical design into review-sized
+delivery work. The design document remains the source of truth for the product
+boundary, architecture, runtime model, public API scope, and validation
+strategy. This document records build order only; it does not promise dates or
+durations.
 
 The roadmap follows the GIST model. Each phase states a falsifiable idea, each
 step is a workstream that validates or falsifies part of that idea, and each
@@ -21,10 +22,11 @@ contracts, and testing spine before feature work expands, later vertical slices
 can adapt the Simulacat Core import without repeatedly reworking public
 interfaces.
 
-This phase keeps Simulacrum as the backplane while narrowing the repository from
-a GitHub simulator into a DigitalOcean simulator. It should leave the project
-with one assembly point, one pinned public contract strategy, and one testable
-runtime shape for state, scheduling, journalling, and unsupported routes.
+This phase keeps Simulacrum as the backplane while narrowing the repository
+from a GitHub simulator into a DigitalOcean simulator. It should leave the
+project with one assembly point, one pinned public contract strategy, and one
+testable runtime shape for state, scheduling, journalling, and unsupported
+routes.
 
 ### 1.1. Close the first implementation decisions
 

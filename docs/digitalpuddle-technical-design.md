@@ -342,7 +342,7 @@ DigitalOcean surface. The recommended v1 public matrix is:
 | any    | other `/v2/*`                                       | unsupported    | explicit `501`                                          |
 
 This is deliberately narrower than the full action plan. It reflects the
-assessment that the first release should optimise for Nile Valley’s DOKS path
+assessment that the first release should optimize for Nile Valley’s DOKS path
 rather than promise broad DigitalOcean emulation on day one.
 
 ### 8.3 Compatibility expectations
@@ -848,7 +848,7 @@ Resolved decisions:
 - **Use Simulacrum as the HTTP backplane.** Do not replace it with a bespoke
   routing framework.
 - **Pin the DigitalOcean OpenAPI contract.** Treat the pin as a release input.
-- **Optimise v1 for the Nile Valley DOKS path.** Do not build the whole ocean
+- **Optimize v1 for the Nile Valley DOKS path.** Do not build the whole ocean
   first.
 - **Keep the worker deterministic and virtual-time driven.**
 - **Use k3d and MinIO as the only real engine-room components in v1.**

@@ -1,4 +1,4 @@
-# ADR 0003: Optimise v1 for the DOKS path
+# ADR 0003: Optimize v1 for the DOKS path
 
 Status: Accepted
 
@@ -10,7 +10,7 @@ retrieval, Terraform integration, and teardown assertions.
 
 ## Decision
 
-DigitalPuddle v1 will prioritise the DOKS vertical slice instead of broad
+DigitalPuddle v1 will prioritize the DOKS vertical slice instead of broad
 DigitalOcean emulation. The first public route matrix will focus on account
 metadata, rate limits, regions, sizes, images, SSH keys, projects, actions,
 Kubernetes options, clusters, kubeconfig, and node-pool behaviour where Nile

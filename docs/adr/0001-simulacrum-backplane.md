@@ -16,6 +16,15 @@ project will supply DigitalOcean-specific schemas, handlers, store slices,
 worker logic, engine adapters, admin routes, and documentation around that
 backplane.
 
+## Rejected Alternatives
+
+- A bespoke HTTP and routing stack was considered and deferred because it would
+  replace Simulacrum’s contract-first routing and delay v1.
+- Alternative backplane frameworks were considered but rejected due to the
+  migration cost and the risk of breaking route contract conformance.
+- A full Simulacrum fork was rejected because it keeps extension seams hard to
+  enforce and still requires a new ADR for any eventual swap.
+
 ## Consequences
 
 - The first implementation work should adapt the existing assembly instead of
