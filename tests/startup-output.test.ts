@@ -185,20 +185,31 @@ const stopProcess = async (child: ChildProcessWithoutNullStreams) => {
     }
   };
 
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
     let settled = false;
 
-    const done = () => {
-      if (settled) return;
-      settled = true;
+    const cleanupListenersAndTimers = () => {
       clearTermTimer();
       clearKillTimer();
       child.off('exit', onExit);
+    };
+
+    const finishOk = () => {
+      if (settled) return;
+      settled = true;
+      cleanupListenersAndTimers();
       resolve();
     };
 
+    const finishErr = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      cleanupListenersAndTimers();
+      reject(error);
+    };
+
     const onExit = () => {
-      done();
+      finishOk();
     };
 
     child.on('exit', onExit);
@@ -215,17 +226,26 @@ const stopProcess = async (child: ChildProcessWithoutNullStreams) => {
 
       killTimer = setTimeout(() => {
         killTimer = undefined;
-        done();
+        if (child.exitCode !== null || child.signalCode !== null) {
+          return;
+        }
+        finishErr(new Error('child did not exit after SIGKILL'));
       }, 2000);
     }, 5000);
   });
 };
 
+const commonJsStartupGuidance = (port: number) =>
+  `DigitalPuddle simulation server started at http://localhost:${port}\nVisit http://localhost:${port}/simulation to view all available routes.`;
+
+const exampleStartupGuidance = (port: number) =>
+  `DigitalPuddle baseline server started at http://localhost:${port}\nVisit http://localhost:${port}/simulation to view all available routes.`;
+
 describe('startup output', () => {
   it('prints DigitalPuddle route guidance for the built CommonJS CLI', async () => {
     await runCommand('bun', ['run', 'build']);
     const port = await getOpenPort();
-    const {child, output} = startProcess('node', ['./bin/start.cjs'], port, 'DigitalPuddle');
+    const {child, output} = startProcess('node', ['./bin/start.cjs'], port, commonJsStartupGuidance(port));
 
     try {
       const rawOutput = await output;
@@ -243,7 +263,7 @@ describe('startup output', () => {
       'node',
       ['--experimental-transform-types', './example/start.ts'],
       port,
-      'DigitalPuddle'
+      exampleStartupGuidance(port)
     );
 
     try {

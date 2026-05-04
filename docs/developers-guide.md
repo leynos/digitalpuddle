@@ -37,18 +37,19 @@ explicitly requires keeping the baseline healthy.
 
 ## 2. Architectural decisions
 
-Durable architectural decisions live in `docs/adr/`. Add an ADR when a change
-settles a boundary, rejects a plausible alternative, changes a dependency, or
-defines compatibility policy. Keep ADRs short and link them from the roadmap
-when they unblock implementation.
+Durable architectural decisions live in `docs/adr/`. Each entry is an
+Architectural Decision Record (ADR). Add an ADR when a change settles a
+boundary, rejects a plausible alternative, changes a dependency, or defines
+compatibility policy. Keep ADRs short and link them from the roadmap when they
+unblock implementation.
 
 ### 2.1. Current ADRs
 
-Current ADRs cover:
+Current Architectural Decision Records cover:
 
 - Simulacrum as the HTTP backplane;
 - the DigitalOcean OpenAPI pinning strategy;
-- the v1 DOKS-first product slice;
+- the v1 product slice that prioritises DigitalOcean Kubernetes Service (DOKS);
 - deterministic worker and virtual-time rules;
 - the temporary treatment of inherited Simulacat transport coupling.
 

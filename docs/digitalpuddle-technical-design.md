@@ -100,6 +100,8 @@ worker, engine adapters, and admin surface.
 
 ## 5. System context
 
+Figure: System context diagram — DigitalPuddle architecture
+
 ```mermaid
 flowchart TB
     subgraph Customer[Customer layer]
