@@ -31,7 +31,8 @@ DigitalPuddle v1 must:
 - model asynchronous control-plane behaviour rather than instant success
 - produce deterministic behaviour under a fixed seed and scenario
 - expose a first-class request journal for post-run assertions
-- provision real local Kubernetes through k3d for fake DOKS
+- provision real local Kubernetes through k3d for fake DigitalOcean Kubernetes
+  Service (DOKS)
 - provide MinIO as the S3-compatible backend for Terraform state and
   Spaces-shaped workflows
 - fail explicitly for unsupported routes instead of faking success
@@ -438,7 +439,7 @@ For cluster creation:
 
 The scheduler should run on a virtual clock by default. The admin API advances
 it explicitly, which keeps eventual consistency and delay semantics
-deterministic in CI.
+deterministic in Continuous Integration (CI).
 
 Required capabilities:
 

@@ -49,7 +49,7 @@ Current Architectural Decision Records cover:
 
 - Simulacrum as the HTTP backplane;
 - the DigitalOcean OpenAPI pinning strategy;
-- the v1 product slice that prioritises DigitalOcean Kubernetes Service (DOKS);
+- the v1 product slice that prioritizes DigitalOcean Kubernetes Service (DOKS);
 - deterministic worker and virtual-time rules;
 - the temporary treatment of inherited Simulacat transport coupling.
 

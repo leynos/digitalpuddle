@@ -155,7 +155,7 @@ const startProcess = (command: string, args: string[], port: number, expectedOut
 };
 
 const normalisePortForSnapshot = (output: string, port: number) =>
-  output.replace(new RegExp(String(port), 'g'), '<PORT>').replace(/\(node:\d+\)/g, '(node:<PID>)');
+  output.replace(/\(node:\d+\)/g, '(node:<PID>)').replace(new RegExp(String(port), 'g'), '<PORT>');
 
 const expectSimulationRouteToRespond = async (port: number) => {
   const response = await fetch(`http://localhost:${port}/simulation`);
@@ -214,11 +214,17 @@ const stopProcess = async (child: ChildProcessWithoutNullStreams) => {
 
     child.on('exit', onExit);
 
+    if (child.exitCode !== null || child.signalCode !== null) {
+      finishOk();
+      return;
+    }
+
     child.kill('SIGTERM');
 
     termTimer = setTimeout(() => {
       termTimer = undefined;
       if (child.exitCode !== null || child.signalCode !== null) {
+        finishOk();
         return;
       }
 
@@ -227,6 +233,7 @@ const stopProcess = async (child: ChildProcessWithoutNullStreams) => {
       killTimer = setTimeout(() => {
         killTimer = undefined;
         if (child.exitCode !== null || child.signalCode !== null) {
+          finishOk();
           return;
         }
         finishErr(new Error('child did not exit after SIGKILL'));
