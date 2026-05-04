@@ -10,7 +10,7 @@ import {blobAsBase64, commitStatusResponse, gitTrees} from './utils.ts';
  */
 type SimulationHandler = SimulationHandlers[string];
 
-const errorDetails = (error: unknown) => {
+export const errorDetails = (error: unknown) => {
   if (error instanceof Error) {
     return {
       name: error.name,
@@ -25,7 +25,7 @@ const errorDetails = (error: unknown) => {
   };
 };
 
-const logRestHandlerError = (operationId: string, error: unknown) => {
+export const logRestHandlerError = (operationId: string, error: unknown) => {
   console.error(
     JSON.stringify({
       event: 'digitalpuddle.rest.handler.error',
@@ -35,7 +35,7 @@ const logRestHandlerError = (operationId: string, error: unknown) => {
   );
 };
 
-const withErrorLogging =
+export const withErrorLogging =
   (operationId: string, handler: SimulationHandler): SimulationHandler =>
   async (...args) => {
     try {
@@ -46,7 +46,7 @@ const withErrorLogging =
     }
   };
 
-const withErrorLoggingForHandlers = (simulationHandlers: SimulationHandlers): SimulationHandlers =>
+export const withErrorLoggingForHandlers = (simulationHandlers: SimulationHandlers): SimulationHandlers =>
   Object.fromEntries(
     Object.entries(simulationHandlers).map(([operationId, handler]) => [
       operationId,

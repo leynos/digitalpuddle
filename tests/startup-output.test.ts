@@ -79,32 +79,52 @@ const startProcess = (command: string, args: string[], port: number, expectedOut
 
   const output = new Promise<string>((resolve, reject) => {
     let combinedOutput = '';
+    let settled = false;
+
     const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
       reject(new Error(`server did not print startup guidance\n${combinedOutput}`));
     }, 15_000);
+
+    const settleResolve = (value: string) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve(value);
+    };
+
+    const settleReject = (reason: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      reject(reason);
+    };
 
     const capture = (data: Buffer) => {
       combinedOutput += data.toString();
       if (combinedOutput.includes(expectedOutput)) {
-        clearTimeout(timeout);
-        resolve(combinedOutput);
+        settleResolve(combinedOutput);
       }
     };
 
     child.stdout.on('data', capture);
     child.stderr.on('data', capture);
     child.on('error', (error) => {
-      clearTimeout(timeout);
-      reject(error);
+      settleReject(error);
     });
     child.on('exit', (code, signal) => {
-      clearTimeout(timeout);
-      reject(new Error(`server exited before guidance with code ${code} and signal ${signal}\n${combinedOutput}`));
+      settleReject(
+        new Error(`server exited before guidance with code ${code} and signal ${signal}\n${combinedOutput}`)
+      );
     });
   });
 
   return {child, output};
 };
+
+const normalisePortForSnapshot = (output: string, port: number) =>
+  output.replace(new RegExp(String(port), 'g'), '<PORT>').replace(/\(node:\d+\)/g, '(node:<PID>)');
 
 const expectSimulationRouteToRespond = async (port: number) => {
   const response = await fetch(`http://localhost:${port}/simulation`);
@@ -117,50 +137,69 @@ const stopProcess = async (child: ChildProcessWithoutNullStreams) => {
     return;
   }
 
-  let exitListener: (() => void) | undefined;
-  let shutdownTimeout: ReturnType<typeof setTimeout> | undefined;
+  let termTimer: ReturnType<typeof setTimeout> | undefined;
+  let killTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const cleanup = () => {
-    if (shutdownTimeout !== undefined) {
-      clearTimeout(shutdownTimeout);
-      shutdownTimeout = undefined;
-    }
-
-    if (exitListener) {
-      child.off('exit', exitListener);
+  const clearTermTimer = () => {
+    if (termTimer !== undefined) {
+      clearTimeout(termTimer);
+      termTimer = undefined;
     }
   };
 
-  const exitPromise = new Promise<void>((resolve) => {
-    exitListener = () => {
-      cleanup();
+  const clearKillTimer = () => {
+    if (killTimer !== undefined) {
+      clearTimeout(killTimer);
+      killTimer = undefined;
+    }
+  };
+
+  await new Promise<void>((resolve) => {
+    let settled = false;
+
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      clearTermTimer();
+      clearKillTimer();
+      child.off('exit', onExit);
       resolve();
     };
-    child.on('exit', exitListener);
-  });
 
-  const shutdownTimeoutMs = 2_000;
-  const timeoutPromise = new Promise<void>((resolve) => {
-    shutdownTimeout = setTimeout(() => {
-      cleanup();
+    const onExit = () => {
+      done();
+    };
+
+    child.on('exit', onExit);
+
+    child.kill('SIGTERM');
+
+    termTimer = setTimeout(() => {
+      termTimer = undefined;
+      if (child.exitCode !== null || child.signalCode !== null) {
+        return;
+      }
+
       child.kill('SIGKILL');
-      resolve();
-    }, shutdownTimeoutMs);
-  });
 
-  child.kill('SIGTERM');
-  await Promise.race([exitPromise, timeoutPromise]);
+      killTimer = setTimeout(() => {
+        killTimer = undefined;
+        done();
+      }, 2000);
+    }, 5000);
+  });
 };
 
 describe('startup output', () => {
   it('prints DigitalPuddle route guidance for the built CommonJS CLI', async () => {
     await runCommand('bun', ['run', 'build']);
     const port = await getOpenPort();
-    const expectedOutput = `DigitalPuddle simulation server started at http://localhost:${port}\nVisit http://localhost:${port}/simulation to view all available routes.`;
-    const {child, output} = startProcess('node', ['./bin/start.cjs'], port, expectedOutput);
+    const {child, output} = startProcess('node', ['./bin/start.cjs'], port, 'DigitalPuddle');
 
     try {
-      await expect(output).resolves.toContain(expectedOutput);
+      const rawOutput = await output;
+      const normalisedOutput = normalisePortForSnapshot(rawOutput, port);
+      expect(normalisedOutput).toMatchSnapshot();
       await expectSimulationRouteToRespond(port);
     } finally {
       await stopProcess(child);
@@ -169,16 +208,17 @@ describe('startup output', () => {
 
   it('prints DigitalPuddle route guidance for the TypeScript example', async () => {
     const port = await getOpenPort();
-    const expectedOutput = `DigitalPuddle baseline server started at http://localhost:${port}\nVisit http://localhost:${port}/simulation to view all available routes.`;
     const {child, output} = startProcess(
       'node',
       ['--experimental-transform-types', './example/start.ts'],
       port,
-      expectedOutput
+      'DigitalPuddle'
     );
 
     try {
-      await expect(output).resolves.toContain(expectedOutput);
+      const rawOutput = await output;
+      const normalisedOutput = normalisePortForSnapshot(rawOutput, port);
+      expect(normalisedOutput).toMatchSnapshot();
       await expectSimulationRouteToRespond(port);
     } finally {
       await stopProcess(child);

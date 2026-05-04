@@ -19,19 +19,24 @@ const isStructuredRequestLoggingEnabled = () => {
   return requestLog === '1' || requestLog === 'true';
 };
 
-const toRequestPath = (pathFromRequest: string, originalUrl: string | undefined, fallbackUrl: string): string => {
+const toRequestPath = (
+  pathFromRequest: string,
+  originalUrl: string | undefined,
+  fallbackUrl: string | undefined
+): string => {
   if (pathFromRequest) {
     return pathFromRequest;
   }
 
   try {
-    return new URL(originalUrl ?? fallbackUrl, 'http://localhost').pathname;
+    const candidate = originalUrl ?? fallbackUrl ?? '';
+    return new URL(candidate, 'http://localhost').pathname;
   } catch {
     return '/';
   }
 };
 
-const registerStructuredRequestLogger = (router: FoundationRouter) => {
+export const registerStructuredRequestLogger = (router: FoundationRouter) => {
   if (!isStructuredRequestLoggingEnabled()) {
     return;
   }

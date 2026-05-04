@@ -21,5 +21,13 @@
     "verbatimModuleSyntax": true
   },
   "exclude": ["dist", "node_modules"],
-  "include": ["codegen.ts", "src/**/*.ts", "tests/**/*.ts", "example/**/*.ts", "sync.ts", "tsdown.config.ts"]
+  "include": [
+    "process-env.d.ts",
+    "codegen.ts",
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "example/**/*.ts",
+    "sync.ts",
+    "tsdown.config.ts"
+  ]
 }

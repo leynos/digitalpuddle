@@ -1,4 +1,4 @@
-# ADR 0001: Use Simulacrum as the HTTP backplane
+# ADR 0001: Use Simulacrum as the HTTP Backplane
 
 Status: Accepted
 

@@ -316,7 +316,7 @@ is layered in selectively.
 The first meaningful release targets the Nile Valley DOKS path, not the entire
 DigitalOcean surface. The recommended v1 public matrix is:
 
-Public endpoint matrix
+Table 1: Recommended v1 public DigitalOcean endpoints under `/v2`.
 
 | Method | Path                                                | Classification | Notes                                                   |
 | ------ | --------------------------------------------------- | -------------- | ------------------------------------------------------- |
@@ -586,9 +586,7 @@ This keeps the first release tight.
 
 All non-DigitalOcean control surfaces live under `/_digitalpuddle`.
 
-Private endpoint matrix
-
-Recommended endpoints:
+Table 2: Recommended private `/_digitalpuddle` harness endpoints.
 
 | Method | Path                                   | Purpose                            |
 | ------ | -------------------------------------- | ---------------------------------- |

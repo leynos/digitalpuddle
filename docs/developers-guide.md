@@ -1,12 +1,18 @@
+---
+scope: Maintainer and contributor workflows for the DigitalPuddle repository,
+  covering layout targets, ADR usage, testing expectations, logging, and
+  transitional rules while the codebase adapts from Simulacat Core.
+precedence: Informative companion to docs/digitalpuddle-technical-design.md and
+  docs/adr/*.md; defers to ADRs and the technical design for normative
+  architecture decisions.
+---
+
 # DigitalPuddle developers' guide
 
-This guide is for maintainers and implementing engineers working on
-DigitalPuddle during the adaptation from Simulacat Core to a DigitalOcean API
-simulator. It covers repository conventions, ADR usage, and practical workflow
-steps for development and testing in the current simulation-first baseline.
-
-This guide explains how to work on DigitalPuddle while it is being adapted from
-Simulacat Core into a DigitalOcean API simulator.
+This guide is for contributors working on the DigitalPuddle codebase. It
+covers repository layout, architectural decisions, development workflow,
+testing expectations, and transitional rules that apply while the codebase is
+being adapted from Simulacat Core.
 
 ## 1. Repository shape
 
