@@ -42,9 +42,34 @@ const runCommand = (command: string, args: string[], timeoutMs = 30_000) =>
       env: process.env
     });
     let output = '';
-    const timeout = setTimeout(() => {
+    let mainTimeout: ReturnType<typeof setTimeout> | undefined;
+    let killTimeout: ReturnType<typeof setTimeout> | undefined;
+    let timedOut = false;
+
+    const clearKillTimeout = () => {
+      if (killTimeout !== undefined) {
+        clearTimeout(killTimeout);
+        killTimeout = undefined;
+      }
+    };
+
+    const clearMainTimeout = () => {
+      if (mainTimeout !== undefined) {
+        clearTimeout(mainTimeout);
+        mainTimeout = undefined;
+      }
+    };
+
+    mainTimeout = setTimeout(() => {
+      mainTimeout = undefined;
+      timedOut = true;
       child.kill('SIGTERM');
-      reject(new Error(`command timed out: ${command} ${args.join(' ')}\n${output}`));
+      killTimeout = setTimeout(() => {
+        killTimeout = undefined;
+        if (child.exitCode === null && child.signalCode === null) {
+          child.kill('SIGKILL');
+        }
+      }, 5000);
     }, timeoutMs);
 
     child.stdout.on('data', (data) => {
@@ -54,11 +79,17 @@ const runCommand = (command: string, args: string[], timeoutMs = 30_000) =>
       output += data.toString();
     });
     child.on('error', (error) => {
-      clearTimeout(timeout);
+      clearMainTimeout();
+      clearKillTimeout();
       reject(error);
     });
-    child.on('exit', (code) => {
-      clearTimeout(timeout);
+    child.once('exit', (code) => {
+      clearMainTimeout();
+      clearKillTimeout();
+      if (timedOut) {
+        reject(new Error(`command timed out: ${command} ${args.join(' ')}\n${output}`));
+        return;
+      }
       if (code === 0) {
         resolve();
         return;

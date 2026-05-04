@@ -665,7 +665,7 @@ Important caveats:
 
 ## 16. Repository layout
 
-A Simulacrum-centred repository should be organised around assembly, store,
+A Simulacrum-centred repository should be organized around assembly, store,
 handlers, worker, engines, and harnesses rather than around a bespoke web
 framework.
 
