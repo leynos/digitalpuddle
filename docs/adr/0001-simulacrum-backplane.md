@@ -16,7 +16,7 @@ project will supply DigitalOcean-specific schemas, handlers, store slices,
 worker logic, engine adapters, admin routes, and documentation around that
 backplane.
 
-## Rejected Alternatives
+## Rejected alternatives
 
 - A bespoke HTTP and routing stack was considered and deferred because it would
   replace Simulacrum’s contract-first routing and delay v1.

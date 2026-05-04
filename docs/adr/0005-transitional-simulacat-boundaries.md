@@ -23,7 +23,7 @@ side effects, and journal emission.
   route-contract visibility and leaks HTTP shape into state models.
 - Embed HTTP mapping inside domain entities was rejected because it couples core
   logic to transport details instead of handler boundaries.
-- Parse headers implicitly was rejected so that header decisions remain explicit
+- Parsing headers implicitly was rejected so that header decisions remain explicit
   and testable before core logic runs.
 - Postpone splitting GitHub scaffolding was rejected because it hides transition
   work and blocks the production boundary from becoming explicit.

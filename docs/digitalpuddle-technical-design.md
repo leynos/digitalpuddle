@@ -1,7 +1,11 @@
 # DigitalPuddle Technical Design
 
 Status: Proposed  
+Scope: Define the v1 architecture, contracts, and execution model for a
+  DigitalOcean-shaped simulator built on a Simulacrum-based backplane.
 Audience: Implementing engineers  
+Precedence: Source of truth for design decisions that affect the public v2
+  simulation contract and runtime architecture.  
 Primary customer: Nile Valley test suites driven through Terratest
 
 ## 1. Purpose
@@ -312,6 +316,8 @@ is layered in selectively.
 The first meaningful release targets the Nile Valley DOKS path, not the entire
 DigitalOcean surface. The recommended v1 public matrix is:
 
+Public endpoint matrix
+
 | Method | Path                                                | Classification | Notes                                                   |
 | ------ | --------------------------------------------------- | -------------- | ------------------------------------------------------- |
 | GET    | `/v2/account`                                       | scriptable     | seeded account metadata                                 |
@@ -579,6 +585,8 @@ This keeps the first release tight.
 ## 13. Private admin API
 
 All non-DigitalOcean control surfaces live under `/_digitalpuddle`.
+
+Private endpoint matrix
 
 Recommended endpoints:
 

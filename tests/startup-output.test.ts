@@ -117,11 +117,39 @@ const stopProcess = async (child: ChildProcessWithoutNullStreams) => {
     return;
   }
 
+  let exitListener: (() => void) | undefined;
+  let shutdownTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  const cleanup = () => {
+    if (shutdownTimeout !== undefined) {
+      clearTimeout(shutdownTimeout);
+      shutdownTimeout = undefined;
+    }
+
+    if (exitListener) {
+      child.off('exit', exitListener);
+    }
+  };
+
   const exitPromise = new Promise<void>((resolve) => {
-    child.once('exit', () => resolve());
+    exitListener = () => {
+      cleanup();
+      resolve();
+    };
+    child.on('exit', exitListener);
   });
+
+  const shutdownTimeoutMs = 2_000;
+  const timeoutPromise = new Promise<void>((resolve) => {
+    shutdownTimeout = setTimeout(() => {
+      cleanup();
+      child.kill('SIGKILL');
+      resolve();
+    }, shutdownTimeoutMs);
+  });
+
   child.kill('SIGTERM');
-  await exitPromise;
+  await Promise.race([exitPromise, timeoutPromise]);
 };
 
 describe('startup output', () => {

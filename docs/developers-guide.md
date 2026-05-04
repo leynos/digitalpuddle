@@ -1,5 +1,10 @@
 # DigitalPuddle developers' guide
 
+This guide is for maintainers and implementing engineers working on
+DigitalPuddle during the adaptation from Simulacat Core to a DigitalOcean API
+simulator. It covers repository conventions, ADR usage, and practical workflow
+steps for development and testing in the current simulation-first baseline.
+
 This guide explains how to work on DigitalPuddle while it is being adapted from
 Simulacat Core into a DigitalOcean API simulator.
 
