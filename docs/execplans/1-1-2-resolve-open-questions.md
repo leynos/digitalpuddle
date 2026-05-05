@@ -429,10 +429,10 @@ the baseline separately.
 
 ## Concrete steps
 
-Run all commands from:
+Run all commands from the repository root:
 
 ```plaintext
-/home/leynos/.lody/repos/github---leynos---digitalpuddle/worktrees/3cdacedb-c3e4-43c9-a591-23291c206395
+.
 ```
 
 Confirm the branch:
