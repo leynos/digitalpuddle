@@ -39,11 +39,12 @@ OpenAPI pin, first API slice, and future Droplet or Spaces work.
   - See `digitalpuddle-technical-design.md` §§1-4 and §20.
   - Success: each ADR states the decision, rejected alternatives, and the
     concrete implementation consequence for v1.
-- [ ] 1.1.2. Resolve the v1 node-pool, Spaces control-plane, Droplet engine, and
+- [x] 1.1.2. Resolve the v1 node-pool, Spaces control-plane, Droplet engine, and
       doctl compatibility questions.
   - See `digitalpuddle-technical-design.md` §§8.2, 8.3, 12.2, 12.3, 18, and 20.
   - Success: every open question in §20 is either in the v1 scope, moved to a
     named follow-on phase, or explicitly rejected.
+  - Decision: see `adr/0006-v1-product-boundaries.md`.
 - [ ] 1.1.3. Define the release capability policy for `scriptable`,
       `engine-backed`, `stubbed`, and `unsupported` operations.
   - See `digitalpuddle-technical-design.md` §§7.1, 8.2, and 16.
@@ -367,10 +368,11 @@ This step answers whether node-pool management needs to be first-class after
 cluster create, delete, and kubeconfig retrieval are stable. The outcome depends
 on Nile Valley's scaling workflows.
 
-- [ ] 5.1.1. Implement node-pool create, resize, list, and delete behaviour if
-      Nile Valley requires scaling workflows.
+- [ ] 5.1.1. Implement node-pool create, resize, delete, recycle, and upgrade
+      behaviour if Nile Valley requires scaling workflows.
   - Requires phase 4.
   - See `digitalpuddle-technical-design.md` §§8.2, 10.3, and 20.
+  - See `adr/0006-v1-product-boundaries.md`.
   - Success: node-pool actions update k3d agent counts and preserve action
     polling semantics.
 
@@ -384,6 +386,7 @@ v1 without evidence.
       if customer tests require Droplet control-plane behaviour.
   - Requires phase 4.
   - See `digitalpuddle-technical-design.md` §§3, 9.1, 12.3, and 20.
+  - See `adr/0006-v1-product-boundaries.md`.
   - Success: Droplet work has a named customer scenario and does not require
     QEMU accuracy.
 - [ ] 5.2.2. Reassess a QEMU-backed engine only when cloud-init or boot
@@ -396,17 +399,24 @@ v1 without evidence.
 ### 5.3. Expand Spaces and client compatibility deliberately
 
 This step answers whether direct MinIO access is sufficient or whether clients
-need DigitalOcean bucket control-plane metadata. The outcome informs future API
-coverage without proxying object traffic.
+need DigitalOcean Spaces access-key or bucket control-plane metadata. The
+outcome informs future API coverage without proxying object traffic.
 
-- [ ] 5.3.1. Add bucket metadata control-plane routes only if Nile Valley needs
+- [ ] 5.3.1. Add Spaces access-key control-plane routes only if Nile Valley,
+      Terraform, or doctl needs them.
+  - Requires phase 4.
+  - See `digitalpuddle-technical-design.md` §§2, 12.2, and 20.
+  - See `adr/0006-v1-product-boundaries.md`.
+  - Success: object-level S3 traffic still goes directly to MinIO.
+- [ ] 5.3.2. Add bucket metadata control-plane routes only if Nile Valley needs
       them.
   - Requires phase 4.
   - See `digitalpuddle-technical-design.md` §§2, 12.2, and 20.
   - Success: object-level S3 traffic still goes directly to MinIO.
-- [ ] 5.3.2. Expand doctl compatibility coverage from best-effort to gated only
+- [ ] 5.3.3. Expand doctl compatibility coverage from best-effort to gated only
       after the v1 route matrix is stable.
   - Requires phase 4.
   - See `digitalpuddle-technical-design.md` §§8.3 and 20.
+  - See `adr/0006-v1-product-boundaries.md`.
   - Success: the CI matrix states which doctl workflows are supported and which
     remain best-effort.

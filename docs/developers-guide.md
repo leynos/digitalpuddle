@@ -51,14 +51,15 @@ Current Architectural Decision Records cover:
 - the DigitalOcean OpenAPI pinning strategy;
 - the v1 product slice that prioritizes DigitalOcean Kubernetes Service (DOKS);
 - deterministic worker and virtual-time rules;
-- the temporary treatment of inherited Simulacat transport coupling.
+- the temporary treatment of inherited Simulacat transport coupling;
+- the v1 product boundaries for node pools, Spaces, Droplets, and doctl.
 
 ## 3. Development workflow
 
 Start by checking the branch:
 
 ```bash
-git branch --show
+git branch --show-current
 ```
 
 Install dependencies:
@@ -70,15 +71,17 @@ bun install
 Run the full code gate:
 
 ```bash
-make all 2>&1 | tee /tmp/all-digitalpuddle-$(git branch --show).out
+BRANCH=$(git branch --show-current | tr '/ ' '__')
+make all 2>&1 | tee /tmp/all-digitalpuddle-${BRANCH}.out
 ```
 
 Run documentation gates when Markdown changes:
 
 ```bash
-bun fmt 2>&1 | tee /tmp/fmt-digitalpuddle-$(git branch --show).out
-make markdownlint 2>&1 | tee /tmp/markdownlint-digitalpuddle-$(git branch --show).out
-make nixie 2>&1 | tee /tmp/nixie-digitalpuddle-$(git branch --show).out
+BRANCH=$(git branch --show-current | tr '/ ' '__')
+bun fmt 2>&1 | tee /tmp/fmt-digitalpuddle-${BRANCH}.out
+make markdownlint 2>&1 | tee /tmp/markdownlint-digitalpuddle-${BRANCH}.out
+make nixie 2>&1 | tee /tmp/nixie-digitalpuddle-${BRANCH}.out
 ```
 
 Build the package when changing the CommonJS CLI:
@@ -115,7 +118,15 @@ duration. Future DigitalPuddle route work should also write request, response,
 transition, engine-call, and fault events to the request journal. The journal is
 the assertion surface; operational logs are diagnostic support.
 
-## 6. Transitional architecture rules
+## 6. Client compatibility tests
+
+Client compatibility tests should follow ADR 0006. Terraform and doctl coverage
+belongs with implemented `/v2` routes, not with unsupported product surfaces.
+When a route claims doctl support, add command-level happy-path and unhappy-path
+coverage after the route exists. Configure doctl with explicit `--api-url`
+arguments in tests and examples.
+
+## 7. Transitional architecture rules
 
 The imported Simulacat code embeds GitHub URLs in entities and keeps some HTTP
 details inside handlers. That is acceptable only as a temporary baseline. New

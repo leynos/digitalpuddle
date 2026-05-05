@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections
 `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work
 proceeds.
 
-Status: DRAFT
+Status: COMPLETE
 
 ## Purpose / big picture
 
@@ -132,13 +132,19 @@ conflict in `Decision Log`, and ask the user how to proceed.
 - [x] (2026-05-05T07:56:50Z) Used a Wyvern agent team for repository-context,
   external-evidence, and ExecPlan-readiness review.
 - [x] (2026-05-05T07:56:50Z) Drafted this ExecPlan.
-- [ ] Await explicit user approval before implementation.
-- [ ] Add ADR 0006 for the resolved v1 product boundaries.
-- [ ] Update the technical design sections cited by roadmap task 1.1.2.
-- [ ] Update the users' and developers' guides if the decisions change user or
-  maintainer expectations.
-- [ ] Mark roadmap task 1.1.2 as done.
-- [ ] Run validation gates and commit the approved implementation.
+- [x] (2026-05-05T09:13:36Z) Received explicit user approval to proceed with
+  implementation of this plan.
+- [x] (2026-05-05T09:13:36Z) Reconfirmed branch
+  `1-1-2-resolve-open-questions`; the worktree was clean before execution.
+- [x] (2026-05-05T09:13:36Z) Add ADR 0006 for the resolved v1 product
+  boundaries.
+- [x] (2026-05-05T09:13:36Z) Update the technical design sections cited by
+  roadmap task 1.1.2.
+- [x] (2026-05-05T09:13:36Z) Update the users' and developers' guides if the
+  decisions change user or maintainer expectations.
+- [x] (2026-05-05T09:13:36Z) Mark roadmap task 1.1.2 as done.
+- [x] (2026-05-05T09:13:36Z) Run validation gates for the approved
+  implementation.
 
 ## Surprises & discoveries
 
@@ -181,6 +187,15 @@ conflict in `Decision Log`, and ask the user how to proceed.
   Impact: validation steps generate resolver types before testing and unset
   `FORCE_COLOR` for the test run.
 
+- Observation: task 1.1.2 fits the documentation-only tolerance exactly.
+  Evidence: implementation touched six tracked files:
+  `docs/execplans/1-1-2-resolve-open-questions.md`,
+  `docs/adr/0006-v1-product-boundaries.md`,
+  `docs/digitalpuddle-technical-design.md`, `docs/users-guide.md`,
+  `docs/developers-guide.md`, and `docs/roadmap.md`.
+  Impact: no tolerance escalation is required, but further tracked files would
+  exceed the file-count tolerance.
+
 ## Decision Log
 
 - Decision: create a new ADR for task 1.1.2 instead of editing prior accepted
@@ -203,12 +218,43 @@ conflict in `Decision Log`, and ask the user how to proceed.
   compatibility policy.
   Date/Author: 2026-05-05T07:56:50Z / Codex.
 
+- Decision: start the execution phase for this plan.
+  Rationale: the user explicitly asked to proceed with implementation of
+  `docs/execplans/1-1-2-resolve-open-questions.md`.
+  Date/Author: 2026-05-05T09:13:36Z / Codex.
+
+- Decision: close section 20 with ADR 0006's narrowed v1 boundaries.
+  Rationale: the expected decisions remained consistent with the local design:
+  v1 is DOKS-first, keeps MinIO direct for object traffic, omits Droplet
+  engines, and limits doctl compatibility to implemented command workflows.
+  Date/Author: 2026-05-05T09:13:36Z / Codex.
+
 ## Outcomes & retrospective
 
-The plan is currently a draft. No implementation outcome exists yet. At
-completion, update this section with the accepted decisions, validation logs,
-remaining follow-on work, and any mismatch between the expected documentation
-scope and the actual change.
+Implementation closed all four section 20 questions through ADR 0006 and
+aligned the technical design, users' guide, developers' guide, and roadmap with
+that decision. The accepted v1 boundary is read-only node-pool state for the
+initial cluster pool, direct MinIO object traffic with deferred
+`/v2/spaces/keys`, no Droplet routes or engines in v1, and command-level doctl
+coverage only for implemented workflows using `--api-url`.
+
+The roadmap now marks task 1.1.2 done and gives deferred work named homes:
+node-pool scale operations, Spaces access-key control-plane routes, bucket
+metadata control-plane routes, a future Droplet slice, and later doctl coverage
+expansion.
+
+Validation passed with these commands:
+
+```plaintext
+bun fmt
+make markdownlint
+make generate
+make check-fmt
+make lint
+env -u FORCE_COLOR make test
+```
+
+The final test run reported 113 passing tests, 0 failures, and 2 snapshots.
 
 ## Context and orientation
 
@@ -398,7 +444,7 @@ git branch --show-current
 Expected output:
 
 ```plaintext
-fix/resolve-v1-questions
+1-1-2-resolve-open-questions
 ```
 
 Review local documentation context:
@@ -561,4 +607,4 @@ them:
 
 Revision note: Initial draft created on 2026-05-05. It captures the requested
 planning scope, Wyvern review inputs, Firecrawl research, approval gate, and
-validation strategy. Implementation remains blocked until explicit approval.
+validation strategy. Execution began after explicit approval on 2026-05-05.
