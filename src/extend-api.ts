@@ -11,6 +11,55 @@ import {createHandler} from './graphql/handler.ts';
 import type {ExtendedSimulationStore} from './store/index.ts';
 
 type FoundationExtendRouter = NonNullable<Parameters<typeof createFoundationSimulationServer>[0]['extendRouter']>;
+type FoundationRouter = Parameters<FoundationExtendRouter>[0];
+
+const isStructuredRequestLoggingEnabled = () => {
+  const {DIGITALPUDDLE_REQUEST_LOG: requestLog} = process.env;
+
+  return requestLog === '1' || requestLog === 'true';
+};
+
+const toRequestPath = (
+  pathFromRequest: string,
+  originalUrl: string | undefined,
+  fallbackUrl: string | undefined
+): string => {
+  if (pathFromRequest) {
+    return pathFromRequest;
+  }
+
+  try {
+    const candidate = originalUrl ?? fallbackUrl ?? '';
+    return new URL(candidate, 'http://localhost').pathname;
+  } catch {
+    return '/';
+  }
+};
+
+export const registerStructuredRequestLogger = (router: FoundationRouter) => {
+  if (!isStructuredRequestLoggingEnabled()) {
+    return;
+  }
+
+  router.use((request, response, next) => {
+    const startedAt = performance.now();
+    const requestPath = toRequestPath(request.path, request.originalUrl, request.url);
+
+    response.on('finish', () => {
+      console.info(
+        JSON.stringify({
+          event: 'digitalpuddle.http.response',
+          method: request.method,
+          path: requestPath,
+          status: response.statusCode,
+          durationMs: Math.round((performance.now() - startedAt) * 1000) / 1000
+        })
+      );
+    });
+
+    next();
+  });
+};
 
 /**
  * Wraps a caller-provided router extension with Simulacat Core's built-in
@@ -30,6 +79,8 @@ export const extendRouter =
       | undefined
   ) =>
   (router: Parameters<FoundationExtendRouter>[0], simulationStore: ExtendedSimulationStore) => {
+    registerStructuredRequestLogger(router);
+
     if (extend) {
       extend(router, simulationStore);
     }

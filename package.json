@@ -1,23 +1,24 @@
 {
   "name": "digitalpuddle",
-  "version": "0.6.4",
-  "description": "Provides common functionality to frontend app and plugins.",
+  "version": "0.1.0",
+  "description": "A local DigitalOcean API simulator for deterministic infrastructure tests.",
   "keywords": [
     "emulation",
-    "github-api",
+    "digitalocean-api",
+    "cloud-simulator",
     "integration testing",
+    "infrastructure testing",
     "mock",
     "mocking",
     "simulation"
   ],
   "bugs": {
-    "url": "https://github.com/thefrontside/simulacrum/issues"
+    "url": "https://github.com/leynos/digitalpuddle/issues"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thefrontside/simulacrum.git",
-    "directory": "packages/github-api"
+    "url": "git+https://github.com/leynos/digitalpuddle.git"
   },
   "packageManager": "bun@1.3.11",
   "bin": "bin/start.cjs",
@@ -25,8 +26,7 @@
     "README.md",
     "dist",
     "src",
-    "schema",
-    "repository-mock-data"
+    "schema"
   ],
   "type": "module",
   "module": "./dist/index.mjs",

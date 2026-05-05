@@ -1,0 +1,15 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`startup output prints DigitalPuddle route guidance for the built CommonJS CLI 1`] = `
+"DigitalPuddle simulation server started at http://localhost:<PORT>
+Visit http://localhost:<PORT>/simulation to view all available routes.
+"
+`;
+
+exports[`startup output prints DigitalPuddle route guidance for the TypeScript example 1`] = `
+"(node:<PID>) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
+(Use \`node --trace-warnings ...\` to show where the warning was created)
+DigitalPuddle baseline server started at http://localhost:<PORT>
+Visit http://localhost:<PORT>/simulation to view all available routes.
+"
+`;
