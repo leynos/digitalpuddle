@@ -67,8 +67,13 @@ The expected client configuration is:
 
 ```bash
 export DIGITALOCEAN_API_URL=http://localhost:3300/v2
+export DIGITALOCEAN_ACCESS_TOKEN=dop_v1_digitalpuddle_dummy_token
 export SPACES_ENDPOINT_URL=http://localhost:9000
 ```
+
+The access token is deliberately fake. It lets local clients that require a
+token during startup, including doctl, reach DigitalPuddle instead of failing
+before the first request.
 
 Configure doctl commands explicitly with the documented API override:
 
