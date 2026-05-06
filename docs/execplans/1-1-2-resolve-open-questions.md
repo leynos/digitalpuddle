@@ -110,8 +110,8 @@ conflict in `Decision Log`, and ask the user how to proceed.
   covers more DigitalOcean products than DigitalPuddle v1.
   Severity: medium.
   Likelihood: high.
-  Mitigation: define a command-level CI contract for supported v1 workflows, and
-  document other doctl commands as best-effort or unsupported.
+  Mitigation: define the compatibility policy in ADR 0006, and keep other docs
+  as references to that ADR.
 
 - Risk: documentation-only implementation may be mistaken for feature delivery.
   Severity: medium.
@@ -121,78 +121,47 @@ conflict in `Decision Log`, and ask the user how to proceed.
 
 ## Progress
 
-- [x] (2026-05-05T07:56:50Z) Confirmed branch
-  `fix/resolve-v1-questions` and loaded the repository, execplans, leta,
-  firecrawl, commit-message, and hexagonal-architecture guidance.
-- [x] (2026-05-05T07:56:50Z) Reviewed `docs/roadmap.md`,
-  `docs/digitalpuddle-technical-design.md`, `docs/users-guide.md`,
-  `docs/developers-guide.md`, and ADRs 0001 through 0005.
-- [x] (2026-05-05T07:56:50Z) Used Firecrawl against official DigitalOcean
-  documentation for Kubernetes node-pool, Spaces, Droplet, and doctl evidence.
-- [x] (2026-05-05T07:56:50Z) Used a Wyvern agent team for repository-context,
-  external-evidence, and ExecPlan-readiness review.
-- [x] (2026-05-05T07:56:50Z) Drafted this ExecPlan.
-- [x] (2026-05-05T09:13:36Z) Received explicit user approval to proceed with
-  implementation of this plan.
-- [x] (2026-05-05T09:13:36Z) Reconfirmed branch
-  `1-1-2-resolve-open-questions`; the worktree was clean before execution.
-- [x] (2026-05-05T09:13:36Z) Add ADR 0006 for the resolved v1 product
-  boundaries.
-- [x] (2026-05-05T09:13:36Z) Update the technical design sections cited by
-  roadmap task 1.1.2.
-- [x] (2026-05-05T09:13:36Z) Update the users' and developers' guides if the
-  decisions change user or maintainer expectations.
-- [x] (2026-05-05T09:13:36Z) Mark roadmap task 1.1.2 as done.
-- [x] (2026-05-05T09:13:36Z) Run validation gates for the approved
-  implementation.
+- [x] Review the roadmap, technical design, user and developer guides, and
+  accepted ADRs that constrain task 1.1.2.
+- [x] Gather current official DigitalOcean evidence for Kubernetes node pools,
+  Spaces, Droplets, and doctl.
+- [x] Draft this ExecPlan and receive explicit approval before implementation.
+- [x] Add ADR 0006 for the resolved v1 product boundaries.
+- [x] Update the technical design sections cited by roadmap task 1.1.2.
+- [x] Update the users' and developers' guides where the decisions change user
+  or maintainer expectations.
+- [x] Mark roadmap task 1.1.2 as done.
+- [x] Run validation gates for the approved implementation.
 
 ## Surprises & discoveries
 
 - Observation: the repository has no existing `docs/execplans/` directory.
-  Evidence: `find docs -maxdepth 2 -type d -print` listed `docs` and
-  `docs/adr` only.
   Impact: this plan creates the directory before adding the plan file.
 
 - Observation: the branch name contains `/`, which makes raw
   `$(git branch --show-current)` unsafe inside a `/tmp/*.out` filename.
-  Evidence: a raw branch-name tee path attempted to write below
-  `/tmp/fmt-digitalpuddle-fix/`.
   Impact: validation commands in this plan sanitize branch names before
   constructing log paths.
 
 - Observation: doctl documents `--api-url` as a global flag, but official
   doctl documentation did not provide matching evidence for a
   `DIGITALOCEAN_API_URL` endpoint override environment variable.
-  Evidence: DigitalOcean doctl node-pool documentation lists `--api-url`, and
-  the doctl README lists `-u, --api-url string`.
   Impact: the implementation should standardize documented doctl compatibility
   on explicit `--api-url` usage unless later evidence proves an environment
   variable is supported.
 
 - Observation: doctl has Spaces key-management commands, while DigitalOcean
   documentation also says doctl does not support the Spaces object API.
-  Evidence: official Spaces key reference documents `/v2/spaces/keys`, and
-  official Spaces product documentation describes Spaces as S3-compatible
-  object storage.
   Impact: the implementation must separate Spaces key control-plane decisions
   from object storage traffic, which remains direct to MinIO for v1.
 
 - Observation: `make test` expects generated GraphQL resolver types and the
   startup-output snapshots are sensitive to inherited colour-environment
   warnings.
-  Evidence: `make test` failed before `make generate` because
-  `src/__generated__/resolvers-types.ts` was absent, then failed snapshot
-  comparisons while `FORCE_COLOR` injected `NO_COLOR` warnings into child
-  process output.
   Impact: validation steps generate resolver types before testing and unset
   `FORCE_COLOR` for the test run.
 
 - Observation: task 1.1.2 fits the documentation-only tolerance exactly.
-  Evidence: implementation touched six tracked files:
-  `docs/execplans/1-1-2-resolve-open-questions.md`,
-  `docs/adr/0006-v1-product-boundaries.md`,
-  `docs/digitalpuddle-technical-design.md`, `docs/users-guide.md`,
-  `docs/developers-guide.md`, and `docs/roadmap.md`.
   Impact: no tolerance escalation is required, but further tracked files would
   exceed the file-count tolerance.
 
@@ -202,32 +171,27 @@ conflict in `Decision Log`, and ask the user how to proceed.
   ADRs to carry the new combined decision.
   Rationale: ADRs 0001 through 0005 already record earlier accepted decisions.
   A new ADR keeps the product-boundary closure narrow and auditable.
-  Date/Author: 2026-05-05T07:56:50Z / Codex.
 
 - Decision: make this plan documentation-first and stop if runtime code changes
   become necessary.
   Rationale: roadmap task 1.1.2 asks to resolve open implementation decisions.
   Runtime route, worker, and engine work belongs to later roadmap tasks after
   the boundaries are closed.
-  Date/Author: 2026-05-05T07:56:50Z / Codex.
 
-- Decision: use official DigitalOcean documentation gathered through Firecrawl
-  as external evidence for the decisions.
+- Decision: use official DigitalOcean documentation as external evidence for
+  the decisions.
   Rationale: node-pool, Spaces, Droplet, and doctl surfaces can change over
   time, so current primary-source evidence is required before recording a
   compatibility policy.
-  Date/Author: 2026-05-05T07:56:50Z / Codex.
 
 - Decision: start the execution phase for this plan.
   Rationale: the user explicitly asked to proceed with implementation of
   `docs/execplans/1-1-2-resolve-open-questions.md`.
-  Date/Author: 2026-05-05T09:13:36Z / Codex.
 
 - Decision: close section 20 with ADR 0006's narrowed v1 boundaries.
   Rationale: the expected decisions remained consistent with the local design:
   v1 is DOKS-first, keeps MinIO direct for object traffic, omits Droplet
   engines, and limits doctl compatibility to implemented command workflows.
-  Date/Author: 2026-05-05T09:13:36Z / Codex.
 
 ## Outcomes & retrospective
 
@@ -351,11 +315,8 @@ The expected decisions to encode, unless new evidence contradicts them, are:
   API operations as unsupported until a named follow-on Droplet slice. Prefer a
   `NullDropletEngine` or small container-backed engine for the first follow-on
   implementation; keep QEMU as a later option for host-bootstrap fidelity.
-- doctl: treat doctl as a narrow compatibility target for supported v1 DOKS
-  commands only, using explicit `--api-url` configuration. Cover supported
-  commands in CI only after their corresponding `/v2` routes exist. Document
-  unsupported doctl product commands as best-effort or explicitly unsupported,
-  not as v1 commitments.
+- doctl: define the normative compatibility and CI policy in ADR 0006. Other
+  docs should reference that ADR instead of restating the whole policy.
 
 Go/no-go: if the evidence makes any expected decision wrong, stop and update
 this plan before editing project docs.
@@ -401,8 +362,7 @@ than implying that a generic environment variable covers doctl.
 
 Update `docs/developers-guide.md` only where maintainer-facing practice
 changes. The likely update is in the ADR and testing sections, where the guide
-should mention ADR 0006 and the rule that doctl CI covers only commands whose
-routes are implemented and classified as supported.
+should mention ADR 0006 without restating its full doctl policy.
 
 Go/no-go: if these guides do not need updates after ADR 0006 and the design
 change, record that in `Decision Log` instead of making cosmetic edits.
@@ -560,32 +520,24 @@ If the ADR number `0006` already exists when implementation begins, choose the
 next unused ADR number, update all references in this plan during execution,
 and record the change in `Decision Log`.
 
-## Artifacts and notes
+## Source evidence
 
-External evidence gathered while drafting this plan:
+External evidence used while drafting this plan:
 
-- DigitalOcean Kubernetes API documentation generated on 2026-04-28 lists
-  Kubernetes cluster node-pool list, add, retrieve, update, delete, node delete,
-  recycle, status, upgrade, and kubeconfig operations under `/v2/kubernetes`.
-- DigitalOcean doctl documentation generated on 2026-04-16 from doctl
-  `v1.155.0` lists node-pool commands and the global `--api-url` flag.
-- DigitalOcean Spaces product documentation generated on 2026-05-04 describes
-  Spaces as S3-compatible object storage.
-- DigitalOcean Spaces Keys API documentation generated on 2026-04-28 documents
-  `/v2/spaces/keys` as a DigitalOcean control-plane endpoint.
-- DigitalOcean Droplets API documentation generated on 2026-04-28 describes a
-  broad Droplet route surface under `/v2/droplets`.
+- DigitalOcean Kubernetes API documentation lists Kubernetes cluster node-pool
+  list, add, retrieve, update, delete, node delete, recycle, status, upgrade,
+  and kubeconfig operations under `/v2/kubernetes`.
+- DigitalOcean doctl documentation lists node-pool commands and the global
+  `--api-url` flag.
+- DigitalOcean Spaces product documentation describes Spaces as S3-compatible
+  object storage.
+- DigitalOcean Spaces Keys API documentation documents `/v2/spaces/keys` as a
+  DigitalOcean control-plane endpoint.
+- DigitalOcean Droplets API documentation describes a broad Droplet route
+  surface under `/v2/droplets`.
 
-Wyvern agent team contributions:
-
-- One agent reviewed repository docs and highlighted the implementation files,
-  decisions, and sequencing risks.
-- One agent reviewed external DigitalOcean documentation and highlighted the
-  split between node-pool API support, Spaces object traffic, Spaces key
-  control-plane routes, Droplet scope, and doctl `--api-url`.
-- One agent reviewed ExecPlan requirements and confirmed the need for an
-  approval gate, living sections, hexagonal boundary notes, documentation
-  updates, and validation gates.
+Implementation review also checked repository documentation for sequencing
+risks and ExecPlan completeness.
 
 ## Interfaces and dependencies
 
@@ -605,6 +557,6 @@ them:
 - doctl as an external compatibility client configured with `--api-url` for
   supported command workflows.
 
-Revision note: Initial draft created on 2026-05-05. It captures the requested
-planning scope, Wyvern review inputs, Firecrawl research, approval gate, and
-validation strategy. Execution began after explicit approval on 2026-05-05.
+Revision note: this completed plan preserves the approved scope, primary-source
+research, approval gate, validation strategy, and implementation outcome while
+leaving ADR 0006 as the normative decision record.

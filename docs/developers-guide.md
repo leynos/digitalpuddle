@@ -122,9 +122,7 @@ the assertion surface; operational logs are diagnostic support.
 
 Client compatibility tests should follow ADR 0006. Terraform and doctl coverage
 belongs with implemented `/v2` routes, not with unsupported product surfaces.
-When a route claims doctl support, add command-level happy-path and unhappy-path
-coverage after the route exists. Configure doctl with explicit `--api-url`
-arguments in tests and examples.
+Configure doctl with explicit `--api-url` arguments in tests and examples.
 
 ## 7. Transitional architecture rules
 

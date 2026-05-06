@@ -8,7 +8,8 @@ Roadmap task 1.1.2 closes the first unresolved v1 product questions before
 DigitalPuddle broadens from the imported Simulacat baseline into a
 DigitalOcean-shaped simulator. The open questions cover Kubernetes node-pool
 scope, Spaces control-plane routes, Droplet engines, and how much doctl
-compatibility belongs in CI.
+(DigitalOcean command-line client) compatibility belongs in continuous
+integration (CI).
 
 Official DigitalOcean documentation currently exposes a broad Kubernetes
 node-pool API, a separate `/v2/spaces/keys` control-plane surface, a broad
@@ -35,11 +36,12 @@ The first Droplet follow-on should start with either a `NullDropletEngine` or a
 small container-backed engine. QEMU remains a later option for tests that need
 host-bootstrap fidelity.
 
-doctl compatibility is a narrow command-level target. CI should cover doctl
-only for supported v1 workflows after the corresponding `/v2` routes exist.
-Users should configure doctl with the documented `--api-url` flag. doctl
-commands for products or operations outwith the v1 capability matrix are
-best-effort at most, and should normally receive explicit unsupported responses.
+The normative doctl compatibility policy is command-level, not product-wide.
+CI should cover doctl only for supported v1 workflows after the corresponding
+`/v2` routes exist. Users should configure doctl with the documented
+`--api-url` flag. doctl commands for products or operations outwith the v1
+capability matrix are best-effort at most, and should normally receive explicit
+unsupported responses.
 
 ## Rejected alternatives
 

@@ -355,17 +355,13 @@ rather than promise broad DigitalOcean emulation on day one.
 ### 8.3 Compatibility expectations
 
 DigitalPuddle should work with unmodified clients redirected through endpoint
-overrides for supported v1 workflows:
+overrides for supported v1 workflows. ADR 0006 is the normative source for
+doctl compatibility and CI coverage.
 
 - Terraform DigitalOcean provider via `DIGITALOCEAN_API_URL`
 - Terraform S3 backend or app logic via `SPACES_ENDPOINT_URL` to MinIO
 - doctl via explicit `--api-url`
 - Nile Valley via its existing client configuration
-
-doctl compatibility is command-level, not product-wide. CI should cover doctl
-only after the relevant `/v2` route exists and is classified as supported.
-Unsupported doctl commands should receive explicit unsupported responses rather
-than accidental fake success.
 
 ### 8.4 Response contract details
 
@@ -799,9 +795,8 @@ DigitalPuddle should ship a small Go helper module that wraps:
 The aim is that a Nile Valley engineer can write tests against a stable helper
 surface instead of scripting the admin API by hand.
 
-doctl checks belong in CI only for implemented v1 command workflows after the
-corresponding `/v2` routes exist. Commands for unsupported products remain
-outside the Terratest acceptance surface.
+doctl checks should follow ADR 0006 and remain outside the Terratest acceptance
+surface for unsupported products.
 
 A canonical test flow should look like:
 
@@ -878,8 +873,7 @@ Resolved decisions:
   management.**
 - **Omit Droplet routes and engines from v1, then revisit them in a named
   Droplet slice.**
-- **Treat doctl as a command-level compatibility target for implemented v1
-  workflows, configured with `--api-url`.**
+- **Use ADR 0006 as the normative doctl compatibility and CI policy.**
 
 Roadmap task 1.1.2 is closed by ADR 0006. The named follow-on phases are
 node-pool scale operations, Spaces access-key control plane, and the Droplet
