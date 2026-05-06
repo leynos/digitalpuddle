@@ -110,7 +110,7 @@ conflict in `Decision Log`, and ask the user how to proceed.
   covers more DigitalOcean products than DigitalPuddle v1.
   Severity: medium.
   Likelihood: high.
-  Mitigation: define a command-level CI contract for supported v1 workflows and
+  Mitigation: define a command-level CI contract for supported v1 workflows, and
   document other doctl commands as best-effort or unsupported.
 
 - Risk: documentation-only implementation may be mistaken for feature delivery.

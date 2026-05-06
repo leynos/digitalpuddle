@@ -39,7 +39,7 @@ doctl compatibility is a narrow command-level target. CI should cover doctl
 only for supported v1 workflows after the corresponding `/v2` routes exist.
 Users should configure doctl with the documented `--api-url` flag. doctl
 commands for products or operations outwith the v1 capability matrix are
-best-effort at most and should normally receive explicit unsupported responses.
+best-effort at most, and should normally receive explicit unsupported responses.
 
 ## Rejected alternatives
 
@@ -47,7 +47,7 @@ best-effort at most and should normally receive explicit unsupported responses.
   first DOKS slice into scale-operation delivery before cluster create, poll,
   kubeconfig, and teardown are stable.
 - Proxying ordinary S3 object traffic through DigitalPuddle was rejected
-  because MinIO already supplies the object-store substrate and proxying would
+  because MinIO already supplies the object-store substrate, and proxying would
   mix object data paths into the DigitalOcean `/v2` control plane.
 - Implementing `/v2/spaces/keys` in v1 was rejected because v1 can use direct
   MinIO configuration until a Terraform, doctl, or Nile Valley workflow proves
