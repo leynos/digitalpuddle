@@ -344,10 +344,8 @@ Table 1: Recommended v1 public DigitalOcean endpoints under `/v2`.
 | GET    | `/v2/kubernetes/clusters/{id}`                      | scriptable     | status reflects worker progression                      |
 | DELETE | `/v2/kubernetes/clusters/{id}`                      | engine-backed  | tears down k3d cluster                                  |
 | GET    | `/v2/kubernetes/clusters/{id}/kubeconfig`           | engine-backed  | returns kubeconfig YAML                                 |
-| GET    | `/v2/kubernetes/clusters/{id}/node_pools`           | scriptable     |                                                         |
-| POST   | `/v2/kubernetes/clusters/{id}/node_pools`           | engine-backed  | optional in v1, recommended if Nile Valley scales pools |
-| PUT    | `/v2/kubernetes/clusters/{id}/node_pools/{pool_id}` | engine-backed  | pool resize                                             |
-| DELETE | `/v2/kubernetes/clusters/{id}/node_pools/{pool_id}` | engine-backed  | pool removal                                            |
+| GET    | `/v2/kubernetes/clusters/{id}/node_pools`           | scriptable     | lists initial pool state created with the cluster       |
+| GET    | `/v2/kubernetes/clusters/{id}/node_pools/{pool_id}` | scriptable     | retrieves initial pool state                            |
 | any    | other `/v2/*`                                       | unsupported    | explicit `501`                                          |
 
 This is deliberately narrower than the full action plan. It reflects the
@@ -357,11 +355,12 @@ rather than promise broad DigitalOcean emulation on day one.
 ### 8.3 Compatibility expectations
 
 DigitalPuddle should work with unmodified clients redirected through endpoint
-overrides:
+overrides for supported v1 workflows. ADR 0006 is the normative source for
+doctl compatibility and CI coverage.
 
 - Terraform DigitalOcean provider via `DIGITALOCEAN_API_URL`
 - Terraform S3 backend or app logic via `SPACES_ENDPOINT_URL` to MinIO
-- `doctl` via `--api-url`
+- doctl via explicit `--api-url`
 - Nile Valley via its existing client configuration
 
 ### 8.4 Response contract details
@@ -396,8 +395,9 @@ type DigitalPuddleState = {
 };
 ```
 
-If Nile Valley later needs Droplets or bucket metadata through the control
-plane, those slices can be added as subsequent vertical slices.
+If Nile Valley later needs Droplets, Spaces access-key metadata, or mutating
+node-pool operations through the control plane, those slices can be added as
+subsequent vertical slices.
 
 ### 9.2 Identifier strategy
 
@@ -569,18 +569,18 @@ should not proxy ordinary S3 object traffic. Instead:
 
 - Terraform state or application object operations go directly to MinIO via
   `SPACES_ENDPOINT_URL`
-- DigitalPuddle may later simulate bucket-level control-plane metadata if Nile
-  Valley needs it
+- DigitalPuddle defers `/v2/spaces/keys` access-key management to the Spaces
+  access-key control-plane follow-on phase
 - MinIO runs as a sibling service in the default compose harness
 
 ### 12.3 Droplet engines
 
-Recommended strategy:
+Accepted strategy:
 
-- v1: do not make Droplets part of the core vertical slice unless Nile Valley
-  already needs them
-- v1.1: add `NullDropletEngine` or a small container-backed implementation if
-  required
+- v1: omit Droplet routes and engines, and classify Droplet public API
+  operations as unsupported
+- follow-on Droplet slice: add `NullDropletEngine` or a small container-backed
+  implementation if required
 - later: add `QemuDropletEngine` when real host bootstrap semantics matter
 
 This keeps the first release tight.
@@ -795,6 +795,9 @@ DigitalPuddle should ship a small Go helper module that wraps:
 The aim is that a Nile Valley engineer can write tests against a stable helper
 surface instead of scripting the admin API by hand.
 
+doctl checks should follow ADR 0006 and remain outside the Terratest acceptance
+surface for unsupported products.
+
 A canonical test flow should look like:
 
 ```go
@@ -845,7 +848,8 @@ h.Journal().AssertNoLeaks(t)
 
 ### Phase 5: follow-on slices
 
-- node-pool scale operations if not included earlier
+- node-pool scale operations
+- Spaces access-key control plane
 - Droplet slice if required
 - optional bucket metadata control plane
 - container-backed or QEMU-backed Droplet engines
@@ -863,17 +867,17 @@ Resolved decisions:
 - **Use k3d and MinIO as the only real engine-room components in v1.**
 - **Make unsupported behaviour explicit and machine-readable.**
 - **Make the request journal and leak detector first-class outputs.**
+- **Include read-only node-pool state in v1 and defer mutating node-pool scale
+  operations.**
+- **Use direct MinIO object traffic in v1 and defer `/v2/spaces/keys` access-key
+  management.**
+- **Omit Droplet routes and engines from v1, then revisit them in a named
+  Droplet slice.**
+- **Use ADR 0006 as the normative doctl compatibility and CI policy.**
 
-Open questions that should be closed before implementation begins:
-
-1. Does Nile Valley require node-pool scaling in the first release, or only
-   cluster create/destroy plus kubeconfig?
-2. Does Nile Valley require Spaces bucket control-plane routes, or is direct
-   MinIO access sufficient in v1?
-3. Is a container-backed Droplet engine required before v1.0, or can the first
-   public release omit Droplets entirely?
-4. How much doctl compatibility should be covered by CI versus documented as
-   best-effort?
+Roadmap task 1.1.2 is closed by ADR 0006. The named follow-on phases are
+node-pool scale operations, Spaces access-key control plane, and the Droplet
+slice.
 
 ## 21. Summary
 

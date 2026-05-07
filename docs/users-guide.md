@@ -67,7 +67,18 @@ The expected client configuration is:
 
 ```bash
 export DIGITALOCEAN_API_URL=http://localhost:3300/v2
+export DIGITALOCEAN_ACCESS_TOKEN=dop_v1_digitalpuddle_dummy_token
 export SPACES_ENDPOINT_URL=http://localhost:9000
+```
+
+The access token is deliberately fake. It lets local clients that require a
+token during startup, including doctl, reach DigitalPuddle instead of failing
+before the first request.
+
+Configure doctl commands explicitly with the documented API override:
+
+```bash
+doctl --api-url http://localhost:3300/v2 kubernetes cluster list
 ```
 
 Terraform, doctl, Terratest, and Nile Valley should point at those local
@@ -76,9 +87,17 @@ endpoints instead of real DigitalOcean. The DOKS slice will then provide:
 - account, rate-limit, region, size, image, SSH key, project, and action
   routes;
 - k3d-backed Kubernetes cluster create, poll, kubeconfig, and delete flows;
-- MinIO-backed Spaces-shaped state workflows without proxying object traffic;
+- read-only Kubernetes node-pool list and retrieval for the initial pool
+  created with a cluster;
+- MinIO-backed Spaces-shaped state workflows without proxying object traffic or
+  managing `/v2/spaces/keys`;
 - deterministic scenario and fault handling;
 - request journals and leak reports for post-run assertions.
+
+The v1 compatibility target does not include mutating node-pool scale
+operations, Droplet routes or engines, or Spaces access-key control-plane
+routes. Unsupported routes should return explicit DigitalOcean-shaped
+`501 Not Implemented` responses once the `/v2` route registry exists.
 
 ## Scenarios and determinism
 
