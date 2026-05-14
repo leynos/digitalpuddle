@@ -314,6 +314,11 @@ All public endpoints live under `/v2`. The implementation is contract-first:
 route shapes and JSON schemas come from the pinned OpenAPI spec, while behaviour
 is layered in selectively.
 
+The pinned bundled contract lives at `src/openapi/digitalocean.openapi.yaml`.
+Its source URL, upstream `digitalocean/openapi` commit, refresh command,
+response metadata, byte length, and SHA-256 hash are recorded in
+`src/openapi/digitalocean.openapi.provenance.json`.
+
 ### 8.2 v1 vertical slice
 
 The first meaningful release targets the Nile Valley DOKS path, not the entire
