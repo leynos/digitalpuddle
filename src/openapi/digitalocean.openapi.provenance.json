@@ -1,0 +1,28 @@
+{
+  "artefact": "src/openapi/digitalocean.openapi.yaml",
+  "sourceUrl": "https://api-engineering.nyc3.digitaloceanspaces.com/spec-ci/DigitalOcean-public.v2.yaml",
+  "upstreamRepository": "https://github.com/digitalocean/openapi.git",
+  "upstreamBranch": "main",
+  "upstreamCommit": "781eb485d1136605e02178f9c48a48fd679eb242",
+  "refreshCommand": "bun scripts/refresh-digitalocean-openapi.ts",
+  "fetchedAt": "2026-05-14T21:45:08.083Z",
+  "contentLength": 2927232,
+  "sha256": "604848f4ec226b1fea2be80552c3e501c5b3e695c3cc5dfc077450101f8bd1ba",
+  "redactions": [
+    {
+      "description": "Slack webhook placeholder with zeroed workspace and channel identifiers",
+      "replacement": "https://example.invalid/redacted-slack-webhook",
+      "reason": "Avoid committing webhook-shaped example secrets from the upstream specification."
+    },
+    {
+      "description": "Slack webhook placeholder with sample workspace and channel identifiers",
+      "replacement": "https://example.invalid/redacted-slack-webhook",
+      "reason": "Avoid committing webhook-shaped example secrets from the upstream specification."
+    }
+  ],
+  "responseHeaders": {
+    "contentType": "application/yaml",
+    "etag": "\"bf6c729dd0cf8eea6a9c8a666ca92e41\"",
+    "lastModified": "Thu, 14 May 2026 16:03:32 GMT"
+  }
+}

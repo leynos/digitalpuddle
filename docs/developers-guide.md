@@ -84,6 +84,20 @@ make markdownlint 2>&1 | tee /tmp/markdownlint-digitalpuddle-${BRANCH}.out
 make nixie 2>&1 | tee /tmp/nixie-digitalpuddle-${BRANCH}.out
 ```
 
+Refresh the pinned DigitalOcean OpenAPI artefact when intentionally updating
+the public API contract:
+
+```bash
+bun scripts/refresh-digitalocean-openapi.ts
+```
+
+The generated contract lives at `src/openapi/digitalocean.openapi.yaml`, and
+its source, upstream commit, refresh command, response metadata, byte length,
+and SHA-256 hash are recorded in
+`src/openapi/digitalocean.openapi.provenance.json`. Updating the pin is a
+compatibility event, so review operation-count and capability-classification
+changes before committing it.
+
 Build the package when changing the CommonJS CLI:
 
 ```bash

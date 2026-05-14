@@ -83,12 +83,13 @@ This step answers whether public routing can be driven from a pinned
 DigitalOcean OpenAPI contract while preserving Simulacrum as the HTTP backplane.
 The outcome unlocks route-level implementation and capability reporting.
 
-- [ ] 1.3.1. Add the pinned DigitalOcean OpenAPI artefact and a repeatable
+- [x] 1.3.1. Add the pinned DigitalOcean OpenAPI artefact and a repeatable
       refresh script with provenance.
   - Requires 1.1.1.
   - See `digitalpuddle-technical-design.md` §§4, 7.1, 8.1, and 20.
   - Success: the repository records the upstream source, pin, refresh command,
     and generated artefact hash.
+  - Pin: see `src/openapi/digitalocean.openapi.provenance.json`.
 - [ ] 1.3.2. Build the operation registry from the pinned OpenAPI contract.
   - Requires 1.1.3 and 1.3.1.
   - See `digitalpuddle-technical-design.md` §§7.1, 8.1, 8.2, and 13.
