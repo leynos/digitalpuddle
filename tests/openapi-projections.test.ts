@@ -89,9 +89,10 @@ describe('capability matrix projection', () => {
 
   it('produces byte-identical JSON for any manifest ordering', () => {
     const expectedJson = JSON.stringify(buildCapabilityMatrix(v1CapabilityManifest));
+    const manifestEntries = [...v1CapabilityManifest];
 
     fc.assert(
-      fc.property(fc.shuffledSubarray(v1CapabilityManifest, {minLength: v1CapabilityManifest.length}), (entries) => {
+      fc.property(fc.shuffledSubarray(manifestEntries, {minLength: manifestEntries.length}), (entries) => {
         expect(JSON.stringify(buildCapabilityMatrix(entries))).toBe(expectedJson);
       })
     );

@@ -11,6 +11,14 @@ type StartedProcess = {
   output: Promise<string>;
 };
 
+const childProcessEnv = (overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv => {
+  const {FORCE_COLOR: _forceColor, ...env} = process.env;
+  return {
+    ...env,
+    ...overrides
+  };
+};
+
 const getOpenPort = () =>
   new Promise<number>((resolve, reject) => {
     const server = net.createServer();
@@ -39,7 +47,7 @@ const runCommand = (command: string, args: string[], timeoutMs = 30_000) =>
   new Promise<void>((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: projectRoot,
-      env: process.env
+      env: childProcessEnv()
     });
     let output = '';
     let mainTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -102,10 +110,7 @@ const runCommand = (command: string, args: string[], timeoutMs = 30_000) =>
 const startProcess = (command: string, args: string[], port: number, expectedOutput: string): StartedProcess => {
   const child = spawn(command, args, {
     cwd: projectRoot,
-    env: {
-      ...process.env,
-      PORT: String(port)
-    }
+    env: childProcessEnv({PORT: String(port)})
   });
 
   const output = new Promise<string>((resolve, reject) => {

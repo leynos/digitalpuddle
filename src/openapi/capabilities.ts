@@ -74,6 +74,7 @@ export const capabilityManifestEntrySchema = z
   });
 
 export type CapabilityManifestEntry = z.infer<typeof capabilityManifestEntrySchema>;
+export type CapabilityManifestEntryInput = z.input<typeof capabilityManifestEntrySchema>;
 
 export const isSupportedCapability = (capability: Capability): boolean => capability !== 'unsupported';
 
@@ -89,7 +90,7 @@ export const createOperationKey = (method: HttpMethod | string, path: string): s
   `${method.toUpperCase()} ${normalizeOperationPath(path)}`;
 
 export const validateCapabilityManifest = (
-  entries: readonly CapabilityManifestEntry[]
+  entries: readonly CapabilityManifestEntryInput[]
 ): readonly CapabilityManifestEntry[] => {
   const parsedEntries = z.array(capabilityManifestEntrySchema).parse(entries);
   const seenKeys = new Set<string>();

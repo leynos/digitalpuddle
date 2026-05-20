@@ -6,6 +6,7 @@ import {
   v1CapabilityManifest,
   type Capability,
   type CapabilityManifestEntry,
+  type CapabilityManifestEntryInput,
   type HttpMethod,
   type RuntimeBehaviour
 } from './capabilities.ts';
@@ -57,21 +58,21 @@ const toMatrixRow = (entry: CapabilityManifestEntry): CapabilityMatrixRow => ({
 });
 
 export const buildCapabilityMatrix = (
-  entries: readonly CapabilityManifestEntry[] = v1CapabilityManifest
+  entries: readonly CapabilityManifestEntryInput[] = v1CapabilityManifest
 ): readonly CapabilityMatrixRow[] =>
   validateCapabilityManifest(entries)
     .map(toMatrixRow)
     .sort((left, right) => left.operationKey.localeCompare(right.operationKey));
 
 export const buildCapabilityDocumentationMetadata = (
-  entries: readonly CapabilityManifestEntry[] = v1CapabilityManifest
+  entries: readonly CapabilityManifestEntryInput[] = v1CapabilityManifest
 ): CapabilityDocumentationMetadata => ({
   legend: capabilityLegend,
   rows: buildCapabilityMatrix(entries).filter((row) => row.exposeInDocs)
 });
 
 export const buildUnsupportedOperationLookup = (
-  entries: readonly CapabilityManifestEntry[] = v1CapabilityManifest
+  entries: readonly CapabilityManifestEntryInput[] = v1CapabilityManifest
 ): UnsupportedOperationLookup =>
   new Map(
     validateCapabilityManifest(entries)
