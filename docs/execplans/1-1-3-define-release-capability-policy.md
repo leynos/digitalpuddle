@@ -439,7 +439,20 @@ finite table tests are the appropriate validation.
   `bun fmt`, `make markdownlint`, `make nixie`, and
   `coderabbit review --agent` with 0 findings after one wording fix.
 - [ ] Commit milestone 1.
-- [ ] Implement milestone 2 and commit it.
+- [x] 2026-05-20: Implemented milestone 2 policy model in
+  `src/openapi/capabilities.ts` with Zod validation, canonical operation keys,
+  capability predicates, and the v1 seed manifest.
+- [x] 2026-05-20: Added `tests/openapi-capabilities.test.ts` with unit tests
+  and `fast-check` property tests for the closed capability vocabulary and
+  operation-key invariants.
+- [x] 2026-05-20: Milestone 2 gates passed:
+  `make check-fmt`, `make lint`, `make generate`, and
+  `env -u FORCE_COLOR make test` with 123 passing tests.
+- [x] 2026-05-20: CodeRabbit reported two milestone 2 concerns; renamed
+  `requiresEngineBackedWorker` to `requiresEnginePort`, derived the HTTP method
+  assertion from `httpMethodValues`, reran the gates, and reran CodeRabbit with
+  0 findings.
+- [ ] Commit milestone 2.
 - [ ] Implement milestone 3 and commit it.
 - [ ] Implement milestone 4 if still within tolerance and commit it.
 - [ ] Implement milestone 5, mark roadmap task 1.1.3 done, and commit it.
@@ -487,6 +500,11 @@ finite table tests are the appropriate validation.
   approved implementation.
   Impact: the first execution edit changed this plan to `IN PROGRESS` and
   recorded the approval date before product changes began.
+
+- Observation: `requiresEngineBackedWorker` was an imprecise name because the
+  predicate checked the capability plus both worker and engine-port metadata.
+  Impact: the helper is now named `requiresEnginePort`, which better describes
+  the decision a caller can make from it.
 
 ## Decision Log
 
