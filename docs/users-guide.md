@@ -16,8 +16,12 @@ working behaviour from planned behaviour:
   DigitalPuddle;
 - the planned public DigitalOcean API root is `/v2`;
 - the planned private harness API root is `/_digitalpuddle`;
-- unsupported DigitalOcean routes will return explicit DigitalOcean-shaped
-  `501 Not Implemented` responses once the `/v2` route registry exists.
+- capability classifications now have a machine-readable policy source, so the
+  future generated capability matrix and unsupported responses use the same
+  data;
+- unsupported DigitalOcean operations will return explicit
+  DigitalOcean-shaped `501 Not Implemented` responses once the `/v2` route
+  registry exists.
 
 ## Installation
 
@@ -98,6 +102,26 @@ The v1 compatibility target does not include mutating node-pool scale
 operations, Droplet routes or engines, or Spaces access-key control-plane
 routes. Unsupported routes should return explicit DigitalOcean-shaped
 `501 Not Implemented` responses once the `/v2` route registry exists.
+
+## Capability classifications
+
+DigitalPuddle labels public DigitalOcean operations with one of four
+capabilities:
+
+- `scriptable` operations are handled by deterministic simulator state,
+  validation, scheduler work, and worker transitions.
+- `engine-backed` operations are supported, but their lifecycle depends on
+  worker-owned side effects such as k3d cluster creation or deletion.
+- `stubbed` operations return deterministic static or lightweight data and
+  should not be treated as complete DigitalOcean control-plane modelling.
+- `unsupported` operations are intentionally unavailable in the current
+  release. Once the `/v2` operation registry is wired, matched unsupported
+  operations return a DigitalOcean-shaped `501 Not Implemented` response.
+
+Unknown routes, unsupported methods on known paths, and known unsupported
+operations are distinct cases. DigitalPuddle preserves that distinction so
+normal routing misses, `405 Method Not Allowed`, and `501 Not Implemented`
+responses remain meaningful.
 
 ## Scenarios and determinism
 

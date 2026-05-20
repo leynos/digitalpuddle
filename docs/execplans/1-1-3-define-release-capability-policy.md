@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections
 `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work
 proceeds.
 
-Status: DRAFT
+Status: IN PROGRESS
 
 ## Purpose / big picture
 
@@ -24,20 +24,19 @@ unsupported in the machine-readable matrix and receives a DigitalOcean-shaped
 separated by how they are implemented: store and worker logic, engine-room
 adapters, or deterministic static stubs.
 
-This plan is planning-only until approved. Do not implement it until the user
-explicitly approves this exact plan or an updated revision.
+This plan was approved for implementation on 2026-05-20. Keep this document
+current as implementation proceeds.
 
 ## Approval gate
 
 This plan has two phases:
 
 1. Draft phase: write and review this ExecPlan only.
-2. Execution phase: after explicit user approval, implement the policy,
-   validation, documentation updates, CodeRabbit review, commits, and roadmap
-   closure described below.
+2. Execution phase: implement the policy, validation, documentation updates,
+   CodeRabbit review, commits, and roadmap closure described below.
 
-Silence is not approval. A future agent must not start the execution phase
-until a user message explicitly approves the plan or asks for named revisions.
+The execution phase is now active because the user explicitly requested
+implementation on 2026-05-20.
 
 ## Constraints
 
@@ -430,8 +429,16 @@ finite table tests are the appropriate validation.
 - [x] 2026-05-19: Used Firecrawl to verify OpenAPI extension support, HTTP
   `501` semantics, Prism prior art, and LemmaScript repository signals.
 - [x] 2026-05-19: Draft this ExecPlan for review.
-- [ ] Receive explicit approval before implementation.
-- [ ] Implement milestone 1 and commit it.
+- [x] 2026-05-20: Received explicit approval to proceed with implementation.
+- [x] 2026-05-20: Confirmed the branch is
+  `1-1-3-define-release-capability-policy` and the working tree was clean
+  before implementation began.
+- [x] 2026-05-20: Implemented milestone 1 documentation: added ADR 0007
+  and updated the technical design, users' guide, and developers' guide.
+- [x] 2026-05-20: Milestone 1 gates passed:
+  `bun fmt`, `make markdownlint`, `make nixie`, and
+  `coderabbit review --agent` with 0 findings after one wording fix.
+- [ ] Commit milestone 1.
 - [ ] Implement milestone 2 and commit it.
 - [ ] Implement milestone 3 and commit it.
 - [ ] Implement milestone 4 if still within tolerance and commit it.
@@ -476,6 +483,11 @@ finite table tests are the appropriate validation.
   for the test process while still invoking the repository's `make test`
   target.
 
+- Observation: the approved plan still used draft-phase wording after the user
+  approved implementation.
+  Impact: the first execution edit changed this plan to `IN PROGRESS` and
+  recorded the approval date before product changes began.
+
 ## Decision Log
 
 - Decision: define capability policy as a source-of-truth manifest or
@@ -499,6 +511,11 @@ finite table tests are the appropriate validation.
   implementation stays finite and property-tested, a proof would add ceremony
   without increasing confidence. If a general policy axiom is introduced, the
   proof requirement becomes active.
+
+- Decision: treat the 2026-05-20 implementation request as the approval gate.
+  Rationale: the user explicitly asked to proceed with the functionality set
+  out in this ExecPlan, so the plan moved from draft to execution without
+  changing scope.
 
 ## Outcomes & retrospective
 
