@@ -453,7 +453,18 @@ finite table tests are the appropriate validation.
   assertion from `httpMethodValues`, reran the gates, and reran CodeRabbit with
   0 findings.
 - [ ] Commit milestone 2.
-- [ ] Implement milestone 3 and commit it.
+- [x] 2026-05-20: Implemented milestone 3 projection helpers in
+  `src/openapi/projections.ts` and the pure unsupported response helper in
+  `src/handlers/unsupported.ts`.
+- [x] 2026-05-20: Added `tests/openapi-projections.test.ts` to cover the
+  capability matrix, documentation metadata, unsupported operation lookup,
+  DigitalOcean-shaped `501` response envelope, and stable sorted projection
+  invariant.
+- [x] 2026-05-20: Milestone 3 gates passed after correcting one test assertion:
+  `make check-fmt`, `make lint`, `make generate`, and
+  `env -u FORCE_COLOR make test` with 131 passing tests.
+- [x] 2026-05-20: CodeRabbit reviewed milestone 3 with 0 findings.
+- [ ] Commit milestone 3.
 - [ ] Implement milestone 4 if still within tolerance and commit it.
 - [ ] Implement milestone 5, mark roadmap task 1.1.3 done, and commit it.
 - [ ] Push the completed implementation branch and update the pull request.
@@ -506,6 +517,11 @@ finite table tests are the appropriate validation.
   Impact: the helper is now named `requiresEnginePort`, which better describes
   the decision a caller can make from it.
 
+- Observation: `expect.objectContaining({unsupported: undefined})` requires an
+  `unsupported` property to exist with the value `undefined`.
+  Impact: projection tests now assert that supported matrix rows do not have
+  the `unsupported` property at all.
+
 ## Decision Log
 
 - Decision: define capability policy as a source-of-truth manifest or
@@ -534,6 +550,12 @@ finite table tests are the appropriate validation.
   Rationale: the user explicitly asked to proceed with the functionality set
   out in this ExecPlan, so the plan moved from draft to execution without
   changing scope.
+
+- Decision: milestone 3 stops at pure projection and response helpers rather
+  than adding a real `/v2/*` catch-all route.
+  Rationale: the pinned OpenAPI artefact and operation registry are owned by
+  roadmap tasks 1.3.1 and 1.3.2. Adding runtime routing now would either rely
+  on a fake registry or broaden this slice beyond the approved tolerances.
 
 ## Outcomes & retrospective
 
