@@ -7,6 +7,7 @@
  */
 import type {createFoundationSimulationServer} from '@simulacrum/foundation-simulator';
 import {stringify} from 'querystring';
+import {capabilitiesPayload} from './admin/capabilities.ts';
 import {createHandler} from './graphql/handler.ts';
 import type {ExtendedSimulationStore} from './store/index.ts';
 
@@ -87,6 +88,10 @@ export const extendRouter =
 
     router.get('/health', (_, response) => {
       response.send({status: 'ok'});
+    });
+
+    router.get('/_digitalpuddle/capabilities', (_request, response) => {
+      response.status(200).json(capabilitiesPayload());
     });
 
     router.use('/graphql', createHandler(simulationStore));

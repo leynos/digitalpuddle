@@ -465,7 +465,18 @@ finite table tests are the appropriate validation.
   `env -u FORCE_COLOR make test` with 131 passing tests.
 - [x] 2026-05-20: CodeRabbit reviewed milestone 3 with 0 findings.
 - [ ] Commit milestone 3.
-- [ ] Implement milestone 4 if still within tolerance and commit it.
+- [x] 2026-05-20: Implemented milestone 4 within scope by exposing
+  `/_digitalpuddle/capabilities` from the existing router extension point,
+  backed by the pure capability documentation projection.
+- [x] 2026-05-20: Added behavioural coverage in `tests/base.test.ts` for the
+  private capabilities admin route.
+- [x] 2026-05-20: Milestone 4 gates passed:
+  `make check-fmt`, `make lint`, `make generate`, and
+  `env -u FORCE_COLOR make test` with 132 passing tests.
+- [x] 2026-05-20: CodeRabbit reported two admin-module documentation concerns;
+  replaced a redundant wrapper with a direct re-export, clarified the module
+  JSDoc, reran the gates, and reran CodeRabbit with 0 findings.
+- [ ] Commit milestone 4.
 - [ ] Implement milestone 5, mark roadmap task 1.1.3 done, and commit it.
 - [ ] Push the completed implementation branch and update the pull request.
 

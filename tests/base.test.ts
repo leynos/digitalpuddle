@@ -39,4 +39,32 @@ describe('router extension tests', () => {
     expect(res.ok).toBe(true);
     expect(body).toEqual({message: 'Hello from GitHub API simulator!'});
   });
+
+  it('exposes the private DigitalPuddle capability matrix', async () => {
+    const res: Response = await fetch(`${url}/_digitalpuddle/capabilities`);
+    const body = await res.json();
+
+    expect(res.ok).toBe(true);
+    expect(body.legend).toEqual(
+      expect.objectContaining({
+        scriptable: expect.any(String),
+        'engine-backed': expect.any(String),
+        stubbed: expect.any(String),
+        unsupported: expect.any(String)
+      })
+    );
+    expect(body.rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          operationId: 'kubernetes.createCluster',
+          capability: 'engine-backed'
+        }),
+        expect.objectContaining({
+          operationId: 'droplets.list',
+          capability: 'unsupported',
+          unsupported: {status: 501}
+        })
+      ])
+    );
+  });
 });
