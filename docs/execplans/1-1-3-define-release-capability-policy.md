@@ -496,7 +496,9 @@ finite table tests are the appropriate validation.
   `25879b9` projections, and `63105f5` admin route integration.
 - [x] 2026-05-20: Prepared milestone 5 for commit, including roadmap and final
   documentation closure.
-- [ ] Push the completed implementation branch and update the pull request.
+- [x] 2026-05-20: Pushed the completed implementation branch to
+  `origin/1-1-3-define-release-capability-policy`.
+- [ ] Update the pull request.
 
 ## Surprises & discoveries
 
