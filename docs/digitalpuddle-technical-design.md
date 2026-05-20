@@ -605,6 +605,12 @@ This keeps the first release tight.
 
 All non-DigitalOcean control surfaces live under `/_digitalpuddle`.
 
+The first implemented admin surface is `GET /_digitalpuddle/capabilities`.
+It returns the derived capability documentation metadata from the validated
+policy manifest: a legend for `scriptable`, `engine-backed`, `stubbed`, and
+`unsupported`, plus one visible row per documented operation. Broader state,
+journal, scenario, and OpenAPI admin routes remain planned.
+
 Table 2: Recommended private `/_digitalpuddle` harness endpoints.
 
 | Method | Path                                   | Purpose                            |

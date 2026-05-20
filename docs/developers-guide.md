@@ -133,6 +133,17 @@ DigitalOcean public operations must update the machine-readable capability
 source in the same change as the contract, handler, or generated documentation
 metadata that depends on it.
 
+The current implementation keeps the source and projections in:
+
+- `src/openapi/capabilities.ts` for the capability vocabulary, Zod validation,
+  canonical operation keys, and v1 seed manifest;
+- `src/openapi/projections.ts` for the capability matrix, documentation
+  metadata, and unsupported operation lookup;
+- `src/handlers/unsupported.ts` for pure DigitalOcean-shaped `501` response
+  helpers;
+- `src/admin/capabilities.ts` and `src/extend-api.ts` for the private
+  `/_digitalpuddle/capabilities` route.
+
 Use these rules when changing classifications:
 
 - choose exactly one of `scriptable`, `engine-backed`, `stubbed`, or

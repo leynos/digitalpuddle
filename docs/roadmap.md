@@ -45,11 +45,12 @@ OpenAPI pin, first API slice, and future Droplet or Spaces work.
   - Success: every open question in §20 is either in the v1 scope, moved to a
     named follow-on phase, or explicitly rejected.
   - Decision: see `adr/0006-v1-product-boundaries.md`.
-- [ ] 1.1.3. Define the release capability policy for `scriptable`,
+- [x] 1.1.3. Define the release capability policy for `scriptable`,
       `engine-backed`, `stubbed`, and `unsupported` operations.
   - See `digitalpuddle-technical-design.md` §§7.1, 8.2, and 16.
   - Success: capability classifications can drive both generated docs and
     `501 Not Implemented` responses.
+  - Decision: see `adr/0007-release-capability-policy.md`.
 
 ### 1.2. Keep the repository shape honest
 

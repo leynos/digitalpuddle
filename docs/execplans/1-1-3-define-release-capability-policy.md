@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections
 `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work
 proceeds.
 
-Status: IN PROGRESS
+Status: COMPLETE
 
 ## Purpose / big picture
 
@@ -477,7 +477,25 @@ finite table tests are the appropriate validation.
   replaced a redundant wrapper with a direct re-export, clarified the module
   JSDoc, reran the gates, and reran CodeRabbit with 0 findings.
 - [ ] Commit milestone 4.
-- [ ] Implement milestone 5, mark roadmap task 1.1.3 done, and commit it.
+- [x] 2026-05-20: Updated `docs/roadmap.md` to mark roadmap task 1.1.3 done
+  and reference ADR 0007.
+- [x] 2026-05-20: Updated user, developer, and technical design documentation
+  to describe the implemented `/_digitalpuddle/capabilities` admin route and
+  the capability policy source/projection files.
+- [x] 2026-05-20: Final full gate passed:
+  `bun fmt`, `make check-fmt`, `make lint`, `make generate`,
+  `env -u FORCE_COLOR make test` with 132 passing tests,
+  `make markdownlint`, and `make nixie`.
+- [x] 2026-05-20: Final `coderabbit review --agent` completed with
+  0 findings.
+- [x] 2026-05-20: Reran the full gate and CodeRabbit after final ExecPlan and
+  documentation edits; all gates passed again and CodeRabbit completed with
+  0 findings.
+- [x] 2026-05-20: Committed implementation milestones:
+  `72613f1` documentation policy, `9d786a4` policy manifest,
+  `25879b9` projections, and `63105f5` admin route integration.
+- [x] 2026-05-20: Prepared milestone 5 for commit, including roadmap and final
+  documentation closure.
 - [ ] Push the completed implementation branch and update the pull request.
 
 ## Surprises & discoveries
@@ -570,6 +588,29 @@ finite table tests are the appropriate validation.
 
 ## Outcomes & retrospective
 
-This plan is still in draft. After implementation, update this section with the
-actual files changed, validation logs, CodeRabbit result, commits, and any
-follow-on work left for roadmap tasks 1.3.1, 1.3.2, 1.3.3, and 2.4.1.
+The implementation defines the release capability policy for roadmap task
+1.1.3 and leaves the repository with a tested DigitalPuddle capability spine.
+ADR 0007 is now the durable policy record. `src/openapi/capabilities.ts` owns
+the closed vocabulary, Zod validation, canonical operation keys, predicates,
+and v1 seed manifest. `src/openapi/projections.ts` derives capability matrix
+rows, documentation metadata, and unsupported operation lookup data from that
+manifest. `src/handlers/unsupported.ts` provides a pure DigitalOcean-shaped
+`501` response helper. The existing router now exposes
+`GET /_digitalpuddle/capabilities` from the derived documentation metadata.
+
+Validation evidence: the final full gate passed on 2026-05-20 with
+`bun fmt`, `make check-fmt`, `make lint`, `make generate`,
+`env -u FORCE_COLOR make test` producing 132 passing tests, `make markdownlint`,
+and `make nixie`. Final `coderabbit review --agent` completed with
+0 findings.
+
+LemmaScript was not used. The implemented policy is a finite validated
+manifest plus closed vocabulary and projection invariants; table tests and
+`fast-check` properties provide the appropriate evidence for this slice.
+
+Follow-on work remains for roadmap tasks 1.3.1, 1.3.2, and 1.3.3: add the
+pinned DigitalOcean OpenAPI artefact, build the full operation registry, and
+merge or decorate the upstream OpenAPI operations with
+`x-digitalpuddle-capability`. Runtime `/v2` unsupported catch-all routing
+should wait for that operation registry so `404`, `405`, and `501` semantics
+stay distinguishable.

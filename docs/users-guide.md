@@ -15,10 +15,12 @@ working behaviour from planned behaviour:
 - the package metadata, README, design, and roadmap now describe
   DigitalPuddle;
 - the planned public DigitalOcean API root is `/v2`;
-- the planned private harness API root is `/_digitalpuddle`;
+- the private harness API root is `/_digitalpuddle`;
 - capability classifications now have a machine-readable policy source, so the
-  future generated capability matrix and unsupported responses use the same
+  generated capability metadata and unsupported response helpers use the same
   data;
+- `GET /_digitalpuddle/capabilities` exposes the current capability
+  documentation metadata for local harnesses and debugging;
 - unsupported DigitalOcean operations will return explicit
   DigitalOcean-shaped `501 Not Implemented` responses once the `/v2` route
   registry exists.
@@ -141,9 +143,14 @@ Use scenarios for behaviours such as:
 ## Admin routes
 
 DigitalPuddle-specific orchestration and inspection routes will live under
-`/_digitalpuddle`. Planned routes include health, version, capabilities, state,
-journal, leak reports, reset, scenario loading, clock advancement, queue drain,
-and the pinned OpenAPI contract.
+`/_digitalpuddle`. The current baseline exposes:
+
+- `GET /_digitalpuddle/capabilities` for the machine-readable capability
+  legend and operation rows.
+
+Planned routes include health, version, state, journal, leak reports, reset,
+scenario loading, clock advancement, queue drain, and the pinned OpenAPI
+contract.
 
 These routes are for local harnesses and debugging. They are not part of the
 DigitalOcean API contract.
