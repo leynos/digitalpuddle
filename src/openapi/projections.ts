@@ -1,4 +1,26 @@
-/** @file Pure projections from capability manifests to public metadata shapes. */
+/**
+ * @file Pure projections from capability manifests to public metadata shapes.
+ *
+ * This module converts validated release capability entries into sorted,
+ * adapter-friendly views. It solves the problem of keeping documentation
+ * metadata, admin payloads, and unsupported-operation lookup data derived from
+ * the same manifest without letting each caller reshape policy data in its own
+ * way.
+ *
+ * The public API exposes `CapabilityMatrixRow`,
+ * `CapabilityDocumentationMetadata`, `buildCapabilityMatrix()`,
+ * `buildCapabilityDocumentationMetadata()`, `buildUnsupportedOperationLookup()`,
+ * and `getKnownCapabilityValues()`. These exports are consumed by the admin
+ * route layer and unsupported-response helpers, and they are intentionally
+ * deterministic so tests and generated documentation remain stable.
+ *
+ * Sibling module `src/openapi/capabilities.ts` owns validation and the domain
+ * vocabulary this module projects. Sibling adapter
+ * `src/handlers/unsupported.ts` performs the HTTP translation for unsupported
+ * operations. This module sits between those layers: it depends on pure
+ * OpenAPI policy data and exposes shapes that the broader route assembly can
+ * serve directly.
+ */
 import {
   capabilityValues,
   createOperationKey,
@@ -24,7 +46,7 @@ export type CapabilityMatrixRow = {
   followOnPhase?: string;
   notes?: string;
   unsupported?: {
-    status: 501;
+    behaviour: 'not-implemented';
   };
 };
 
@@ -39,7 +61,7 @@ export const capabilityLegend: Record<Capability, string> = {
   scriptable: 'Deterministic state, validation, scheduler, or worker behaviour without an engine adapter.',
   'engine-backed': 'Supported workflow that delegates side effects to worker-owned engine ports.',
   stubbed: 'Deterministic static or lightweight response, not full control-plane modelling.',
-  unsupported: 'Known operation that is intentionally unavailable in this release and returns 501.'
+  unsupported: 'Known operation that is intentionally unavailable in this release.'
 };
 
 const toMatrixRow = (entry: CapabilityManifestEntry): CapabilityMatrixRow => ({
@@ -54,28 +76,29 @@ const toMatrixRow = (entry: CapabilityManifestEntry): CapabilityMatrixRow => ({
   runtimeBehaviour: entry.runtime.behaviour,
   ...(entry.followOnPhase ? {followOnPhase: entry.followOnPhase} : {}),
   ...(entry.notes ? {notes: entry.notes} : {}),
-  ...(entry.capability === 'unsupported' ? {unsupported: {status: 501}} : {})
+  ...(entry.capability === 'unsupported' ? {unsupported: {behaviour: 'not-implemented' as const}} : {})
 });
 
+const sortMatrixRows = (entries: readonly CapabilityManifestEntry[]): readonly CapabilityMatrixRow[] =>
+  entries.map(toMatrixRow).sort((left, right) => left.operationKey.localeCompare(right.operationKey));
+
 export const buildCapabilityMatrix = (
-  entries: readonly CapabilityManifestEntryInput[] = v1CapabilityManifest
+  entries?: readonly CapabilityManifestEntryInput[]
 ): readonly CapabilityMatrixRow[] =>
-  validateCapabilityManifest(entries)
-    .map(toMatrixRow)
-    .sort((left, right) => left.operationKey.localeCompare(right.operationKey));
+  sortMatrixRows(entries ? validateCapabilityManifest(entries) : v1CapabilityManifest);
 
 export const buildCapabilityDocumentationMetadata = (
-  entries: readonly CapabilityManifestEntryInput[] = v1CapabilityManifest
+  entries?: readonly CapabilityManifestEntryInput[]
 ): CapabilityDocumentationMetadata => ({
   legend: capabilityLegend,
   rows: buildCapabilityMatrix(entries).filter((row) => row.exposeInDocs)
 });
 
 export const buildUnsupportedOperationLookup = (
-  entries: readonly CapabilityManifestEntryInput[] = v1CapabilityManifest
+  entries?: readonly CapabilityManifestEntryInput[]
 ): UnsupportedOperationLookup =>
   new Map(
-    validateCapabilityManifest(entries)
+    (entries ? validateCapabilityManifest(entries) : v1CapabilityManifest)
       .filter((entry) => entry.capability === 'unsupported')
       .map((entry) => [createOperationKey(entry.method, entry.path), entry])
   );

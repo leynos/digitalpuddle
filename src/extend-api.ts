@@ -91,7 +91,20 @@ export const extendRouter =
     });
 
     router.get('/_digitalpuddle/capabilities', (_request, response) => {
-      response.status(200).json(capabilitiesPayload());
+      try {
+        response.status(200).json(capabilitiesPayload());
+      } catch (error: unknown) {
+        console.error(
+          JSON.stringify({
+            event: 'digitalpuddle.admin.capabilities.error',
+            message: error instanceof Error ? error.message : String(error)
+          })
+        );
+        response.status(500).json({
+          id: 'internal_error',
+          message: 'Failed to build capabilities payload.'
+        });
+      }
     });
 
     router.use('/graphql', createHandler(simulationStore));

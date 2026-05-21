@@ -121,37 +121,24 @@ describe('v1 capability manifest', () => {
     );
   });
 
-  it('requires 501 metadata for unsupported entries', () => {
+  it('requires not-implemented behaviour for unsupported entries', () => {
     const unsupportedEntries = v1CapabilityManifest.filter((entry) => entry.capability === 'unsupported');
 
     expect(unsupportedEntries.length).toBeGreaterThan(0);
     for (const entry of unsupportedEntries) {
-      expect(entry.runtime).toEqual(expect.objectContaining({unsupportedResponseStatus: 501}));
+      expect(entry.runtime.behaviour).toBe('not-implemented');
     }
   });
 
-  it('rejects unsupported entries without 501 response metadata', () => {
+  it('rejects unsupported entries without not-implemented runtime behaviour', () => {
     expectEntryError(
       minimalEntry({
         capability: 'unsupported',
         runtime: {
-          behaviour: 'not-implemented'
+          behaviour: 'handler'
         }
       }),
-      'unsupported operations must carry 501 response metadata'
-    );
-  });
-
-  it('rejects supported entries with 501 response metadata', () => {
-    expectEntryError(
-      minimalEntry({
-        capability: 'scriptable',
-        runtime: {
-          behaviour: 'handler',
-          unsupportedResponseStatus: 501
-        }
-      }),
-      'only unsupported operations may carry 501 response metadata'
+      'unsupported operations must use not-implemented runtime behaviour'
     );
   });
 

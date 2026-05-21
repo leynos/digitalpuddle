@@ -45,6 +45,7 @@ describe('router extension tests', () => {
     const body = await res.json();
 
     expect(res.ok).toBe(true);
+    expect(body).toMatchSnapshot();
     expect(body.legend).toEqual(
       expect.objectContaining({
         scriptable: expect.any(String),
@@ -62,7 +63,7 @@ describe('router extension tests', () => {
         expect.objectContaining({
           operationId: 'droplets.list',
           capability: 'unsupported',
-          unsupported: {status: 501}
+          unsupported: {behaviour: 'not-implemented'}
         })
       ])
     );

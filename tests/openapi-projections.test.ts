@@ -60,21 +60,21 @@ describe('capability matrix projection', () => {
       expect.objectContaining({
         capability: 'unsupported',
         followOnPhase: 'node-pool scale operations',
-        unsupported: {status: 501}
+        unsupported: {behaviour: 'not-implemented'}
       })
     );
     expect(rowByOperationId('droplets.list')).toEqual(
       expect.objectContaining({
         capability: 'unsupported',
         followOnPhase: 'Droplet slice',
-        unsupported: {status: 501}
+        unsupported: {behaviour: 'not-implemented'}
       })
     );
     expect(rowByOperationId('spacesKeys.list')).toEqual(
       expect.objectContaining({
         capability: 'unsupported',
         followOnPhase: 'Spaces access-key control plane',
-        unsupported: {status: 501}
+        unsupported: {behaviour: 'not-implemented'}
       })
     );
   });

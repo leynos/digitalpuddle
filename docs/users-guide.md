@@ -125,6 +125,34 @@ operations are distinct cases. DigitalPuddle preserves that distinction so
 normal routing misses, `405 Method Not Allowed`, and `501 Not Implemented`
 responses remain meaningful.
 
+### Inspecting the capability metadata
+
+The capabilities endpoint returns JSON with `legend` and `rows` fields: the
+legend explains each capability label, while rows describe classified
+operations and their runtime behaviour.
+
+```bash
+curl http://localhost:8080/_digitalpuddle/capabilities
+```
+
+An abbreviated response looks like this:
+
+```json
+{
+  "legend": {
+    "scriptable": "Deterministic state, validation, scheduler, or worker behaviour without an engine adapter.",
+    "unsupported": "Known operation that is intentionally unavailable in this release."
+  },
+  "rows": [
+    {
+      "operationKey": "GET /v2/droplets",
+      "capability": "unsupported",
+      "runtimeBehaviour": "not-implemented"
+    }
+  ]
+}
+```
+
 ## Scenarios and determinism
 
 Scenarios will be trusted YAML or JSON data files. They will configure the

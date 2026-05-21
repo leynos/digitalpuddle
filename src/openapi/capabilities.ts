@@ -1,4 +1,25 @@
-/** @file Release capability policy for DigitalPuddle OpenAPI operations. */
+/**
+ * @file Release capability policy for DigitalPuddle OpenAPI operations.
+ *
+ * This module defines the domain vocabulary that says whether a known
+ * DigitalOcean operation is scriptable, engine-backed, stubbed, or unsupported.
+ * It solves the release-planning problem of keeping public operation
+ * classifications in one validated source instead of scattering policy across
+ * generated documentation, handlers, and prose.
+ *
+ * The public API exposes the capability and runtime behaviour schemas,
+ * `CapabilityManifestEntry` types, `validateCapabilityManifest()`, stable
+ * operation-key creation, capability predicates, and the v1 seed manifest. The
+ * manifest is validated at module initialisation so configuration errors fail
+ * before route adapters can publish inconsistent metadata.
+ *
+ * Sibling module `src/openapi/projections.ts` consumes these validated entries
+ * to build documentation and lookup projections. Adapter module
+ * `src/handlers/unsupported.ts` translates unsupported domain entries into
+ * HTTP responses. This module deliberately depends only on schema validation
+ * and pure policy data; it does not depend on Express, route objects, or engine
+ * adapters.
+ */
 import {z} from 'zod';
 
 export const capabilityValues = ['scriptable', 'engine-backed', 'stubbed', 'unsupported'] as const;
@@ -33,26 +54,17 @@ export const capabilityManifestEntrySchema = z
       handlerRequired: z.boolean().default(false),
       workerRequired: z.boolean().default(false),
       enginePortRequired: z.boolean().default(false),
-      deterministicFixture: z.boolean().default(false),
-      unsupportedResponseStatus: z.literal(501).optional()
+      deterministicFixture: z.boolean().default(false)
     }),
     followOnPhase: z.string().min(1).optional(),
     notes: z.string().min(1).optional()
   })
   .superRefine((entry, context) => {
-    if (entry.capability === 'unsupported' && entry.runtime.unsupportedResponseStatus !== 501) {
+    if (entry.capability === 'unsupported' && entry.runtime.behaviour !== 'not-implemented') {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'unsupported operations must carry 501 response metadata',
-        path: ['runtime', 'unsupportedResponseStatus']
-      });
-    }
-
-    if (entry.capability !== 'unsupported' && entry.runtime.unsupportedResponseStatus !== undefined) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'only unsupported operations may carry 501 response metadata',
-        path: ['runtime', 'unsupportedResponseStatus']
+        message: 'unsupported operations must use not-implemented runtime behaviour',
+        path: ['runtime', 'behaviour']
       });
     }
 
@@ -143,11 +155,33 @@ const unsupportedRuntime = {
   handlerRequired: false,
   workerRequired: false,
   enginePortRequired: false,
-  deterministicFixture: false,
-  unsupportedResponseStatus: 501
+  deterministicFixture: false
 } as const;
 
-export const v1CapabilityManifest = validateCapabilityManifest([
+const validateV1CapabilityManifest = (
+  entries: readonly CapabilityManifestEntryInput[]
+): readonly CapabilityManifestEntry[] => {
+  try {
+    const manifest = validateCapabilityManifest(entries);
+    console.info(
+      JSON.stringify({
+        event: 'digitalpuddle.manifest.validated',
+        entryCount: manifest.length
+      })
+    );
+    return manifest;
+  } catch (error: unknown) {
+    console.error(
+      JSON.stringify({
+        event: 'digitalpuddle.manifest.validation_failed',
+        message: error instanceof Error ? error.message : String(error)
+      })
+    );
+    throw error;
+  }
+};
+
+export const v1CapabilityManifest = validateV1CapabilityManifest([
   {
     operationId: 'account.get',
     method: 'GET',
