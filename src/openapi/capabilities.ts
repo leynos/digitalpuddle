@@ -48,6 +48,14 @@ export const capabilityManifestEntrySchema = z
       });
     }
 
+    if (entry.capability !== 'unsupported' && entry.runtime.unsupportedResponseStatus !== undefined) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'only unsupported operations may carry 501 response metadata',
+        path: ['runtime', 'unsupportedResponseStatus']
+      });
+    }
+
     if (entry.capability !== 'unsupported' && entry.runtime.behaviour === 'not-implemented') {
       context.addIssue({
         code: z.ZodIssueCode.custom,

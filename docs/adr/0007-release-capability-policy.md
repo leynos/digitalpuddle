@@ -1,4 +1,4 @@
-# ADR 0007: Define the release capability policy
+# Architecture Decision Record (ADR) 0007: Define the release capability policy
 
 Status: Accepted
 

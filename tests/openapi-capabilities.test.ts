@@ -2,6 +2,7 @@
 import {describe, expect, it} from 'bun:test';
 import fc from 'fast-check';
 import {
+  capabilityManifestEntrySchema,
   capabilitySchema,
   capabilityValues,
   createOperationKey,
@@ -11,6 +12,7 @@ import {
   validateCapabilityManifest,
   v1CapabilityManifest,
   type CapabilityManifestEntry,
+  type CapabilityManifestEntryInput,
   type HttpMethod
 } from '../src/openapi/capabilities.ts';
 
@@ -25,6 +27,29 @@ const entryByOperationId = (operationId: string): CapabilityManifestEntry => {
 const pathSegment = fc
   .string({minLength: 1, maxLength: 12})
   .filter((value) => !value.includes('/') && value.trim().length > 0);
+
+const minimalEntry = (overrides: Partial<CapabilityManifestEntryInput> = {}): CapabilityManifestEntryInput => ({
+  operationId: 'test.operation',
+  method: 'GET',
+  path: '/v2/test-operation',
+  capability: 'scriptable',
+  releaseStage: 'test',
+  productArea: 'Test',
+  runtime: {
+    behaviour: 'handler'
+  },
+  ...overrides
+});
+
+const expectEntryError = (entry: CapabilityManifestEntryInput, expectedMessage: string): void => {
+  const result = capabilityManifestEntrySchema.safeParse(entry);
+
+  expect(result.success).toBe(false);
+  if (result.success) {
+    throw new Error('expected capability manifest entry validation to fail');
+  }
+  expect(result.error.issues.map((issue) => issue.message)).toContain(expectedMessage);
+};
 
 describe('capability policy vocabulary', () => {
   it('accepts the four release capability literals', () => {
@@ -103,6 +128,68 @@ describe('v1 capability manifest', () => {
     for (const entry of unsupportedEntries) {
       expect(entry.runtime).toEqual(expect.objectContaining({unsupportedResponseStatus: 501}));
     }
+  });
+
+  it('rejects unsupported entries without 501 response metadata', () => {
+    expectEntryError(
+      minimalEntry({
+        capability: 'unsupported',
+        runtime: {
+          behaviour: 'not-implemented'
+        }
+      }),
+      'unsupported operations must carry 501 response metadata'
+    );
+  });
+
+  it('rejects supported entries with 501 response metadata', () => {
+    expectEntryError(
+      minimalEntry({
+        capability: 'scriptable',
+        runtime: {
+          behaviour: 'handler',
+          unsupportedResponseStatus: 501
+        }
+      }),
+      'only unsupported operations may carry 501 response metadata'
+    );
+  });
+
+  it('rejects supported entries with not-implemented runtime behaviour', () => {
+    expectEntryError(
+      minimalEntry({
+        capability: 'scriptable',
+        runtime: {
+          behaviour: 'not-implemented'
+        }
+      }),
+      'only unsupported operations may use not-implemented runtime behaviour'
+    );
+  });
+
+  it('rejects engine-backed entries without worker orchestration', () => {
+    expectEntryError(
+      minimalEntry({
+        capability: 'engine-backed',
+        runtime: {
+          behaviour: 'worker',
+          enginePortRequired: true
+        }
+      }),
+      'engine-backed operations must require worker-owned orchestration'
+    );
+  });
+
+  it('rejects stubbed entries without deterministic fixture behaviour', () => {
+    expectEntryError(
+      minimalEntry({
+        capability: 'stubbed',
+        runtime: {
+          behaviour: 'fixture'
+        }
+      }),
+      'stubbed operations must identify deterministic fixture behaviour'
+    );
   });
 
   it('rejects duplicate canonical operation keys', () => {

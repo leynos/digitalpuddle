@@ -95,7 +95,8 @@ conflict in `Decision Log`, and ask the user how to proceed.
 - Ambiguity: if an operation can reasonably be classified in two ways and the
   choice affects user-visible behaviour, add a decision record entry and ask
   for approval unless the answer is already determined by
-  `docs/digitalpuddle-technical-design.md` or ADR 0006.
+  `docs/digitalpuddle-technical-design.md` or architecture decision record
+  (ADR) 0006.
 - Validation: if any gate still fails after two focused correction attempts,
   stop with the failing log path and a concise diagnosis.
 - CodeRabbit: if CodeRabbit reports a concern that would require expanding
@@ -210,12 +211,13 @@ should not add those tools unless an approved later change needs them.
 
 ### Milestone 1: record the policy decision
 
-Create a narrow ADR, probably `docs/adr/0007-release-capability-policy.md`,
-that makes the capability vocabulary and source-of-truth rule durable. The ADR
-should state that every public DigitalOcean operation known to the pinned
-contract must have exactly one DigitalPuddle capability classification before
-release, and that generated docs plus unsupported runtime responses must be
-derived from the same classification source.
+Create a narrow ADR, probably
+`docs/adr/0007-release-capability-policy.md`, that makes the capability
+vocabulary and source-of-truth rule durable. The ADR should state that every
+public DigitalOcean operation known to the pinned contract must have exactly
+one DigitalPuddle capability classification before release, and that generated
+docs plus unsupported runtime responses must be derived from the same
+classification source.
 
 Update `docs/digitalpuddle-technical-design.md` sections 7.1, 8.2, 16, 17.2,
 and 20 so the design explains how the policy feeds the operation registry,
@@ -498,6 +500,14 @@ finite table tests are the appropriate validation.
   documentation closure.
 - [x] 2026-05-20: Pushed the completed implementation branch to
   `origin/1-1-3-define-release-capability-policy`.
+- [x] 2026-05-21: Addressed code review comments by tightening capability
+  manifest validation, adding negative tests for every custom validation
+  branch, and expanding the first use of architecture decision record (ADR) in
+  this plan and ADR 0007.
+- [x] 2026-05-21: Review follow-up gates passed:
+  `bun fmt`, `make all` with 137 passing tests,
+  `bunx markdownlint-cli2 "**/*.md"`, `nixie --no-sandbox`, and
+  `coderabbit review --agent` with 0 findings.
 - [ ] Update the pull request.
 
 ## Surprises & discoveries
@@ -553,6 +563,12 @@ finite table tests are the appropriate validation.
   Impact: projection tests now assert that supported matrix rows do not have
   the `unsupported` property at all.
 
+- Observation: the first schema version rejected unsupported entries without
+  `501` response metadata, but did not reject supported entries that supplied
+  `unsupportedResponseStatus`.
+  Impact: the manifest schema now treats that as a configuration error and the
+  negative test suite covers each custom validation branch directly.
+
 ## Decision Log
 
 - Decision: define capability policy as a source-of-truth manifest or
@@ -588,6 +604,12 @@ finite table tests are the appropriate validation.
   roadmap tasks 1.3.1 and 1.3.2. Adding runtime routing now would either rely
   on a fake registry or broaden this slice beyond the approved tolerances.
 
+- Decision: keep the review-follow-up tests explicit rather than deriving
+  invalid entries by recursively rewriting existing manifest rows.
+  Rationale: small constructed fixtures make each custom validation rule and
+  expected error message visible, which improves diagnosis when a future policy
+  change breaks one rule.
+
 ## Outcomes & retrospective
 
 The implementation defines the release capability policy for roadmap task
@@ -604,6 +626,14 @@ Validation evidence: the final full gate passed on 2026-05-20 with
 `bun fmt`, `make check-fmt`, `make lint`, `make generate`,
 `env -u FORCE_COLOR make test` producing 132 passing tests, `make markdownlint`,
 and `make nixie`. Final `coderabbit review --agent` completed with
+0 findings.
+
+Review follow-up on 2026-05-21 tightened the schema so only unsupported
+operations may carry `unsupportedResponseStatus`, and added negative tests for
+unsupported response metadata, `not-implemented` behaviour, engine-backed
+worker orchestration, and stubbed deterministic fixture rules.
+The follow-up gate passed with `make all` reporting 137 passing tests,
+Markdown linting and Mermaid validation clean, and CodeRabbit reporting
 0 findings.
 
 LemmaScript was not used. The implemented policy is a finite validated
