@@ -52,7 +52,9 @@ Current Architectural Decision Records cover:
 - the v1 product slice that prioritizes DigitalOcean Kubernetes Service (DOKS);
 - deterministic worker and virtual-time rules;
 - the temporary treatment of inherited Simulacat transport coupling;
-- the v1 product boundaries for node pools, Spaces, Droplets, and doctl.
+- the v1 product boundaries for node pools, Spaces, Droplets, and doctl;
+- the release capability policy for `scriptable`, `engine-backed`, `stubbed`,
+  and `unsupported` operations.
 
 ## 3. Development workflow
 
@@ -124,7 +126,41 @@ Client compatibility tests should follow ADR 0006. Terraform and doctl coverage
 belongs with implemented `/v2` routes, not with unsupported product surfaces.
 Configure doctl with explicit `--api-url` arguments in tests and examples.
 
-## 7. Transitional architecture rules
+## 7. Capability policy
+
+ADR 0007 is the normative release capability policy. New or changed
+DigitalOcean public operations must update the machine-readable capability
+source in the same change as the contract, handler, or generated documentation
+metadata that depends on it.
+
+The current implementation keeps the source and projections in:
+
+- `src/openapi/capabilities.ts` for the capability vocabulary, Zod validation,
+  canonical operation keys, and v1 seed manifest;
+- `src/openapi/projections.ts` for the capability matrix, documentation
+  metadata, and unsupported operation lookup;
+- `src/handlers/unsupported.ts` for pure DigitalOcean-shaped `501` response
+  helpers;
+- `src/admin/capabilities.ts` and `src/extend-api.ts` for the private
+  `/_digitalpuddle/capabilities` route.
+
+Use these rules when changing classifications:
+
+- choose exactly one of `scriptable`, `engine-backed`, `stubbed`, or
+  `unsupported` for each known operation;
+- keep classification and projection logic free of Express, Simulacrum request
+  objects, filesystem I/O, and engine adapters;
+- mark `engine-backed` only when public handlers still delegate side effects to
+  worker-owned ports and adapters;
+- mark `stubbed` only for deterministic static or lightweight responses that
+  are intentionally not full control-plane models;
+- provide `501` response metadata for every `unsupported` operation that can be
+  matched under `/v2`;
+- update unit and behavioural tests, including `fast-check` property tests for
+  projection invariants, whenever the manifest shape or classification rules
+  change.
+
+## 8. Transitional architecture rules
 
 The imported Simulacat code embeds GitHub URLs in entities and keeps some HTTP
 details inside handlers. That is acceptable only as a temporary baseline. New

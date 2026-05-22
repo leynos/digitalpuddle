@@ -244,14 +244,23 @@ DigitalPuddle pins a specific commit of the DigitalOcean public OpenAPI
 specification and builds an internal registry of operations. Each operation is
 classified as:
 
-- `scriptable`: fully modelled by store reads/writes and worker transitions
-- `engine-backed`: requires an engine-room side effect
-- `stubbed`: intentionally static or lightweight
-- `unsupported`: explicit `501`
+- `scriptable`: deterministic state reads, state writes, validation, action
+  creation, scheduler work, or worker transitions without an engine adapter
+- `engine-backed`: supported workflow logic that requires a worker-owned
+  engine-room side effect
+- `stubbed`: deterministic static or lightweight behaviour that is explicitly
+  not full control-plane modelling
+- `unsupported`: intentionally unavailable in this release and mapped to an
+  explicit `501` response for matched `/v2` operations
 
 The registry is also the source for a generated capability matrix. That matrix
 is part of the implementation contract and should be exposed via the private
-admin API.
+admin API. ADR 0007 defines the release capability policy and requires the
+runtime lookup, generated documentation metadata, and admin matrix to derive
+from one validated classification source. Until the pinned OpenAPI artefact
+lands, the v1 seed manifest is the source of truth; after the pin lands, the
+same data may decorate operation objects with a DigitalPuddle-owned extension
+such as `x-digitalpuddle-capability`.
 
 ### 7.2 State store
 
@@ -351,6 +360,13 @@ Table 1: Recommended v1 public DigitalOcean endpoints under `/v2`.
 This is deliberately narrower than the full action plan. It reflects the
 assessment that the first release should optimize for Nile Valley’s DOKS path
 rather than promise broad DigitalOcean emulation on day one.
+
+The classifications in Table 1 are not merely explanatory. They are the seed
+for the machine-readable policy manifest until the pinned DigitalOcean OpenAPI
+operation registry is available. Each manifest entry records the method, path
+template, operation ID, capability, release stage, product area, and runtime
+support metadata needed to build generated documentation, private admin
+payloads, and unsupported response lookup data.
 
 ### 8.3 Compatibility expectations
 
@@ -589,6 +605,12 @@ This keeps the first release tight.
 
 All non-DigitalOcean control surfaces live under `/_digitalpuddle`.
 
+The first implemented admin surface is `GET /_digitalpuddle/capabilities`.
+It returns the derived capability documentation metadata from the validated
+policy manifest: a legend for `scriptable`, `engine-backed`, `stubbed`, and
+`unsupported`, plus one visible row per documented operation. Broader state,
+journal, scenario, and OpenAPI admin routes remain planned.
+
 Table 2: Recommended private `/_digitalpuddle` harness endpoints.
 
 | Method | Path                                   | Purpose                            |
@@ -678,6 +700,7 @@ src/
   simulation.ts
   config.ts
   openapi/
+    capabilities.ts
     registry.ts
     operations.ts
     digitalocean.openapi.json
@@ -749,6 +772,7 @@ Contract tests should validate:
 - pagination envelopes are correct
 - error envelopes are correct
 - unsupported routes return explicit `501`
+- capability matrix projections contain each classified operation exactly once
 
 Only implemented routes and shared contract behaviours should be in scope for
 the contract suite. Unsupported routes are not failures if they are explicitly
@@ -874,6 +898,10 @@ Resolved decisions:
 - **Omit Droplet routes and engines from v1, then revisit them in a named
   Droplet slice.**
 - **Use ADR 0006 as the normative doctl compatibility and CI policy.**
+- **Use ADR 0007 as the normative release capability policy.** Keep
+  `scriptable`, `engine-backed`, `stubbed`, and `unsupported` classifications
+  machine-readable and derive generated docs plus unsupported runtime lookups
+  from that source.
 
 Roadmap task 1.1.2 is closed by ADR 0006. The named follow-on phases are
 node-pool scale operations, Spaces access-key control plane, and the Droplet

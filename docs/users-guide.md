@@ -15,9 +15,15 @@ working behaviour from planned behaviour:
 - the package metadata, README, design, and roadmap now describe
   DigitalPuddle;
 - the planned public DigitalOcean API root is `/v2`;
-- the planned private harness API root is `/_digitalpuddle`;
-- unsupported DigitalOcean routes will return explicit DigitalOcean-shaped
-  `501 Not Implemented` responses once the `/v2` route registry exists.
+- the private harness API root is `/_digitalpuddle`;
+- capability classifications now have a machine-readable policy source, so the
+  generated capability metadata and unsupported response helpers use the same
+  data;
+- `GET /_digitalpuddle/capabilities` exposes the current capability
+  documentation metadata for local harnesses and debugging;
+- unsupported DigitalOcean operations will return explicit
+  DigitalOcean-shaped `501 Not Implemented` responses once the `/v2` route
+  registry exists.
 
 ## Installation
 
@@ -99,6 +105,54 @@ operations, Droplet routes or engines, or Spaces access-key control-plane
 routes. Unsupported routes should return explicit DigitalOcean-shaped
 `501 Not Implemented` responses once the `/v2` route registry exists.
 
+## Capability classifications
+
+DigitalPuddle labels public DigitalOcean operations with one of four
+capabilities:
+
+- `scriptable` operations are handled by deterministic simulator state,
+  validation, scheduler work, and worker transitions.
+- `engine-backed` operations are supported, but their lifecycle depends on
+  worker-owned side effects such as k3d cluster creation or deletion.
+- `stubbed` operations return deterministic static or lightweight data and
+  should not be treated as complete DigitalOcean control-plane modelling.
+- `unsupported` operations are intentionally unavailable in the current
+  release. Once the `/v2` operation registry is wired, matched unsupported
+  operations return a DigitalOcean-shaped `501 Not Implemented` response.
+
+Unknown routes, unsupported methods on known paths, and known unsupported
+operations are distinct cases. DigitalPuddle preserves that distinction so
+normal routing misses, `405 Method Not Allowed`, and `501 Not Implemented`
+responses remain meaningful.
+
+### Inspecting the capability metadata
+
+The capabilities endpoint returns JSON with `legend` and `rows` fields: the
+legend explains each capability label, while rows describe classified
+operations and their runtime behaviour.
+
+```bash
+curl http://localhost:3300/_digitalpuddle/capabilities
+```
+
+An abbreviated response looks like this:
+
+```json
+{
+  "legend": {
+    "scriptable": "Deterministic state, validation, scheduler, or worker behaviour without an engine adapter.",
+    "unsupported": "Known operation that is intentionally unavailable in this release."
+  },
+  "rows": [
+    {
+      "operationKey": "GET /v2/droplets",
+      "capability": "unsupported",
+      "runtimeBehaviour": "not-implemented"
+    }
+  ]
+}
+```
+
 ## Scenarios and determinism
 
 Scenarios will be trusted YAML or JSON data files. They will configure the
@@ -117,9 +171,14 @@ Use scenarios for behaviours such as:
 ## Admin routes
 
 DigitalPuddle-specific orchestration and inspection routes will live under
-`/_digitalpuddle`. Planned routes include health, version, capabilities, state,
-journal, leak reports, reset, scenario loading, clock advancement, queue drain,
-and the pinned OpenAPI contract.
+`/_digitalpuddle`. The current baseline exposes:
+
+- `GET /_digitalpuddle/capabilities` for the machine-readable capability
+  legend and operation rows.
+
+Planned routes include health, version, state, journal, leak reports, reset,
+scenario loading, clock advancement, queue drain, and the pinned OpenAPI
+contract.
 
 These routes are for local harnesses and debugging. They are not part of the
 DigitalOcean API contract.
