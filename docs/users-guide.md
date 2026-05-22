@@ -132,7 +132,7 @@ legend explains each capability label, while rows describe classified
 operations and their runtime behaviour.
 
 ```bash
-curl http://localhost:8080/_digitalpuddle/capabilities
+curl http://localhost:3300/_digitalpuddle/capabilities
 ```
 
 An abbreviated response looks like this:
