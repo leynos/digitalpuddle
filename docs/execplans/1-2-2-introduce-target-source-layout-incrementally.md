@@ -150,7 +150,8 @@ conflict in `Decision log`, and ask for direction.
   and final deterministic gates.
 - [x] (2026-06-02T00:21:00Z) Ran final CodeRabbit review; it completed with
   0 findings.
-- [ ] Push and update the implementation PR.
+- [x] (2026-06-02T00:24:00Z) Pushed the branch and updated draft PR #7 with
+  the implementation summary and validation results.
 
 ## Surprises & discoveries
 
@@ -286,6 +287,11 @@ conflict in `Decision log`, and ask for direction.
   `{"type":"complete","status":"review_completed","findings":0}`.
   Impact: the branch is ready to push and the PR can be updated for
   implementation review.
+- Observation: draft PR #7 now describes the completed implementation rather
+  than only the original execplan.
+  Evidence: `gh pr edit 7 --body-file ...` returned
+  `https://github.com/leynos/digitalpuddle/pull/7`.
+  Impact: reviewers can use the PR body as the implementation review guide.
 
 ## Decision log
 
