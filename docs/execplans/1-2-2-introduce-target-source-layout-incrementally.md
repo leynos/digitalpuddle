@@ -142,8 +142,10 @@ conflict in `Decision log`, and ask for direction.
   extraction.
 - [x] (2026-06-01T23:24:00Z) Ran CodeRabbit review for Milestone 3; it
   completed with 0 findings.
-- [ ] Complete Milestone 4: worker, engine, journal, scenario, and CLI
-  skeletal interfaces.
+- [x] (2026-06-01T23:38:00Z) Completed Milestone 4: worker, engine, journal,
+  scenario, and CLI skeletal interfaces.
+- [ ] Run CodeRabbit review for Milestone 4 and clear any concerns before
+  proceeding.
 - [ ] Complete Milestone 5: documentation, roadmap completion, final gates,
   CodeRabbit, push, and implementation PR.
 
@@ -233,6 +235,22 @@ conflict in `Decision log`, and ask for direction.
   Evidence: `coderabbit review --agent` ended with
   `{"type":"complete","status":"review_completed","findings":0}`.
   Impact: the plan can proceed to skeletal runtime module homes.
+- Observation: the runtime skeleton contracts should allow synchronous or
+  asynchronous implementations.
+  Evidence: the first `make test` run for Milestone 4 failed because the new
+  tests used `.resolves` directly on `RequestJournal.append(...)` and
+  `CliCommand.run(...)`, but those contracts intentionally return
+  `void | Promise<void>` and `CliCommandResult | Promise<CliCommandResult>`.
+  Impact: tests now wrap those calls in `Promise.resolve(...)`, preserving
+  synchronous no-op adapters while still proving async-compatible call sites.
+- Observation: Milestone 4 introduces typed homes but no new business
+  invariant.
+  Evidence: `src/worker/index.ts`, `src/engines/index.ts`,
+  `src/journal/index.ts`, `src/scenarios/index.ts`, and `src/cli/index.ts`
+  contain narrow contracts and no-op factories only; the full test suite
+  reported 146 passing tests after the skeletons were added.
+  Impact: no `fast-check` property test or LemmaScript proof is required for
+  this milestone.
 
 ## Decision log
 
@@ -276,6 +294,13 @@ conflict in `Decision log`, and ask for direction.
   Rationale: this keeps the migration incremental, avoids repository/blob
   utility churn, and uses existing behavioural tests as the runtime proof.
   Date/Author: 2026-06-01T23:10:00Z / Codex.
+- Decision: add no-op factories only where they make the future port shape
+  executable without adding side effects.
+  Rationale: `createWorkerRuntime`, `createNoopRequestJournal`, and
+  `createEmptyScenarioRegistry` are testable composition targets, while the
+  engine and CLI modules expose contracts without implementing future runtime
+  behaviour.
+  Date/Author: 2026-06-01T23:38:00Z / Codex.
 
 ## Outcomes & retrospective
 
