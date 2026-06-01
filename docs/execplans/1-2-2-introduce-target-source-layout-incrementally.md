@@ -136,8 +136,8 @@ conflict in `Decision log`, and ask for direction.
   completed with 0 findings.
 - [x] (2026-06-01T22:50:00Z) Completed Milestone 2: OpenAPI, admin, and
   unsupported handler ownership.
-- [ ] Run CodeRabbit review for Milestone 2 and clear any concerns before
-  proceeding.
+- [x] (2026-06-01T22:58:00Z) Ran CodeRabbit review for Milestone 2; it
+  completed with 0 findings.
 - [ ] Complete Milestone 3: incremental handler extraction.
 - [ ] Complete Milestone 4: worker, engine, journal, scenario, and CLI
   skeletal interfaces.
@@ -211,6 +211,11 @@ conflict in `Decision log`, and ask for direction.
   `operationKeySchema`, and `UnsupportedOperationLookupEntry`.
   Impact: `src/openapi/index.ts` should re-export the current policy API
   instead of adding aliases during this layout task.
+- Observation: CodeRabbit accepted the Milestone 2 ownership move without
+  findings.
+  Evidence: `coderabbit review --agent` ended with
+  `{"type":"complete","status":"review_completed","findings":0}`.
+  Impact: the plan can proceed to incremental handler extraction.
 
 ## Decision log
 
