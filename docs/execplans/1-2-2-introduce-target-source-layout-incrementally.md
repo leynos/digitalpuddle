@@ -140,8 +140,8 @@ conflict in `Decision log`, and ask for direction.
   completed with 0 findings.
 - [x] (2026-06-01T23:10:00Z) Completed Milestone 3: incremental user handler
   extraction.
-- [ ] Run CodeRabbit review for Milestone 3 and clear any concerns before
-  proceeding.
+- [x] (2026-06-01T23:24:00Z) Ran CodeRabbit review for Milestone 3; it
+  completed with 0 findings.
 - [ ] Complete Milestone 4: worker, engine, journal, scenario, and CLI
   skeletal interfaces.
 - [ ] Complete Milestone 5: documentation, roadmap completion, final gates,
@@ -228,6 +228,11 @@ conflict in `Decision log`, and ask for direction.
   test suite reported 142 passing tests.
   Impact: `src/handlers/` now owns a real extracted handler group while the
   inherited REST adapter keeps composing the compatibility map.
+- Observation: CodeRabbit accepted the Milestone 3 handler extraction without
+  findings.
+  Evidence: `coderabbit review --agent` ended with
+  `{"type":"complete","status":"review_completed","findings":0}`.
+  Impact: the plan can proceed to skeletal runtime module homes.
 
 ## Decision log
 
