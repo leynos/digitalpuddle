@@ -134,8 +134,10 @@ conflict in `Decision log`, and ask for direction.
   compatibility facades.
 - [x] (2026-06-01T22:33:00Z) Ran CodeRabbit review for Milestone 1; it
   completed with 0 findings.
-- [ ] Complete Milestone 2: OpenAPI, admin, and unsupported
-  handler ownership.
+- [x] (2026-06-01T22:50:00Z) Completed Milestone 2: OpenAPI, admin, and
+  unsupported handler ownership.
+- [ ] Run CodeRabbit review for Milestone 2 and clear any concerns before
+  proceeding.
 - [ ] Complete Milestone 3: incremental handler extraction.
 - [ ] Complete Milestone 4: worker, engine, journal, scenario, and CLI
   skeletal interfaces.
@@ -194,6 +196,21 @@ conflict in `Decision log`, and ask for direction.
   `{"type":"complete","status":"review_completed","findings":0}`.
   Impact: no Milestone 1 review concerns need clearing before proceeding to
   OpenAPI, admin, and unsupported handler ownership.
+- Observation: `FoundationExtendRouter` from Simulacrum is too generic for the
+  repository's `ExtendedSimulationStore` when used as the direct type of the
+  admin route extender.
+  Evidence: the first Milestone 2 `make typecheck` run rejected
+  `extendDigitalPuddleAdminRoutes` because the generic Foundation store lacked
+  the extended GitHub state slices.
+  Impact: admin route ownership needs a local `DigitalPuddleAdminRouter` type
+  that accepts `ExtendedSimulationStore` while still using the Foundation
+  router type.
+- Observation: OpenAPI barrel exports must mirror the existing capability and
+  projection API names exactly.
+  Evidence: typecheck rejected guessed names such as `isCapability`,
+  `operationKeySchema`, and `UnsupportedOperationLookupEntry`.
+  Impact: `src/openapi/index.ts` should re-export the current policy API
+  instead of adding aliases during this layout task.
 
 ## Decision log
 
@@ -222,6 +239,17 @@ conflict in `Decision log`, and ask for direction.
   Rationale: the approved plan requires the public package entry point to
   remain stable while the target `src/simulation.ts` assembly point appears.
   Date/Author: 2026-06-01T22:18:00Z / Codex.
+- Decision: move private capability route registration to
+  `src/admin/routes.ts` and keep `src/extend-api.ts` as the compatibility
+  composition facade.
+  Rationale: this gives admin routes an owned module without changing
+  `/_digitalpuddle/capabilities`, health, GraphQL, or OAuth test behaviour.
+  Date/Author: 2026-06-01T22:50:00Z / Codex.
+- Decision: add `src/openapi/index.ts` as an internal barrel over existing
+  capability policy and projection exports.
+  Rationale: future DigitalOcean contract work now has a target OpenAPI module
+  boundary without adding runtime behaviour or changing package exports.
+  Date/Author: 2026-06-01T22:50:00Z / Codex.
 
 ## Outcomes & retrospective
 

@@ -1,7 +1,7 @@
 /** @file Integration tests for top-level router extension hooks. */
 import {afterAll, beforeAll, describe, expect, it} from 'bun:test';
 import express from 'express';
-import {registerCapabilitiesRoute} from '../src/extend-api.ts';
+import {registerCapabilitiesRoute} from '../src/admin/routes.ts';
 import {simulation} from '../src/index.ts';
 
 type SimulationServer = Awaited<ReturnType<ReturnType<typeof simulation>['listen']>>;

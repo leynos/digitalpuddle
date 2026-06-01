@@ -7,13 +7,12 @@
  */
 import type {createFoundationSimulationServer} from '@simulacrum/foundation-simulator';
 import {stringify} from 'querystring';
-import {capabilitiesPayload} from './admin/capabilities.ts';
+import {extendDigitalPuddleAdminRoutes, registerCapabilitiesRoute} from './admin/routes.ts';
 import {createHandler} from './graphql/handler.ts';
 import type {ExtendedSimulationStore} from './store/index.ts';
 
 type FoundationExtendRouter = NonNullable<Parameters<typeof createFoundationSimulationServer>[0]['extendRouter']>;
 type FoundationRouter = Parameters<FoundationExtendRouter>[0];
-type CapabilitiesPayloadProvider = typeof capabilitiesPayload;
 
 const isStructuredRequestLoggingEnabled = () => {
   const {DIGITALPUDDLE_REQUEST_LOG: requestLog} = process.env;
@@ -63,27 +62,7 @@ export const registerStructuredRequestLogger = (router: FoundationRouter) => {
   });
 };
 
-export const registerCapabilitiesRoute = (
-  router: FoundationRouter,
-  payloadProvider: CapabilitiesPayloadProvider = capabilitiesPayload
-) => {
-  router.get('/_digitalpuddle/capabilities', (_request, response) => {
-    try {
-      response.status(200).json(payloadProvider());
-    } catch (error: unknown) {
-      console.error(
-        JSON.stringify({
-          event: 'digitalpuddle.admin.capabilities.error',
-          message: error instanceof Error ? error.message : String(error)
-        })
-      );
-      response.status(500).json({
-        id: 'internal_error',
-        message: 'Failed to build capabilities payload.'
-      });
-    }
-  });
-};
+export {registerCapabilitiesRoute};
 
 /**
  * Wraps a caller-provided router extension with Simulacat Core's built-in
@@ -113,7 +92,7 @@ export const extendRouter =
       response.send({status: 'ok'});
     });
 
-    registerCapabilitiesRoute(router);
+    extendDigitalPuddleAdminRoutes(router, simulationStore);
 
     router.use('/graphql', createHandler(simulationStore));
 
