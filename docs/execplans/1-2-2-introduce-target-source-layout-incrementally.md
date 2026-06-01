@@ -132,8 +132,8 @@ conflict in `Decision log`, and ask for direction.
   the user and started executing the approved plan.
 - [x] (2026-06-01T22:18:00Z) Completed Milestone 1: simulation and
   compatibility facades.
-- [ ] Run CodeRabbit review for Milestone 1 and clear any concerns before
-  proceeding.
+- [x] (2026-06-01T22:33:00Z) Ran CodeRabbit review for Milestone 1; it
+  completed with 0 findings.
 - [ ] Complete Milestone 2: OpenAPI, admin, and unsupported
   handler ownership.
 - [ ] Complete Milestone 3: incremental handler extraction.
@@ -188,6 +188,12 @@ conflict in `Decision log`, and ask for direction.
   Impact: this task should keep touched Markdown clean and continue recording
   the inherited repo-wide Markdown lint debt separately unless directed to fix
   that large document.
+- Observation: CodeRabbit's Milestone 1 review took several minutes after
+  reporting tool completion but returned successfully.
+  Evidence: `coderabbit review --agent` ended with
+  `{"type":"complete","status":"review_completed","findings":0}`.
+  Impact: no Milestone 1 review concerns need clearing before proceeding to
+  OpenAPI, admin, and unsupported handler ownership.
 
 ## Decision log
 
