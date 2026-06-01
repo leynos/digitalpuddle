@@ -63,7 +63,7 @@ outcome keeps later source moves deliberate instead of cosmetic.
   - See `digitalpuddle-technical-design.md` §§1, 4, and 16.
   - Success: package metadata, published files, and the CLI banner identify
     DigitalPuddle while the current Simulacrum-based gates still pass.
-- [ ] 1.2.2. Introduce the target source layout incrementally around
+- [x] 1.2.2. Introduce the target source layout incrementally around
       `simulation`, `openapi`, `store`, `handlers`, `worker`, `engines`,
       `journal`, `admin`, `scenarios`, and `cli` modules.
   - Requires 1.1.1 and 1.1.3.

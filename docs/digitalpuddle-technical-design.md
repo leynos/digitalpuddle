@@ -751,6 +751,19 @@ testenv/
 docs/
 ```
 
+The current transitional implementation has introduced the target homes
+incrementally. `src/index.ts` remains the package and build entry facade while
+`src/simulation.ts` owns Simulacrum server assembly. `src/openapi/index.ts`
+re-exports the existing capability policy and projections. Private
+DigitalPuddle admin routes are owned by `src/admin/routes.ts`, with
+`src/extend-api.ts` kept as the Simulacrum composition facade. The first
+extracted inherited REST handlers live in `src/handlers/user.ts`; deeper
+GitHub compatibility separation remains a follow-on task. `src/worker/`,
+`src/engines/`, `src/journal/`, `src/scenarios/`, and `src/cli/` currently
+contain contracts and no-op factories only, so they define boundaries without
+claiming scheduler, engine, persistence, scenario loading, or CLI behaviour
+that is not implemented yet.
+
 ## 17. Testing strategy
 
 ### 17.1 Unit tests

@@ -144,10 +144,11 @@ conflict in `Decision log`, and ask for direction.
   completed with 0 findings.
 - [x] (2026-06-01T23:38:00Z) Completed Milestone 4: worker, engine, journal,
   scenario, and CLI skeletal interfaces.
-- [ ] Run CodeRabbit review for Milestone 4 and clear any concerns before
-  proceeding.
-- [ ] Complete Milestone 5: documentation, roadmap completion, final gates,
-  CodeRabbit, push, and implementation PR.
+- [x] (2026-06-01T23:49:00Z) Ran CodeRabbit review for Milestone 4; it
+  completed with 0 findings.
+- [x] (2026-06-02T00:07:00Z) Completed Milestone 5 documentation, roadmap,
+  and final deterministic gates.
+- [ ] Run final CodeRabbit review, push, and update the implementation PR.
 
 ## Surprises & discoveries
 
@@ -251,6 +252,33 @@ conflict in `Decision log`, and ask for direction.
   reported 146 passing tests after the skeletons were added.
   Impact: no `fast-check` property test or LemmaScript proof is required for
   this milestone.
+- Observation: CodeRabbit accepted the Milestone 4 runtime skeletons without
+  findings.
+  Evidence: `coderabbit review --agent` ended with
+  `{"type":"complete","status":"review_completed","findings":0}`.
+  Impact: the plan can proceed to documentation, roadmap, final gates, push,
+  and PR update.
+- Observation: the source-layout migration changes internal module ownership
+  only.
+  Evidence: `docs/developers-guide.md`,
+  `docs/digitalpuddle-technical-design.md`, and `docs/roadmap.md` needed
+  updates; `docs/users-guide.md` did not because no route, CLI, capability
+  state, or user-visible behaviour changed.
+  Impact: users' guide changes are not required for this roadmap item.
+- Observation: final deterministic gates passed after documentation closeout.
+  Evidence: `make check-fmt`, `make lint`, `make typecheck`, and `make test`
+  passed; `make test` reported 146 passing tests across 18 files. `bun fmt`,
+  touched-file Markdown lint, and `make nixie` also passed.
+  Impact: the implementation is ready for the final CodeRabbit checkpoint and
+  PR update.
+- Observation: repo-wide `make markdownlint` remains blocked by the inherited
+  Simulacrum guidance document.
+  Evidence: the final repo-wide run still reports 77 MD013 line-length errors
+  only in
+  `docs/mocking-services-with-simulacrum-actors-and-stable-keyset-connections.md`,
+  while the four touched Markdown files pass targeted `markdownlint-cli2`.
+  Impact: this task leaves that pre-existing Markdown debt unchanged and
+  reports it as a validation caveat.
 
 ## Decision log
 
@@ -301,6 +329,12 @@ conflict in `Decision log`, and ask for direction.
   engine and CLI modules expose contracts without implementing future runtime
   behaviour.
   Date/Author: 2026-06-01T23:38:00Z / Codex.
+- Decision: document the implemented layout as a transitional state rather
+  than replacing the target repository layout in the technical design.
+  Rationale: the target design still describes the intended final runtime
+  architecture, while this roadmap item only establishes incremental homes and
+  compatibility facades.
+  Date/Author: 2026-06-01T23:56:00Z / Codex.
 
 ## Outcomes & retrospective
 
