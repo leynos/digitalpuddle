@@ -138,7 +138,10 @@ conflict in `Decision log`, and ask for direction.
   unsupported handler ownership.
 - [x] (2026-06-01T22:58:00Z) Ran CodeRabbit review for Milestone 2; it
   completed with 0 findings.
-- [ ] Complete Milestone 3: incremental handler extraction.
+- [x] (2026-06-01T23:10:00Z) Completed Milestone 3: incremental user handler
+  extraction.
+- [ ] Run CodeRabbit review for Milestone 3 and clear any concerns before
+  proceeding.
 - [ ] Complete Milestone 4: worker, engine, journal, scenario, and CLI
   skeletal interfaces.
 - [ ] Complete Milestone 5: documentation, roadmap completion, final gates,
@@ -216,6 +219,15 @@ conflict in `Decision log`, and ask for direction.
   Evidence: `coderabbit review --agent` ended with
   `{"type":"complete","status":"review_completed","findings":0}`.
   Impact: the plan can proceed to incremental handler extraction.
+- Observation: the authenticated user and membership operations are the
+  smallest cohesive handler group in `src/rest/index.ts` with dedicated
+  behavioural coverage.
+  Evidence: `tests/user.test.ts` already covers unauthenticated `/user`,
+  unauthenticated `/user/memberships/orgs`, and authenticated membership
+  filtering. After moving those handlers to `src/handlers/user.ts`, the full
+  test suite reported 142 passing tests.
+  Impact: `src/handlers/` now owns a real extracted handler group while the
+  inherited REST adapter keeps composing the compatibility map.
 
 ## Decision log
 
@@ -255,6 +267,10 @@ conflict in `Decision log`, and ask for direction.
   Rationale: future DigitalOcean contract work now has a target OpenAPI module
   boundary without adding runtime behaviour or changing package exports.
   Date/Author: 2026-06-01T22:50:00Z / Codex.
+- Decision: extract only user and membership handlers in Milestone 3.
+  Rationale: this keeps the migration incremental, avoids repository/blob
+  utility churn, and uses existing behavioural tests as the runtime proof.
+  Date/Author: 2026-06-01T23:10:00Z / Codex.
 
 ## Outcomes & retrospective
 
