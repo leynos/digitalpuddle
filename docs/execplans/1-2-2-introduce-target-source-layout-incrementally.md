@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections
 `Decision log`, and `Outcomes & retrospective` must be kept up to date as work
 proceeds.
 
-Status: IN PROGRESS
+Status: COMPLETE
 
 ## Purpose / big picture
 
@@ -148,7 +148,9 @@ conflict in `Decision log`, and ask for direction.
   completed with 0 findings.
 - [x] (2026-06-02T00:07:00Z) Completed Milestone 5 documentation, roadmap,
   and final deterministic gates.
-- [ ] Run final CodeRabbit review, push, and update the implementation PR.
+- [x] (2026-06-02T00:21:00Z) Ran final CodeRabbit review; it completed with
+  0 findings.
+- [ ] Push and update the implementation PR.
 
 ## Surprises & discoveries
 
@@ -279,6 +281,11 @@ conflict in `Decision log`, and ask for direction.
   while the four touched Markdown files pass targeted `markdownlint-cli2`.
   Impact: this task leaves that pre-existing Markdown debt unchanged and
   reports it as a validation caveat.
+- Observation: the final CodeRabbit review completed without concerns.
+  Evidence: `coderabbit review --agent` ended with
+  `{"type":"complete","status":"review_completed","findings":0}`.
+  Impact: the branch is ready to push and the PR can be updated for
+  implementation review.
 
 ## Decision log
 
@@ -338,10 +345,21 @@ conflict in `Decision log`, and ask for direction.
 
 ## Outcomes & retrospective
 
-No implementation outcome exists yet. This section must be updated after each
-approved milestone and at completion. Completion means the target layout is
-present, existing gates pass, new tests prove any changed observable behaviour,
-CodeRabbit concerns are cleared, and roadmap item 1.2.2 is marked done.
+Implemented the target source layout incrementally while preserving the
+package-facing `src/index.ts` facade and inherited Simulacat behaviour. New
+internal homes now exist for simulation assembly, OpenAPI exports, admin
+routes, extracted user handlers, worker contracts, engine contracts, request
+journalling, scenario registration, and CLI command contracts. The roadmap item
+1.2.2 is marked done.
+
+Validation passed for `make check-fmt`, `make lint`, `make typecheck`, and
+`make test`. The final test run reported 146 passing tests across 18 files.
+`bun fmt`, `make nixie`, and targeted Markdown lint for touched documentation
+also passed. Repo-wide `make markdownlint` still fails on pre-existing MD013
+line-length findings in
+`docs/mocking-services-with-simulacrum-actors-and-stable-keyset-connections.md`;
+this task did not modify that inherited document. CodeRabbit reviews after
+Milestones 1, 2, 3, 4, and final closeout all completed with 0 findings.
 
 ## Context and orientation
 
