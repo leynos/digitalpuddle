@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections
 `Decision log`, and `Outcomes & retrospective` must be kept up to date as work
 proceeds.
 
-Status: DRAFT
+Status: IN PROGRESS
 
 ## Purpose / big picture
 
@@ -128,16 +128,19 @@ conflict in `Decision log`, and ask for direction.
   review of requirements, current source layout, and documentation gates.
 - [x] (2026-05-25T01:05:42Z) Used Firecrawl to check prior-art/tooling context
   for `dependency-cruiser` and LemmaScript.
-- [ ] Await explicit approval before implementing any source-layout migration.
-- [ ] After approval, complete Milestone 1: simulation and compatibility
-  facades.
-- [ ] After approval, complete Milestone 2: OpenAPI, admin, and unsupported
+- [x] (2026-06-01T22:01:29Z) Received explicit implementation approval from
+  the user and started executing the approved plan.
+- [x] (2026-06-01T22:18:00Z) Completed Milestone 1: simulation and
+  compatibility facades.
+- [ ] Run CodeRabbit review for Milestone 1 and clear any concerns before
+  proceeding.
+- [ ] Complete Milestone 2: OpenAPI, admin, and unsupported
   handler ownership.
-- [ ] After approval, complete Milestone 3: incremental handler extraction.
-- [ ] After approval, complete Milestone 4: worker, engine, journal, scenario,
-  and CLI skeletal interfaces.
-- [ ] After approval, complete Milestone 5: documentation, roadmap completion,
-  final gates, CodeRabbit, push, and implementation PR.
+- [ ] Complete Milestone 3: incremental handler extraction.
+- [ ] Complete Milestone 4: worker, engine, journal, scenario, and CLI
+  skeletal interfaces.
+- [ ] Complete Milestone 5: documentation, roadmap completion, final gates,
+  CodeRabbit, push, and implementation PR.
 
 ## Surprises & discoveries
 
@@ -167,6 +170,24 @@ conflict in `Decision log`, and ask for direction.
   task; LemmaScript should be reserved for introduced business invariants, not
   used for this structural migration unless implementation adds such an
   invariant.
+- Observation: Milestone 1 can move the simulation assembly without changing
+  package exports because `src/index.ts` can remain as the `tsdown` entry and
+  re-export `src/simulation.ts`.
+  Evidence: `make check-fmt`, `make lint`, `make typecheck`, and `make test`
+  passed after adding `tests/simulation-layout.test.ts`; the full test suite
+  reported 139 passing tests.
+  Impact: future internal DigitalOcean code can import simulation assembly
+  from `src/simulation.ts`, while published consumers continue to import from
+  the package facade.
+- Observation: repo-wide `make markdownlint` still fails on pre-existing
+  MD013 line-length issues in
+  `docs/mocking-services-with-simulacrum-actors-and-stable-keyset-connections.md`.
+  Evidence: targeted
+  `bunx markdownlint-cli2 docs/execplans/1-2-2-introduce-target-source-layout-incrementally.md`
+  passed with 0 errors, and `make nixie` passed.
+  Impact: this task should keep touched Markdown clean and continue recording
+  the inherited repo-wide Markdown lint debt separately unless directed to fix
+  that large document.
 
 ## Decision log
 
@@ -190,6 +211,11 @@ conflict in `Decision log`, and ask for direction.
   state-transition invariant. If implementation later adds a substantive
   invariant, the proof requirement must be revisited.
   Date/Author: 2026-05-25T01:05:42Z / Codex.
+- Decision: implement Milestone 1 as an internal source move plus facade rather
+  than changing `package.json`, `tsdown.config.ts`, or the build entry.
+  Rationale: the approved plan requires the public package entry point to
+  remain stable while the target `src/simulation.ts` assembly point appears.
+  Date/Author: 2026-06-01T22:18:00Z / Codex.
 
 ## Outcomes & retrospective
 
