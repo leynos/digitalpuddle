@@ -21,6 +21,7 @@
         "@graphql-codegen/typescript": "^4.1.6",
         "@graphql-codegen/typescript-resolvers": "^4.5.1",
         "@octokit/graphql": "^9.0.1",
+        "@redocly/cli": "^2.31.5",
         "@types/express": "^5.0.6",
         "@types/node": "^25.6.0",
         "bun-types": "^1.3.11",
@@ -250,6 +251,8 @@
     "@publint/pack": ["@publint/pack@0.1.4", "", {}, "sha512-HDVTWq3H0uTXiU0eeSQntcVUTPP3GamzeXI41+x7uU9J65JgWQh3qWZHblR1i0npXfFtF+mxBiU2nJH8znxWnQ=="],
 
     "@quansync/fs": ["@quansync/fs@1.0.0", "", { "dependencies": { "quansync": "^1.0.0" } }, "sha512-4TJ3DFtlf1L5LDMaM6CanJ/0lckGNtJcMjQ1NAV6zDmA0tEHKZtxNKin8EgPaVX1YzljbxckyT2tJrpQKAtngQ=="],
+
+    "@redocly/cli": ["@redocly/cli@2.34.0", "", { "bin": { "redocly": "bin/cli.js", "openapi": "bin/cli.js" } }, "sha512-wlEy03fyf+xrEatHbSSLFGP7T8slYwyJHO6xooArvUOntiGRMPuTGivaSPhxx+f2bFhe69zDDzDy51+CsvJ/zw=="],
 
     "@repeaterjs/repeater": ["@repeaterjs/repeater@3.0.6", "", {}, "sha512-Javneu5lsuhwNCryN+pXH93VPQ8g0dBX7wItHFgYiwQmzE1sVdg5tWHiOgHywzL2W21XQopa7IwIEnNbmeUJYA=="],
 

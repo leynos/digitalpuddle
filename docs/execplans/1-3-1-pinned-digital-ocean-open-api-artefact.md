@@ -5,7 +5,7 @@ This ExecPlan (execution plan) is a living document. The sections
 `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work
 proceeds.
 
-Status: DRAFT
+Status: IN PROGRESS
 
 ## Purpose / big picture
 
@@ -23,8 +23,8 @@ refresh command with the recorded pin should reproduce the checked-in
 artefact, and the normal repository gates should prove that the metadata,
 artefact shape, documentation, and existing baseline still agree.
 
-This plan is pre-implementation. Do not implement it until the user explicitly
-approves the plan.
+This plan was approved for implementation by the user on
+2026-06-02T00:08:49+02:00.
 
 ## Approval gate
 
@@ -454,9 +454,47 @@ Observable success after implementation:
       valid copy findings from the first pass. A second pass reported stale
       wrapping findings even though local line-length checks and targeted
       Markdown linting passed.
-- [ ] Commit the plan-only change.
-- [ ] Push the plan branch and open a draft pull request for review.
-- [ ] Await explicit user approval before implementation.
+- [x] 2026-05-25T03:09:20+02:00: Committed the plan-only change, pushed the
+      branch, and opened draft PR 8 for execplan review.
+- [x] 2026-06-02T00:08:49+02:00: Received explicit user approval to proceed
+      with implementation.
+- [x] 2026-06-02T00:08:49+02:00: Rechecked the branch, worktree, upstream main
+      revision, and raw source reachability before implementation.
+- [x] 2026-06-02T00:10:23+02:00: Added deterministic refresh tooling,
+      installed `@redocly/cli`, and generated the pinned artefact plus
+      provenance record.
+- [x] 2026-06-02T00:10:23+02:00: Added focused `bun:test` coverage for
+      artefact shape, provenance validation, hash mismatch rejection, and
+      canonical JSON ordering.
+- [x] 2026-06-02T00:12:30+02:00: Ran `bun fmt`, `make check-fmt`,
+      `make typecheck`, `make lint`, and `make test`; all gates passed. Biome
+      reported a non-fatal size warning for the generated 3.4 MiB OpenAPI
+      artefact.
+- [x] 2026-06-02T01:05:00+02:00: Ran CodeRabbit for the artefact/tooling/test
+      milestone. It reported five valid findings covering deterministic key
+      sorting, archive root selection, timeout and pin validation, temporary
+      directory portability, and the property-test oracle.
+- [x] 2026-06-02T01:18:00+02:00: Fixed the first CodeRabbit findings and reran
+      `bun fmt`, focused OpenAPI tests, `make check-fmt`, `make typecheck`,
+      `make lint`, and `make test`; all gates passed.
+- [x] 2026-06-02T01:55:00+02:00: Reran CodeRabbit after the first fixes. It
+      reported three valid follow-up findings: export the shared commit-SHA
+      regex, pin the `bunx` Redocly package version, and add a JSON parse
+      round-trip assertion to the canonicalisation property test.
+- [x] 2026-06-02T02:02:00+02:00: Fixed the follow-up CodeRabbit findings and
+      reran `bun fmt`, focused OpenAPI tests, `make check-fmt`,
+      `make typecheck`, `make lint`, and `make test`; all gates passed.
+- [ ] Clear final CodeRabbit review for the artefact/tooling/test milestone.
+- [x] 2026-06-02T02:45:00+02:00: Attempted to push the artefact commit.
+      GitHub push protection rejected it because upstream OpenAPI examples
+      contained Slack webhook-shaped URLs.
+- [x] 2026-06-02T02:50:00+02:00: Added deterministic scrubbing for
+      secret-shaped Slack webhook examples before canonical artefact output,
+      regenerated provenance, and verified no `hooks.slack.com` host remains
+      in the checked-in artefact.
+- [x] 2026-06-02T02:50:00+02:00: Reproduced the `bun audit` finding for
+      vulnerable transitive `qs` versions and added a `qs` `6.15.2` override.
+      `bun audit` now reports no vulnerabilities.
 
 ## Surprises & Discoveries
 
@@ -473,6 +511,27 @@ Observable success after implementation:
 - `make markdownlint` is currently blocked by pre-existing long-line
   violations in the long Simulacrum actors guide. Targeted Markdown linting for
   this ExecPlan passes.
+- The planning-time upstream commit no longer serves the expected lower-case
+  raw source path. The latest upstream `main` commit also returns `404` for
+  `specification/digitalocean-public.v2.yaml`, but the repository tree contains
+  `specification/DigitalOcean-public.v2.yaml`.
+- Redocly cannot bundle from the single raw YAML file alone because the
+  DigitalOcean source file uses many relative `$ref` entries. The refresh
+  script therefore downloads the pinned repository tarball and bundles from the
+  extracted tree, while still recording the raw source URL for provenance.
+- The first CodeRabbit invocation reached `tools_completed` and then produced
+  no final report for several minutes. The hung DigitalPuddle process was
+  terminated without touching other agents' CodeRabbit reviews, and the review
+  will be retried.
+- After all known CodeRabbit findings were fixed and deterministic gates
+  passed, repeated final CodeRabbit retries were blocked by recoverable
+  `rate_limit` errors reporting that the organisation had run out of usage
+  credits. Backoffs of 17, 17, 28, 23, 20, and 16 minutes all ended with the
+  same rate-limit response.
+- GitHub secret scanning treats realistic upstream Slack webhook examples as
+  push-protection violations, even when they are examples rather than live
+  credentials. Generated artefact output needs deterministic sanitisation
+  before hashing and provenance recording.
 
 ## Decision Log
 
@@ -497,6 +556,23 @@ Observable success after implementation:
   Rationale: This slice introduces provenance and deterministic artefact
   generation, which are better validated by byte-level fixture tests and
   bounded property tests than by a standalone proof.
+
+- Decision: Use upstream commit
+  `ef3868ee4cadd34fd4f9624371f7a45d7a205fc1` and source path
+  `specification/DigitalOcean-public.v2.yaml` for the first implementation
+  pin.
+  Rationale: The planning-time commit
+  `3512e763734dbe54871fc0611a025febc1ab7ceb` and the documented lower-case
+  source path both return `404` from GitHub raw content. The latest upstream
+  `main` revision was observed on 2026-06-02 and its tree contains the
+  case-sensitive source file path above.
+
+- Decision: Add `@redocly/cli` as a dev dependency and use the pinned upstream
+  repository tarball as the refresh input.
+  Rationale: The OpenAPI file has repository-local relative references, so
+  single-file fetching cannot produce a bundled artefact. Downloading the
+  tarball preserves source provenance, avoids a persistent checkout, and keeps
+  runtime code free of Redocly imports.
 
 ## Outcomes & Retrospective
 
