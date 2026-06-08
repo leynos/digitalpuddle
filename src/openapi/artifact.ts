@@ -21,21 +21,41 @@ export const digitalOceanOpenApiRefreshCommand = 'bun run sync:openapi:digitaloc
 export const digitalOceanOpenApiCommitPattern = /^[a-f0-9]{40}$/;
 const sha256Pattern = /^[a-f0-9]{64}$/;
 
-export const digitalOceanOpenApiProvenanceSchema = z.object({
-  upstreamRepository: z.string().url(),
-  upstreamCommit: z.string().regex(digitalOceanOpenApiCommitPattern),
-  sourcePath: z.literal(digitalOceanOpenApiSourcePath),
-  rawSourceUrl: z.string().url(),
-  sourceArchiveUrl: z.string().url(),
-  refreshCommand: z.literal(digitalOceanOpenApiRefreshCommand),
-  bundlingTool: z.object({
-    name: z.literal('@redocly/cli'),
-    version: z.string().min(1)
-  }),
-  generatedArtifactPath: z.literal(digitalOceanOpenApiArtifactPath),
-  generatedArtifactSha256: z.string().regex(sha256Pattern),
-  refreshedAt: z.string().datetime()
-});
+export const digitalOceanOpenApiProvenanceSchema = z
+  .object({
+    upstreamRepository: z.literal(digitalOceanOpenApiRepositoryUrl),
+    upstreamCommit: z.string().regex(digitalOceanOpenApiCommitPattern),
+    sourcePath: z.literal(digitalOceanOpenApiSourcePath),
+    rawSourceUrl: z.string().url(),
+    sourceArchiveUrl: z.string().url(),
+    refreshCommand: z.literal(digitalOceanOpenApiRefreshCommand),
+    bundlingTool: z.object({
+      name: z.literal('@redocly/cli'),
+      version: z.string().min(1)
+    }),
+    generatedArtifactPath: z.literal(digitalOceanOpenApiArtifactPath),
+    generatedArtifactSha256: z.string().regex(sha256Pattern),
+    refreshedAt: z.string().datetime()
+  })
+  .superRefine((provenance, context) => {
+    const expectedRawSourceUrl = getDigitalOceanOpenApiRawSourceUrl(provenance.upstreamCommit);
+    if (provenance.rawSourceUrl !== expectedRawSourceUrl) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `rawSourceUrl must match upstreamCommit: ${expectedRawSourceUrl}`,
+        path: ['rawSourceUrl']
+      });
+    }
+
+    const expectedSourceArchiveUrl = getDigitalOceanOpenApiSourceArchiveUrl(provenance.upstreamCommit);
+    if (provenance.sourceArchiveUrl !== expectedSourceArchiveUrl) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `sourceArchiveUrl must match upstreamCommit: ${expectedSourceArchiveUrl}`,
+        path: ['sourceArchiveUrl']
+      });
+    }
+  });
 
 export type DigitalOceanOpenApiProvenance = z.infer<typeof digitalOceanOpenApiProvenanceSchema>;
 

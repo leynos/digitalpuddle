@@ -9,9 +9,12 @@ import {
   assertDigitalOceanOpenApiProvenanceMatchesArtifact,
   digitalOceanOpenApiArtifactPath,
   digitalOceanOpenApiProvenancePath,
+  getDigitalOceanOpenApiRawSourceUrl,
+  getDigitalOceanOpenApiSourceArchiveUrl,
   sha256Hex,
   stringifyCanonicalJson,
   validateDigitalOceanOpenApiProvenance,
+  type DigitalOceanOpenApiProvenance,
   type JsonValue
 } from '../src/openapi/artifact.ts';
 
@@ -79,6 +82,34 @@ describe('DigitalOcean OpenAPI artefact', () => {
     expect(() =>
       validateDigitalOceanOpenApiProvenance({
         upstreamRepository: 'https://github.com/digitalocean/openapi'
+      })
+    ).toThrow();
+  });
+
+  test('rejects provenance URLs that do not match the stated upstream commit', async () => {
+    const provenance = validateDigitalOceanOpenApiProvenance(await readJsonFile(digitalOceanOpenApiProvenancePath));
+    const otherCommit = '0123456789abcdef0123456789abcdef01234567';
+
+    const mismatchedRawSource: DigitalOceanOpenApiProvenance = {
+      ...provenance,
+      rawSourceUrl: getDigitalOceanOpenApiRawSourceUrl(otherCommit)
+    };
+    expect(() => validateDigitalOceanOpenApiProvenance(mismatchedRawSource)).toThrow(/rawSourceUrl/);
+
+    const mismatchedArchive: DigitalOceanOpenApiProvenance = {
+      ...provenance,
+      sourceArchiveUrl: getDigitalOceanOpenApiSourceArchiveUrl(otherCommit)
+    };
+    expect(() => validateDigitalOceanOpenApiProvenance(mismatchedArchive)).toThrow(/sourceArchiveUrl/);
+  });
+
+  test('rejects provenance with a different upstream repository', async () => {
+    const provenance = validateDigitalOceanOpenApiProvenance(await readJsonFile(digitalOceanOpenApiProvenancePath));
+
+    expect(() =>
+      validateDigitalOceanOpenApiProvenance({
+        ...provenance,
+        upstreamRepository: 'https://example.invalid/digitalocean/openapi'
       })
     ).toThrow();
   });
