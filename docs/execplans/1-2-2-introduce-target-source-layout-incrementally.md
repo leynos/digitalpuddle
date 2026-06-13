@@ -190,15 +190,15 @@ conflict in `Decision log`, and ask for direction.
   Impact: future internal DigitalOcean code can import simulation assembly
   from `src/simulation.ts`, while published consumers continue to import from
   the package facade.
-- Observation: repo-wide `make markdownlint` still fails on pre-existing
-  MD013 line-length issues in
+- Observation: the imported Simulacrum guidance document contains long prose
+  lines that are intentionally kept stable during this migration.
+  Evidence: a file-level MD013 exception is recorded at the top of
   `docs/mocking-services-with-simulacrum-actors-and-stable-keyset-connections.md`.
-  Evidence: targeted
+  Targeted
   `bunx markdownlint-cli2 docs/execplans/1-2-2-introduce-target-source-layout-incrementally.md`
   passed with 0 errors, and `make nixie` passed.
-  Impact: this task should keep touched Markdown clean and continue recording
-  the inherited repo-wide Markdown lint debt separately unless directed to fix
-  that large document.
+  Impact: repo-wide Markdown lint can run without reflowing that imported
+  source text as part of the target-layout migration.
 - Observation: CodeRabbit's Milestone 1 review took several minutes after
   reporting tool completion but returned successfully.
   Evidence: `coderabbit review --agent` ended with
@@ -274,14 +274,13 @@ conflict in `Decision log`, and ask for direction.
   touched-file Markdown lint, and `make nixie` also passed.
   Impact: the implementation is ready for the final CodeRabbit checkpoint and
   PR update.
-- Observation: repo-wide `make markdownlint` remains blocked by the inherited
-  Simulacrum guidance document.
-  Evidence: the final repo-wide run still reports 77 MD013 line-length errors
-  only in
-  `docs/mocking-services-with-simulacrum-actors-and-stable-keyset-connections.md`,
-  while the four touched Markdown files pass targeted `markdownlint-cli2`.
-  Impact: this task leaves that pre-existing Markdown debt unchanged and
-  reports it as a validation caveat.
+- Observation: repo-wide Markdown lint now passes with an explicit file-level
+  MD013 exception for the imported Simulacrum guidance document.
+  Evidence: the exception is local to
+  `docs/mocking-services-with-simulacrum-actors-and-stable-keyset-connections.md`
+  and records that the long imported prose lines are intentionally kept stable.
+  Impact: the repository-wide Markdown gate can be used for this PR without
+  forcing a broad prose reflow unrelated to roadmap item 1.2.2.
 - Observation: the final CodeRabbit review completed without concerns.
   Evidence: `coderabbit review --agent` ended with
   `{"type":"complete","status":"review_completed","findings":0}`.
@@ -360,12 +359,11 @@ journalling, scenario registration, and CLI command contracts. The roadmap item
 
 Validation passed for `make check-fmt`, `make lint`, `make typecheck`, and
 `make test`. The final test run reported 146 passing tests across 18 files.
-`bun fmt`, `make nixie`, and targeted Markdown lint for touched documentation
-also passed. Repo-wide `make markdownlint` still fails on pre-existing MD013
-line-length findings in
-`docs/mocking-services-with-simulacrum-actors-and-stable-keyset-connections.md`;
-this task did not modify that inherited document. CodeRabbit reviews after
-Milestones 1, 2, 3, 4, and final closeout all completed with 0 findings.
+`bun fmt`, `make nixie`, and `make markdownlint` also passed. The imported
+Simulacrum guidance document keeps a file-level MD013 exception so its stable
+long prose lines do not need to be reflowed for this layout migration.
+CodeRabbit reviews after Milestones 1, 2, 3, 4, and final closeout all
+completed with 0 findings.
 
 ## Context and orientation
 
