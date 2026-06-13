@@ -42,7 +42,8 @@ const parseTimeoutMs = (value: string | undefined): number => {
   return Number.isInteger(parsed) && parsed > 0 && parsed <= maxTimeoutMs ? parsed : defaultTimeoutMs;
 };
 
-const timeoutMs = parseTimeoutMs(process.env.DIGITALPUDDLE_OPENAPI_SYNC_TIMEOUT_MS);
+// biome-ignore lint/complexity/useLiteralKeys: strict index-signature checking requires bracket access.
+const timeoutMs = parseTimeoutMs(process.env['DIGITALPUDDLE_OPENAPI_SYNC_TIMEOUT_MS']);
 
 const readPinArgument = (): string => {
   const pinArg = process.argv.find((argument) => argument.startsWith('--pin='));
@@ -87,7 +88,12 @@ const findExtractedRepositoryRoot = async (destination: string, pin: string): Pr
     );
   }
 
-  return path.join(destination, directories[0].name);
+  const [repositoryRoot] = directories;
+  if (repositoryRoot === undefined) {
+    throw new Error(`archive did not contain ${expectedPrefix} under ${destination}`);
+  }
+
+  return path.join(destination, repositoryRoot.name);
 };
 
 const bundleOpenApi = async (sourcePath: string, outputPath: string): Promise<void> => {
@@ -119,7 +125,7 @@ const parseBundledJson = async (bundledPath: string): Promise<JsonValue> => {
 const scrubSecretLikeExamples = (value: JsonValue): JsonValue => {
   if (typeof value === 'string') {
     return value.replaceAll(
-      /https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9/]+/g,
+      /https:\/\/hooks\.slack\.com\/services\/[^\s"'`)\]}]+/g,
       'https://example.invalid/slack-webhook'
     );
   }
@@ -133,6 +139,12 @@ const scrubSecretLikeExamples = (value: JsonValue): JsonValue => {
   }
 
   return value;
+};
+
+const assertNoSlackWebhookUrls = (content: string): void => {
+  if (content.includes('hooks.slack.com/services/')) {
+    throw new Error('DigitalOcean OpenAPI artefact sanitization failed: Slack webhook URL remains');
+  }
 };
 
 const writeCanonicalJson = async (outputPath: string, value: JsonValue): Promise<string> => {
@@ -172,10 +184,11 @@ const refreshDigitalOceanOpenApi = async (): Promise<void> => {
     await bundleOpenApi(sourceFile, bundlePath);
 
     const artifactPath = path.join(repoRoot, digitalOceanOpenApiArtifactPath);
-    const artifactContent = await writeCanonicalJson(
-      artifactPath,
-      scrubSecretLikeExamples(await parseBundledJson(bundlePath))
-    );
+    const bundledJson = await parseBundledJson(bundlePath);
+    const scrubbedArtifact = scrubSecretLikeExamples(bundledJson);
+    const scrubbedArtifactContent = stringifyCanonicalJson(scrubbedArtifact);
+    assertNoSlackWebhookUrls(scrubbedArtifactContent);
+    const artifactContent = await writeCanonicalJson(artifactPath, scrubbedArtifact);
     const artifactHash = sha256Hex(artifactContent);
     const provenance = validateDigitalOceanOpenApiProvenance(buildProvenance(pin, artifactHash));
     const provenancePath = path.join(repoRoot, digitalOceanOpenApiProvenancePath);
@@ -190,4 +203,8 @@ const refreshDigitalOceanOpenApi = async (): Promise<void> => {
   }
 };
 
-await refreshDigitalOceanOpenApi();
+export {assertNoSlackWebhookUrls, refreshDigitalOceanOpenApi, scrubSecretLikeExamples};
+
+if (import.meta.main) {
+  await refreshDigitalOceanOpenApi();
+}

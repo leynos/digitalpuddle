@@ -36,7 +36,10 @@ This plan has two phases:
    tooling, tests, documentation updates, CodeRabbit review, commits, and
    roadmap closure described below.
 
-The execution phase is not active. Silence is not approval.
+Execution is active. The pinned OpenAPI artefact, refresh tooling, provenance
+validation, documentation updates, audit override, and provenance URL binding
+have been implemented; the remaining work is to resolve review feedback,
+validate, commit, push, and close the roadmap entry after approval.
 
 ## Constraints
 
@@ -495,6 +498,10 @@ Observable success after implementation:
 - [x] 2026-06-02T02:50:00+02:00: Reproduced the `bun audit` finding for
       vulnerable transitive `qs` versions and added a `qs` `6.15.2` override.
       `bun audit` now reports no vulnerabilities.
+- [x] 2026-06-14T00:00:00+02:00: Resolved review feedback by making the
+      execution-state wording consistent, moving the MD013 suppression below
+      the imported guide H1, and adding fail-closed Slack webhook sanitization
+      before artefact writes.
 
 ## Surprises & Discoveries
 
@@ -532,6 +539,9 @@ Observable success after implementation:
   push-protection violations, even when they are examples rather than live
   credentials. Generated artefact output needs deterministic sanitisation
   before hashing and provenance recording.
+- Importing the refresh script for direct unit coverage brought it under the
+  stricter TypeScript checks used for tests. The script now uses indexed
+  `process.env` access and narrows extracted archive directories explicitly.
 
 ## Decision Log
 
@@ -576,6 +586,7 @@ Observable success after implementation:
 
 ## Outcomes & Retrospective
 
-Implementation has not started. Fill this section after the approved execution
-phase records the artefact, refresh tooling, validation evidence, CodeRabbit
-results, commits, and roadmap closure.
+Execution is active. The pinned OpenAPI artefact, refresh tooling, provenance
+validation, documentation updates, audit override, and provenance URL binding
+have been implemented; the remaining work is to resolve review feedback,
+validate, commit, push, and close the roadmap entry after approval.

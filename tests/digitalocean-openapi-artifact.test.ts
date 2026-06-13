@@ -17,6 +17,7 @@ import {
   type DigitalOceanOpenApiProvenance,
   type JsonValue
 } from '../src/openapi/artifact.ts';
+import {assertNoSlackWebhookUrls, scrubSecretLikeExamples} from '../sync-digitalocean-openapi.ts';
 
 const repoRoot = join(import.meta.dirname, '..');
 
@@ -134,6 +135,28 @@ describe('DigitalOcean OpenAPI artefact', () => {
         );
       }),
       {numRuns: 100}
+    );
+  });
+});
+
+describe('DigitalOcean OpenAPI refresh sanitization', () => {
+  test('scrubs Slack webhook examples before artefact writing', () => {
+    const scrubbed = scrubSecretLikeExamples({
+      nested: [
+        'https://hooks.slack.com/services/T000/B000/SECRET',
+        'wrapped https://hooks.slack.com/services/T000/B000/SECRET?foo=bar)'
+      ]
+    });
+    const content = stringifyCanonicalJson(scrubbed);
+
+    expect(content).not.toContain('hooks.slack.com/services/');
+    expect(content).toContain('https://example.invalid/slack-webhook');
+    expect(() => assertNoSlackWebhookUrls(content)).not.toThrow();
+  });
+
+  test('fails closed when a Slack webhook survives sanitization', () => {
+    expect(() => assertNoSlackWebhookUrls('https://hooks.slack.com/services/T000/B000/SECRET')).toThrow(
+      /sanitization failed/
     );
   });
 });
