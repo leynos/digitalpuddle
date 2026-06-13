@@ -4,6 +4,27 @@ import type {SimulationHandlers} from '@simulacrum/foundation-simulator';
 import type {ExtendedSimulationStore} from '../store/index.ts';
 import type {SimulationHandler} from './types.ts';
 
+type AuthenticatedUser = ReturnType<ExtendedSimulationStore['schema']['users']['selectTableAsList']>[number];
+type MembershipOrganization = ReturnType<ExtendedSimulationStore['selectors']['allGithubOrganizations']>[number];
+
+type MembershipProjection = {
+  readonly role: 'member';
+  readonly state: 'active';
+};
+
+export const serializeMembershipResponse = (
+  membership: MembershipProjection,
+  organization: MembershipOrganization,
+  user: AuthenticatedUser
+) => ({
+  url: `${organization.url}/memberships/${user.login}`,
+  organization_url: organization.url,
+  state: membership.state,
+  role: membership.role,
+  organization,
+  user
+});
+
 export const createUserHandlers = (simulationStore: ExtendedSimulationStore): SimulationHandlers => {
   const getState = () => simulationStore.store.getState();
 
@@ -43,14 +64,7 @@ export const createUserHandlers = (simulationStore: ExtendedSimulationStore): Si
       const organizations = simulationStore.selectors.allGithubOrganizations(getState());
       const memberships = organizations
         .filter((organization) => user.organizations.includes(organization.login))
-        .map((organization) => ({
-          url: `${organization.url}/memberships/${user.login}`,
-          state: 'active',
-          organization,
-          role: 'member',
-          organization_url: organization.url,
-          user
-        }));
+        .map((organization) => serializeMembershipResponse({state: 'active', role: 'member'}, organization, user));
       return response.status(200).json(memberships);
     }
   };

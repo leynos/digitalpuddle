@@ -47,8 +47,9 @@ inherited Simulacat tests must still pass during the transition.
   must not be added as part of the first implementation unless approved.
 - Documentation must use en-GB Oxford spelling and the Markdown rules in
   `docs/documentation-style-guide.md`.
-- The plan itself is pre-implementation. Stop after drafting, validating,
-  committing, pushing, and opening the draft PR for this execplan.
+- The plan was pre-implementation when drafted; implementation began only
+  after the execplan was drafted, validated, committed, pushed, and opened for
+  review.
 
 If satisfying the objective requires violating a constraint, stop, record the
 conflict in `Decision log`, and ask for direction.
@@ -474,7 +475,7 @@ pwd
 Expected output ends with:
 
 ```plaintext
-/home/leynos/.lody/repos/github---leynos---digitalpuddle/worktrees/f3e971f6-6558-4cd2-a380-89ddce509231
+<repo-root>
 ```
 
 Before implementing, confirm the plan is approved and the branch is correct:
@@ -597,7 +598,7 @@ Branch after rename:
 1-2-2-introduce-target-source-layout-incrementally
 
 Leta workspace:
-Added workspace: /home/leynos/.lody/repos/github---leynos---digitalpuddle/worktrees/f3e971f6-6558-4cd2-a380-89ddce509231
+Added workspace: <repo-root>
 ```
 
 Relevant project documents:

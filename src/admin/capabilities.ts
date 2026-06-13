@@ -8,10 +8,10 @@
  *
  * The module depends on `src/openapi/projections.ts` for the pure
  * `buildCapabilityDocumentationMetadata()` projection and exposes
- * `capabilitiesPayload()` as its public API. `src/extend-api.ts` consumes that
- * function when registering the private admin route, keeping admin routing
- * independent of projection details while still allowing the payload cache to
- * report startup failures through structured logs.
+ * `capabilitiesPayload()` as its public API. `src/admin/routes.ts` consumes
+ * that function when registering the private admin route, keeping admin
+ * routing independent of projection details while still allowing the payload
+ * cache to report startup failures through structured logs.
  */
 import {buildCapabilityDocumentationMetadata} from '../openapi/projections.ts';
 import type {CapabilityDocumentationMetadata} from '../openapi/projections.ts';
