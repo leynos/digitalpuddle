@@ -99,7 +99,8 @@ make nixie 2>&1 | tee /tmp/nixie-digitalpuddle-${BRANCH}.out
 Build the package when changing the CommonJS CLI:
 
 ```bash
-make build 2>&1 | tee /tmp/build-digitalpuddle-$(git branch --show).out
+BRANCH=$(git branch --show-current | tr '/ ' '__')
+make build 2>&1 | tee /tmp/build-digitalpuddle-${BRANCH}.out
 ```
 
 ## 4. Testing expectations

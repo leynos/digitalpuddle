@@ -637,7 +637,7 @@ choice in `Decision log`:
 
 ```typescript
 // src/simulation.ts
-export function simulation(options?: SimulationOptions): SimulationApi;
+export const simulation: (args?: GitHubSimulatorArgs) => FoundationSimulator<ExtendedSimulationStore>;
 ```
 
 `src/index.ts` should re-export this public API and keep the package-facing
@@ -652,9 +652,9 @@ export const extendDigitalPuddleAdminRoutes: FoundationExtendRouter;
 a later package-boundary task removes it.
 
 ```typescript
-// src/engines/interfaces.ts
+// src/engines/index.ts
 export interface KubernetesEngine {
-  readonly name: string;
+  readonly descriptor: EngineDescriptor;
 }
 ```
 
