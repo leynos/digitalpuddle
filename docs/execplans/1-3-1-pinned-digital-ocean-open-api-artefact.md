@@ -502,6 +502,13 @@ Observable success after implementation:
       execution-state wording consistent, moving the MD013 suppression below
       the imported guide H1, and adding fail-closed Slack webhook sanitization
       before artefact writes.
+- [x] 2026-06-14T00:00:00+02:00: Used Wyvern and scribe agent teams to verify
+      the follow-up findings. Fixed the still-valid sync command testability,
+      credential sanitization, command-path coverage, atomic-write,
+      developer-guide, and roadmap findings. Skipped the stale ExecPlan wording
+      finding because current text already says execution is active, and
+      skipped `trybuild` because this TypeScript/Bun repository has no Rust
+      compile-time fixture convention.
 
 ## Surprises & Discoveries
 
@@ -542,6 +549,11 @@ Observable success after implementation:
 - Importing the refresh script for direct unit coverage brought it under the
   stricter TypeScript checks used for tests. The script now uses indexed
   `process.env` access and narrows extracted archive directories explicitly.
+- Bun 1.3.14 could not resolve `@redocly/cli` through either
+  `bunx -p @redocly/cli@2.31.5 redocly` or
+  `bunx @redocly/cli@2.31.5`. The refresh script now runs the declared dev
+  dependency at `node_modules/@redocly/cli/bin/cli.js`, while the provenance
+  still records the pinned tool name and version.
 
 ## Decision Log
 

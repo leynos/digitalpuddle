@@ -6,6 +6,7 @@
  * artefact, and records machine-readable provenance beside it.
  */
 import {execFile} from 'node:child_process';
+import type {Dirent} from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -32,21 +33,49 @@ const execFileAsync = promisify(execFile);
 const repoRoot = import.meta.dirname;
 const defaultTimeoutMs = 60000;
 const maxTimeoutMs = 10 * 60 * 1000;
+const syncTimeoutEnvKey = 'DIGITALPUDDLE_OPENAPI_SYNC_TIMEOUT_MS';
 const bundlingTool = {
   name: '@redocly/cli',
   version: '2.31.5'
 } as const;
+
+type SyncLogger = {
+  info: (...values: readonly unknown[]) => void;
+  error: (...values: readonly unknown[]) => void;
+};
+
+type SyncFileSystem = {
+  mkdir: typeof fs.mkdir;
+  mkdtemp: typeof fs.mkdtemp;
+  readFile: typeof fs.readFile;
+  readdir: typeof fs.readdir;
+  rename: typeof fs.rename;
+  rm: typeof fs.rm;
+  writeFile: typeof fs.writeFile;
+};
+
+type SyncDependencies = {
+  readonly execFileAsync: typeof execFileAsync;
+  readonly fetchBytes: (url: string, timeoutMs: number) => Promise<Uint8Array>;
+  readonly fs: SyncFileSystem;
+  readonly logger: SyncLogger;
+  readonly now: () => Date;
+};
+
+type RefreshOptions = {
+  readonly argv?: readonly string[];
+  readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly repoRoot?: string;
+  readonly tempRootParent?: string;
+};
 
 const parseTimeoutMs = (value: string | undefined): number => {
   const parsed = Number(value ?? defaultTimeoutMs);
   return Number.isInteger(parsed) && parsed > 0 && parsed <= maxTimeoutMs ? parsed : defaultTimeoutMs;
 };
 
-// biome-ignore lint/complexity/useLiteralKeys: strict index-signature checking requires bracket access.
-const timeoutMs = parseTimeoutMs(process.env['DIGITALPUDDLE_OPENAPI_SYNC_TIMEOUT_MS']);
-
-const readPinArgument = (): string => {
-  const pinArg = process.argv.find((argument) => argument.startsWith('--pin='));
+const readPinArgument = (argv: readonly string[]): string => {
+  const pinArg = argv.find((argument) => argument.startsWith('--pin='));
   const pin = pinArg?.slice('--pin='.length) || digitalOceanOpenApiPin;
 
   if (!digitalOceanOpenApiCommitPattern.test(pin)) {
@@ -56,9 +85,9 @@ const readPinArgument = (): string => {
   return pin;
 };
 
-const fetchBytes = async (url: string): Promise<Uint8Array> => {
+const fetchBytes = async (url: string, requestTimeoutMs: number): Promise<Uint8Array> => {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
 
   try {
     const response = await fetch(url, {signal: controller.signal});
@@ -71,14 +100,23 @@ const fetchBytes = async (url: string): Promise<Uint8Array> => {
   }
 };
 
-const extractArchive = async (archivePath: string, destination: string): Promise<void> => {
-  await execFileAsync('tar', ['-xzf', archivePath, '-C', destination], {
-    timeout: timeoutMs
+const extractArchive = async (
+  archivePath: string,
+  destination: string,
+  dependencies: SyncDependencies,
+  requestTimeoutMs: number
+): Promise<void> => {
+  await dependencies.execFileAsync('tar', ['-xzf', archivePath, '-C', destination], {
+    timeout: requestTimeoutMs
   });
 };
 
-const findExtractedRepositoryRoot = async (destination: string, pin: string): Promise<string> => {
-  const entries = await fs.readdir(destination, {withFileTypes: true});
+const findExtractedRepositoryRoot = async (
+  destination: string,
+  pin: string,
+  dependencies: SyncDependencies
+): Promise<string> => {
+  const entries = (await dependencies.fs.readdir(destination, {withFileTypes: true})) as Dirent[];
   const expectedPrefix = `openapi-${pin}`;
   const directories = entries.filter((entry) => entry.isDirectory() && entry.name.startsWith(expectedPrefix));
 
@@ -96,38 +134,40 @@ const findExtractedRepositoryRoot = async (destination: string, pin: string): Pr
   return path.join(destination, repositoryRoot.name);
 };
 
-const bundleOpenApi = async (sourcePath: string, outputPath: string): Promise<void> => {
-  await execFileAsync(
-    'bunx',
-    [
-      '-p',
-      `@redocly/cli@${bundlingTool.version}`,
-      'redocly',
-      'bundle',
-      sourcePath,
-      '--output',
-      outputPath,
-      '--ext',
-      'json'
-    ],
+const bundleOpenApi = async (
+  sourcePath: string,
+  outputPath: string,
+  dependencies: SyncDependencies,
+  commandRepoRoot: string,
+  requestTimeoutMs: number
+): Promise<void> => {
+  await dependencies.execFileAsync(
+    'bun',
+    ['node_modules/@redocly/cli/bin/cli.js', 'bundle', sourcePath, '--output', outputPath, '--ext', 'json'],
     {
-      cwd: repoRoot,
-      timeout: timeoutMs * 2
+      cwd: commandRepoRoot,
+      timeout: requestTimeoutMs * 2
     }
   );
 };
 
-const parseBundledJson = async (bundledPath: string): Promise<JsonValue> => {
-  const content = await fs.readFile(bundledPath, 'utf8');
+const parseBundledJson = async (bundledPath: string, dependencies: SyncDependencies): Promise<JsonValue> => {
+  const content = await dependencies.fs.readFile(bundledPath, 'utf8');
   return JSON.parse(content) as JsonValue;
 };
 
 const scrubSecretLikeExamples = (value: JsonValue): JsonValue => {
   if (typeof value === 'string') {
-    return value.replaceAll(
-      /https:\/\/hooks\.slack\.com\/services\/[^\s"'`)\]}]+/g,
-      'https://example.invalid/slack-webhook'
-    );
+    return value
+      .replaceAll(/https:\/\/hooks\.slack\.com\/services\/[^\s"'`)\]}]+/g, 'https://example.invalid/slack-webhook')
+      .replaceAll(
+        /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g,
+        'SANITIZED DIGITALPUDDLE EXAMPLE CERTIFICATE'
+      )
+      .replaceAll(
+        /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,
+        'SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY'
+      );
   }
 
   if (Array.isArray(value)) {
@@ -141,20 +181,30 @@ const scrubSecretLikeExamples = (value: JsonValue): JsonValue => {
   return value;
 };
 
-const assertNoSlackWebhookUrls = (content: string): void => {
+const assertNoCredentialLikeExamples = (content: string): void => {
   if (content.includes('hooks.slack.com/services/')) {
     throw new Error('DigitalOcean OpenAPI artefact sanitization failed: Slack webhook URL remains');
   }
+
+  if (content.includes('-----BEGIN PRIVATE KEY-----') || content.includes('-----BEGIN CERTIFICATE-----')) {
+    throw new Error('DigitalOcean OpenAPI artefact sanitization failed: PEM block remains');
+  }
 };
 
-const writeCanonicalJson = async (outputPath: string, value: JsonValue): Promise<string> => {
+const writeCanonicalJson = async (
+  outputPath: string,
+  value: JsonValue,
+  dependencies: SyncDependencies
+): Promise<string> => {
   const content = stringifyCanonicalJson(value);
-  await fs.mkdir(path.dirname(outputPath), {recursive: true});
-  await fs.writeFile(outputPath, content, 'utf8');
+  await dependencies.fs.mkdir(path.dirname(outputPath), {recursive: true});
+  const tempOutputPath = `${outputPath}.${process.pid}.${dependencies.now().getTime()}.tmp`;
+  await dependencies.fs.writeFile(tempOutputPath, content, 'utf8');
+  await dependencies.fs.rename(tempOutputPath, outputPath);
   return content;
 };
 
-const buildProvenance = (pin: string, artifactHash: string): DigitalOceanOpenApiProvenance => ({
+const buildProvenance = (pin: string, artifactHash: string, now: () => Date): DigitalOceanOpenApiProvenance => ({
   upstreamRepository: digitalOceanOpenApiRepositoryUrl,
   upstreamCommit: pin,
   sourcePath: digitalOceanOpenApiSourcePath,
@@ -164,46 +214,85 @@ const buildProvenance = (pin: string, artifactHash: string): DigitalOceanOpenApi
   bundlingTool,
   generatedArtifactPath: digitalOceanOpenApiArtifactPath,
   generatedArtifactSha256: artifactHash,
-  refreshedAt: new Date().toISOString()
+  refreshedAt: now().toISOString()
 });
 
-const refreshDigitalOceanOpenApi = async (): Promise<void> => {
-  const pin = readPinArgument();
+const createDefaultSyncDependencies = (): SyncDependencies => ({
+  execFileAsync,
+  fetchBytes,
+  fs,
+  logger: console,
+  now: () => new Date()
+});
+
+const refreshDigitalOceanOpenApi = async (
+  options: RefreshOptions = {},
+  dependencies = createDefaultSyncDependencies()
+): Promise<void> => {
+  const commandRepoRoot = options.repoRoot ?? repoRoot;
+  const commandEnv = options.env ?? process.env;
+  const commandTimeoutMs = parseTimeoutMs(commandEnv[syncTimeoutEnvKey]);
+  const pin = readPinArgument(options.argv ?? process.argv);
   const archiveUrl = getDigitalOceanOpenApiSourceArchiveUrl(pin);
-  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'digitalpuddle-openapi-'));
+  const startedAt = dependencies.now();
+  const tempRoot = await dependencies.fs.mkdtemp(
+    path.join(options.tempRootParent ?? os.tmpdir(), 'digitalpuddle-openapi-')
+  );
   const archivePath = path.join(tempRoot, 'openapi.tar.gz');
   const bundlePath = path.join(tempRoot, 'digitalocean.openapi.raw.json');
 
   try {
-    console.log('[syncDigitalOceanOpenApi] fetching source archive from', archiveUrl);
-    await fs.writeFile(archivePath, await fetchBytes(archiveUrl));
-    await extractArchive(archivePath, tempRoot);
+    dependencies.logger.info('[syncDigitalOceanOpenApi] fetching source archive from', archiveUrl);
+    await dependencies.fs.writeFile(archivePath, await dependencies.fetchBytes(archiveUrl, commandTimeoutMs));
+    await extractArchive(archivePath, tempRoot, dependencies, commandTimeoutMs);
 
-    const extractedRoot = await findExtractedRepositoryRoot(tempRoot, pin);
+    const extractedRoot = await findExtractedRepositoryRoot(tempRoot, pin, dependencies);
     const sourceFile = path.join(extractedRoot, digitalOceanOpenApiSourcePath);
-    await bundleOpenApi(sourceFile, bundlePath);
+    await bundleOpenApi(sourceFile, bundlePath, dependencies, commandRepoRoot, commandTimeoutMs);
 
-    const artifactPath = path.join(repoRoot, digitalOceanOpenApiArtifactPath);
-    const bundledJson = await parseBundledJson(bundlePath);
+    const artifactPath = path.join(commandRepoRoot, digitalOceanOpenApiArtifactPath);
+    const bundledJson = await parseBundledJson(bundlePath, dependencies);
     const scrubbedArtifact = scrubSecretLikeExamples(bundledJson);
     const scrubbedArtifactContent = stringifyCanonicalJson(scrubbedArtifact);
-    assertNoSlackWebhookUrls(scrubbedArtifactContent);
-    const artifactContent = await writeCanonicalJson(artifactPath, scrubbedArtifact);
+    assertNoCredentialLikeExamples(scrubbedArtifactContent);
+    const artifactContent = await writeCanonicalJson(artifactPath, scrubbedArtifact, dependencies);
     const artifactHash = sha256Hex(artifactContent);
-    const provenance = validateDigitalOceanOpenApiProvenance(buildProvenance(pin, artifactHash));
-    const provenancePath = path.join(repoRoot, digitalOceanOpenApiProvenancePath);
+    const provenance = validateDigitalOceanOpenApiProvenance(buildProvenance(pin, artifactHash, dependencies.now));
+    const provenancePath = path.join(commandRepoRoot, digitalOceanOpenApiProvenancePath);
 
-    await writeCanonicalJson(provenancePath, provenance as unknown as JsonValue);
+    await writeCanonicalJson(provenancePath, provenance as unknown as JsonValue, dependencies);
 
-    console.log('[syncDigitalOceanOpenApi] wrote artefact to', artifactPath);
-    console.log('[syncDigitalOceanOpenApi] wrote provenance to', provenancePath);
-    console.log('[syncDigitalOceanOpenApi] artefact sha256', artifactHash);
+    dependencies.logger.info('[syncDigitalOceanOpenApi] wrote artefact to', artifactPath);
+    dependencies.logger.info('[syncDigitalOceanOpenApi] wrote provenance to', provenancePath);
+    dependencies.logger.info('[syncDigitalOceanOpenApi] artefact sha256', artifactHash);
+    dependencies.logger.info('[syncDigitalOceanOpenApi] completed', {
+      elapsedMs: dependencies.now().getTime() - startedAt.getTime(),
+      pin
+    });
+  } catch (error) {
+    dependencies.logger.error('[syncDigitalOceanOpenApi] failed', {
+      archiveUrl,
+      artifactPath: path.join(commandRepoRoot, digitalOceanOpenApiArtifactPath),
+      elapsedMs: dependencies.now().getTime() - startedAt.getTime(),
+      error,
+      pin
+    });
+    throw error;
   } finally {
-    await fs.rm(tempRoot, {recursive: true, force: true});
+    await dependencies.fs.rm(tempRoot, {recursive: true, force: true});
   }
 };
 
-export {assertNoSlackWebhookUrls, refreshDigitalOceanOpenApi, scrubSecretLikeExamples};
+const assertNoSlackWebhookUrls = assertNoCredentialLikeExamples;
+
+export {
+  assertNoCredentialLikeExamples,
+  assertNoSlackWebhookUrls,
+  createDefaultSyncDependencies,
+  refreshDigitalOceanOpenApi,
+  scrubSecretLikeExamples,
+  type SyncDependencies
+};
 
 if (import.meta.main) {
   await refreshDigitalOceanOpenApi();
