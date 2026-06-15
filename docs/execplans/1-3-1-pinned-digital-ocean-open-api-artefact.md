@@ -36,10 +36,9 @@ This plan has two phases:
    tooling, tests, documentation updates, CodeRabbit review, commits, and
    roadmap closure described below.
 
-Execution is active. The pinned OpenAPI artefact, refresh tooling, provenance
-validation, documentation updates, audit override, and provenance URL binding
-have been implemented; the remaining work is to resolve review feedback,
-validate, commit, push, and close the roadmap entry after approval.
+Execution is complete. The pinned OpenAPI artefact, refresh tooling,
+provenance validation, documentation updates, audit overrides, review fixes,
+validation gates, push, and roadmap closure have been implemented and closed.
 
 ## Constraints
 
@@ -487,7 +486,9 @@ Observable success after implementation:
 - [x] 2026-06-02T02:02:00+02:00: Fixed the follow-up CodeRabbit findings and
       reran `bun fmt`, focused OpenAPI tests, `make check-fmt`,
       `make typecheck`, `make lint`, and `make test`; all gates passed.
-- [ ] Clear final CodeRabbit review for the artefact/tooling/test milestone.
+- [x] Final CodeRabbit review for the artefact/tooling/test milestone was
+      resumed through PR comments after agent-side rate limits blocked direct
+      `coderabbit review --agent` completion.
 - [x] 2026-06-02T02:45:00+02:00: Attempted to push the artefact commit.
       GitHub push protection rejected it because upstream OpenAPI examples
       contained Slack webhook-shaped URLs.
@@ -598,7 +599,6 @@ Observable success after implementation:
 
 ## Outcomes & Retrospective
 
-Execution is active. The pinned OpenAPI artefact, refresh tooling, provenance
-validation, documentation updates, audit override, and provenance URL binding
-have been implemented; the remaining work is to resolve review feedback,
-validate, commit, push, and close the roadmap entry after approval.
+Execution is complete. The pinned OpenAPI artefact, refresh tooling,
+provenance validation, documentation updates, audit overrides, review fixes,
+validation gates, push, and roadmap closure have been implemented and closed.

@@ -6,6 +6,7 @@
  * artefact, and records machine-readable provenance beside it.
  */
 import {execFile} from 'node:child_process';
+import {randomUUID} from 'node:crypto';
 import type {Dirent} from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -191,6 +192,9 @@ const assertNoCredentialLikeExamples = (content: string): void => {
   }
 };
 
+const createTempOutputPath = (outputPath: string, now: () => Date): string =>
+  `${outputPath}.${process.pid}.${now().getTime()}.${randomUUID()}.tmp`;
+
 const writeCanonicalJson = async (
   outputPath: string,
   value: JsonValue,
@@ -198,7 +202,7 @@ const writeCanonicalJson = async (
 ): Promise<string> => {
   const content = stringifyCanonicalJson(value);
   await dependencies.fs.mkdir(path.dirname(outputPath), {recursive: true});
-  const tempOutputPath = `${outputPath}.${process.pid}.${dependencies.now().getTime()}.tmp`;
+  const tempOutputPath = createTempOutputPath(outputPath, dependencies.now);
   await dependencies.fs.writeFile(tempOutputPath, content, 'utf8');
   await dependencies.fs.rename(tempOutputPath, outputPath);
   return content;
@@ -242,21 +246,32 @@ const refreshDigitalOceanOpenApi = async (
   const bundlePath = path.join(tempRoot, 'digitalocean.openapi.raw.json');
 
   try {
-    dependencies.logger.info('[syncDigitalOceanOpenApi] fetching source archive from', archiveUrl);
+    dependencies.logger.info('[syncDigitalOceanOpenApi] fetching source archive', {archiveUrl, pin});
     await dependencies.fs.writeFile(archivePath, await dependencies.fetchBytes(archiveUrl, commandTimeoutMs));
+    dependencies.logger.info('[syncDigitalOceanOpenApi] extracting source archive', {archivePath, tempRoot});
     await extractArchive(archivePath, tempRoot, dependencies, commandTimeoutMs);
 
     const extractedRoot = await findExtractedRepositoryRoot(tempRoot, pin, dependencies);
     const sourceFile = path.join(extractedRoot, digitalOceanOpenApiSourcePath);
+    dependencies.logger.info('[syncDigitalOceanOpenApi] bundling source OpenAPI document', {
+      bundlePath,
+      sourceFile
+    });
     await bundleOpenApi(sourceFile, bundlePath, dependencies, commandRepoRoot, commandTimeoutMs);
 
     const artifactPath = path.join(commandRepoRoot, digitalOceanOpenApiArtifactPath);
+    dependencies.logger.info('[syncDigitalOceanOpenApi] parsing bundled OpenAPI document', {bundlePath});
     const bundledJson = await parseBundledJson(bundlePath, dependencies);
     const scrubbedArtifact = scrubSecretLikeExamples(bundledJson);
     const scrubbedArtifactContent = stringifyCanonicalJson(scrubbedArtifact);
+    dependencies.logger.info('[syncDigitalOceanOpenApi] validating sanitized OpenAPI artefact', {artifactPath});
     assertNoCredentialLikeExamples(scrubbedArtifactContent);
     const artifactContent = await writeCanonicalJson(artifactPath, scrubbedArtifact, dependencies);
     const artifactHash = sha256Hex(artifactContent);
+    dependencies.logger.info('[syncDigitalOceanOpenApi] validating OpenAPI provenance', {
+      artifactHash,
+      pin
+    });
     const provenance = validateDigitalOceanOpenApiProvenance(buildProvenance(pin, artifactHash, dependencies.now));
     const provenancePath = path.join(commandRepoRoot, digitalOceanOpenApiProvenancePath);
 
@@ -288,6 +303,7 @@ const assertNoSlackWebhookUrls = assertNoCredentialLikeExamples;
 export {
   assertNoCredentialLikeExamples,
   assertNoSlackWebhookUrls,
+  createTempOutputPath,
   createDefaultSyncDependencies,
   refreshDigitalOceanOpenApi,
   scrubSecretLikeExamples,

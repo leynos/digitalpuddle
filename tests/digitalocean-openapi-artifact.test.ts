@@ -22,6 +22,7 @@ import {
 import {
   assertNoCredentialLikeExamples,
   assertNoSlackWebhookUrls,
+  createTempOutputPath,
   refreshDigitalOceanOpenApi,
   scrubSecretLikeExamples,
   type SyncDependencies
@@ -227,6 +228,48 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
       expect(dependencies.calls).toContain('bundle');
     } finally {
       await rm(tempRoot, {recursive: true, force: true});
+    }
+  });
+
+  test('keeps temporary output paths unique with a frozen clock', async () => {
+    const outputPath = join(repoRoot, digitalOceanOpenApiArtifactPath);
+
+    expect(createTempOutputPath(outputPath, () => fixedNow)).not.toBe(createTempOutputPath(outputPath, () => fixedNow));
+  });
+
+  test('supports concurrent refresh calls with a frozen clock', async () => {
+    const leftRoot = await mkdtemp(join(os.tmpdir(), 'digitalpuddle-sync-left-'));
+    const rightRoot = await mkdtemp(join(os.tmpdir(), 'digitalpuddle-sync-right-'));
+    const dependencies = createFakeSyncDependencies();
+
+    try {
+      await Promise.all([
+        refreshDigitalOceanOpenApi(
+          {
+            argv: ['bun', 'sync-digitalocean-openapi.ts', '--pin=0123456789abcdef0123456789abcdef01234567'],
+            repoRoot: leftRoot,
+            tempRootParent: leftRoot
+          },
+          dependencies
+        ),
+        refreshDigitalOceanOpenApi(
+          {
+            argv: ['bun', 'sync-digitalocean-openapi.ts', '--pin=0123456789abcdef0123456789abcdef01234567'],
+            repoRoot: rightRoot,
+            tempRootParent: rightRoot
+          },
+          dependencies
+        )
+      ]);
+
+      await expect(readFile(join(leftRoot, digitalOceanOpenApiArtifactPath), 'utf8')).resolves.toContain(
+        'SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY'
+      );
+      await expect(readFile(join(rightRoot, digitalOceanOpenApiArtifactPath), 'utf8')).resolves.toContain(
+        'SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY'
+      );
+    } finally {
+      await Promise.all([rm(leftRoot, {recursive: true, force: true}), rm(rightRoot, {recursive: true, force: true})]);
     }
   });
 });
