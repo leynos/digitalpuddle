@@ -101,6 +101,7 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
         '[syncDigitalOceanOpenApi] extracting source archive',
         '[syncDigitalOceanOpenApi] bundling source OpenAPI document',
         '[syncDigitalOceanOpenApi] parsing bundled OpenAPI document',
+        '[syncDigitalOceanOpenApi] scrubbed credential-like examples',
         '[syncDigitalOceanOpenApi] validating sanitized OpenAPI artefact',
         '[syncDigitalOceanOpenApi] validating OpenAPI provenance',
         '[syncDigitalOceanOpenApi] wrote artefact to',

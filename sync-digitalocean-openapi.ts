@@ -264,6 +264,7 @@ const refreshDigitalOceanOpenApi = async (
     const bundledJson = await parseBundledJson(bundlePath, dependencies);
     const scrubbedArtifact = scrubSecretLikeExamples(bundledJson);
     const scrubbedArtifactContent = stringifyCanonicalJson(scrubbedArtifact);
+    dependencies.logger.info('[syncDigitalOceanOpenApi] scrubbed credential-like examples', {artifactPath});
     dependencies.logger.info('[syncDigitalOceanOpenApi] validating sanitized OpenAPI artefact', {artifactPath});
     assertNoCredentialLikeExamples(scrubbedArtifactContent);
     const artifactContent = await writeCanonicalJson(artifactPath, scrubbedArtifact, dependencies);
