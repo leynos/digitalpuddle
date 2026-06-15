@@ -59,6 +59,7 @@ type SyncDependencies = {
   readonly execFileAsync: typeof execFileAsync;
   readonly fetchBytes: (url: string, timeoutMs: number) => Promise<Uint8Array>;
   readonly fs: SyncFileSystem;
+  readonly getPid: () => number;
   readonly logger: SyncLogger;
   readonly now: () => Date;
 };
@@ -192,8 +193,19 @@ const assertNoCredentialLikeExamples = (content: string): void => {
   }
 };
 
-const createTempOutputPath = (outputPath: string, now: () => Date): string =>
-  `${outputPath}.${process.pid}.${now().getTime()}.${randomUUID()}.tmp`;
+const createTempOutputPath = (outputPath: string, now: () => Date, getPid: () => number): string =>
+  `${outputPath}.${getPid()}.${now().getTime()}.${randomUUID()}.tmp`;
+
+const writeCanonicalJsonContent = async (
+  outputPath: string,
+  content: string,
+  dependencies: SyncDependencies
+): Promise<void> => {
+  await dependencies.fs.mkdir(path.dirname(outputPath), {recursive: true});
+  const tempOutputPath = createTempOutputPath(outputPath, dependencies.now, dependencies.getPid);
+  await dependencies.fs.writeFile(tempOutputPath, content, 'utf8');
+  await dependencies.fs.rename(tempOutputPath, outputPath);
+};
 
 const writeCanonicalJson = async (
   outputPath: string,
@@ -201,10 +213,7 @@ const writeCanonicalJson = async (
   dependencies: SyncDependencies
 ): Promise<string> => {
   const content = stringifyCanonicalJson(value);
-  await dependencies.fs.mkdir(path.dirname(outputPath), {recursive: true});
-  const tempOutputPath = createTempOutputPath(outputPath, dependencies.now);
-  await dependencies.fs.writeFile(tempOutputPath, content, 'utf8');
-  await dependencies.fs.rename(tempOutputPath, outputPath);
+  await writeCanonicalJsonContent(outputPath, content, dependencies);
   return content;
 };
 
@@ -225,6 +234,7 @@ const createDefaultSyncDependencies = (): SyncDependencies => ({
   execFileAsync,
   fetchBytes,
   fs,
+  getPid: () => process.pid,
   logger: console,
   now: () => new Date()
 });
@@ -267,7 +277,8 @@ const refreshDigitalOceanOpenApi = async (
     dependencies.logger.info('[syncDigitalOceanOpenApi] scrubbed credential-like examples', {artifactPath});
     dependencies.logger.info('[syncDigitalOceanOpenApi] validating sanitized OpenAPI artefact', {artifactPath});
     assertNoCredentialLikeExamples(scrubbedArtifactContent);
-    const artifactContent = await writeCanonicalJson(artifactPath, scrubbedArtifact, dependencies);
+    await writeCanonicalJsonContent(artifactPath, scrubbedArtifactContent, dependencies);
+    const artifactContent = scrubbedArtifactContent;
     const artifactHash = sha256Hex(artifactContent);
     dependencies.logger.info('[syncDigitalOceanOpenApi] validating OpenAPI provenance', {
       artifactHash,
@@ -278,9 +289,9 @@ const refreshDigitalOceanOpenApi = async (
 
     await writeCanonicalJson(provenancePath, provenance as unknown as JsonValue, dependencies);
 
-    dependencies.logger.info('[syncDigitalOceanOpenApi] wrote artefact to', artifactPath);
-    dependencies.logger.info('[syncDigitalOceanOpenApi] wrote provenance to', provenancePath);
-    dependencies.logger.info('[syncDigitalOceanOpenApi] artefact sha256', artifactHash);
+    dependencies.logger.info('[syncDigitalOceanOpenApi] wrote artefact to', {artifactPath});
+    dependencies.logger.info('[syncDigitalOceanOpenApi] wrote provenance to', {provenancePath});
+    dependencies.logger.info('[syncDigitalOceanOpenApi] artefact sha256', {artifactHash});
     dependencies.logger.info('[syncDigitalOceanOpenApi] completed', {
       elapsedMs: dependencies.now().getTime() - startedAt.getTime(),
       pin

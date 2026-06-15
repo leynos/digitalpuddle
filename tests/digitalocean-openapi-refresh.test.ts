@@ -1,33 +1,66 @@
 /**
  * @file Tests for the DigitalOcean OpenAPI refresh command.
  */
-import fs, {mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
+import {mkdtemp, readFile, rm} from 'node:fs/promises';
 import os from 'node:os';
 import {join} from 'node:path';
-import {describe, expect, test} from 'bun:test';
+import {afterEach, describe, expect, test} from 'bun:test';
+import fc from 'fast-check';
 import {
   digitalOceanOpenApiArtifactPath,
   digitalOceanOpenApiProvenancePath,
-  digitalOceanOpenApiSourcePath,
   getDigitalOceanOpenApiSourceArchiveUrl,
   sha256Hex,
   stringifyCanonicalJson,
-  validateDigitalOceanOpenApiProvenance
+  validateDigitalOceanOpenApiProvenance,
+  type JsonValue
 } from '../src/openapi/artifact.ts';
 import {
   assertNoCredentialLikeExamples,
   assertNoSlackWebhookUrls,
   createTempOutputPath,
   refreshDigitalOceanOpenApi,
-  scrubSecretLikeExamples,
-  type SyncDependencies
+  scrubSecretLikeExamples
 } from '../sync-digitalocean-openapi.ts';
+import {createFakeSyncDependencies, fakePin, fixedNow} from './support/digitalocean-openapi-refresh-helpers.ts';
 
 const repoRoot = join(import.meta.dirname, '..');
-const fixedNow = new Date('2026-06-14T00:00:00.000Z');
-const fakePin = '0123456789abcdef0123456789abcdef01234567';
+const testTempRoots: string[] = [];
+
+const mkTestTempRoot = async (prefix: string): Promise<string> => {
+  const tempRoot = await mkdtemp(join(os.tmpdir(), prefix));
+  testTempRoots.push(tempRoot);
+  return tempRoot;
+};
+
+const slackWebhookExample = fc
+  .stringMatching(/[A-Za-z0-9/?=_-]{1,24}/)
+  .map((suffix) => `wrapped https://hooks.slack.com/services/T000/B000/${suffix})`);
+
+const privateKeyExample = fc
+  .string({minLength: 1, maxLength: 48})
+  .map((body) => `-----BEGIN PRIVATE KEY-----\n${body}\n-----END PRIVATE KEY-----`);
+
+const certificateExample = fc
+  .string({minLength: 1, maxLength: 48})
+  .map((body) => `-----BEGIN CERTIFICATE-----\n${body}\n-----END CERTIFICATE-----`);
+
+const sensitiveJsonValue = fc.letrec((tie) => ({
+  value: fc.oneof(
+    slackWebhookExample,
+    privateKeyExample,
+    certificateExample,
+    fc.string(),
+    fc.array(tie('value'), {maxLength: 4}),
+    fc.dictionary(fc.string({maxLength: 8}), tie('value'), {maxKeys: 4})
+  )
+})).value as fc.Arbitrary<JsonValue>;
 
 describe('DigitalOcean OpenAPI refresh sanitization', () => {
+  afterEach(async () => {
+    await Promise.all(testTempRoots.splice(0).map((tempRoot) => rm(tempRoot, {force: true, recursive: true})));
+  });
+
   test('scrubs credential-like examples before artefact writing', () => {
     const scrubbed = scrubSecretLikeExamples({
       nested: [
@@ -44,6 +77,22 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
     expect(content).not.toContain('-----BEGIN CERTIFICATE-----');
     expect(content).toContain('https://example.invalid/slack-webhook');
     expect(() => assertNoSlackWebhookUrls(content)).not.toThrow();
+  });
+
+  test('scrubs credential-like examples idempotently', () => {
+    fc.assert(
+      fc.property(sensitiveJsonValue, (value) => {
+        const scrubbed = scrubSecretLikeExamples(value);
+        const scrubbedContent = stringifyCanonicalJson(scrubbed);
+
+        expect(scrubSecretLikeExamples(scrubbed)).toEqual(scrubbed);
+        expect(scrubbedContent).not.toContain('hooks.slack.com/services/');
+        expect(scrubbedContent).not.toContain('-----BEGIN PRIVATE KEY-----');
+        expect(scrubbedContent).not.toContain('-----BEGIN CERTIFICATE-----');
+        expect(() => assertNoCredentialLikeExamples(scrubbedContent)).not.toThrow();
+      }),
+      {numRuns: 100}
+    );
   });
 
   test('fails closed when a Slack webhook survives sanitization', () => {
@@ -69,63 +118,74 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
   });
 
   test('writes sanitized artefact and provenance through the command flow', async () => {
-    const tempRoot = await mkdtemp(join(os.tmpdir(), 'digitalpuddle-sync-test-'));
+    const tempRoot = await mkTestTempRoot('digitalpuddle-sync-test-');
     const dependencies = createFakeSyncDependencies();
 
-    try {
-      await refreshDigitalOceanOpenApi(
-        {
-          argv: ['bun', 'sync-digitalocean-openapi.ts', `--pin=${fakePin}`],
-          repoRoot: tempRoot,
-          tempRootParent: tempRoot
-        },
-        dependencies
-      );
+    await refreshDigitalOceanOpenApi(
+      {
+        argv: ['bun', 'sync-digitalocean-openapi.ts', `--pin=${fakePin}`],
+        repoRoot: tempRoot,
+        tempRootParent: tempRoot
+      },
+      dependencies
+    );
 
-      const artifactContent = await readFile(join(tempRoot, digitalOceanOpenApiArtifactPath), 'utf8');
-      const provenance = validateDigitalOceanOpenApiProvenance(
-        JSON.parse(await readFile(join(tempRoot, digitalOceanOpenApiProvenancePath), 'utf8')) as unknown
-      );
+    const artifactContent = await readFile(join(tempRoot, digitalOceanOpenApiArtifactPath), 'utf8');
+    const provenance = validateDigitalOceanOpenApiProvenance(
+      JSON.parse(await readFile(join(tempRoot, digitalOceanOpenApiProvenancePath), 'utf8')) as unknown
+    );
 
-      expect(artifactContent).toContain('SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY');
-      expect(artifactContent).not.toContain('hooks.slack.com/services/');
-      expect(artifactContent).not.toContain('-----BEGIN PRIVATE KEY-----');
-      expect(artifactContent).not.toContain('-----BEGIN CERTIFICATE-----');
-      expect(provenance.generatedArtifactSha256).toBe(sha256Hex(artifactContent));
-      expect(provenance.refreshedAt).toBe(fixedNow.toISOString());
-      expect(dependencies.calls).toContain('fetch');
-      expect(dependencies.calls).toContain('tar');
-      expect(dependencies.calls).toContain('bundle');
-      expect(dependencies.logEntries.map((entry) => entry.message)).toEqual([
-        '[syncDigitalOceanOpenApi] fetching source archive',
-        '[syncDigitalOceanOpenApi] extracting source archive',
-        '[syncDigitalOceanOpenApi] bundling source OpenAPI document',
-        '[syncDigitalOceanOpenApi] parsing bundled OpenAPI document',
-        '[syncDigitalOceanOpenApi] scrubbed credential-like examples',
-        '[syncDigitalOceanOpenApi] validating sanitized OpenAPI artefact',
-        '[syncDigitalOceanOpenApi] validating OpenAPI provenance',
-        '[syncDigitalOceanOpenApi] wrote artefact to',
-        '[syncDigitalOceanOpenApi] wrote provenance to',
-        '[syncDigitalOceanOpenApi] artefact sha256',
-        '[syncDigitalOceanOpenApi] completed'
-      ]);
-      expect(dependencies.logEntries).toContainEqual({
-        level: 'info',
-        message: '[syncDigitalOceanOpenApi] validating sanitized OpenAPI artefact',
-        values: [{artifactPath: join(tempRoot, digitalOceanOpenApiArtifactPath)}]
-      });
-      expect(dependencies.logEntries).toContainEqual({
-        level: 'info',
-        message: '[syncDigitalOceanOpenApi] completed',
-        values: [{elapsedMs: 0, pin: fakePin}]
-      });
-    } finally {
-      await rm(tempRoot, {recursive: true, force: true});
-    }
+    expect(artifactContent).toContain('SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY');
+    expect(artifactContent).not.toContain('hooks.slack.com/services/');
+    expect(artifactContent).not.toContain('-----BEGIN PRIVATE KEY-----');
+    expect(artifactContent).not.toContain('-----BEGIN CERTIFICATE-----');
+    expect(provenance.generatedArtifactSha256).toBe(sha256Hex(artifactContent));
+    expect(provenance.refreshedAt).toBe(fixedNow.toISOString());
+    expect(dependencies.calls).toContain('fetch');
+    expect(dependencies.calls).toContain('tar');
+    expect(dependencies.calls).toContain('bundle');
+    expect(dependencies.logEntries.map((entry) => entry.message)).toEqual([
+      '[syncDigitalOceanOpenApi] fetching source archive',
+      '[syncDigitalOceanOpenApi] extracting source archive',
+      '[syncDigitalOceanOpenApi] bundling source OpenAPI document',
+      '[syncDigitalOceanOpenApi] parsing bundled OpenAPI document',
+      '[syncDigitalOceanOpenApi] scrubbed credential-like examples',
+      '[syncDigitalOceanOpenApi] validating sanitized OpenAPI artefact',
+      '[syncDigitalOceanOpenApi] validating OpenAPI provenance',
+      '[syncDigitalOceanOpenApi] wrote artefact to',
+      '[syncDigitalOceanOpenApi] wrote provenance to',
+      '[syncDigitalOceanOpenApi] artefact sha256',
+      '[syncDigitalOceanOpenApi] completed'
+    ]);
+    expect(dependencies.logEntries).toContainEqual({
+      fields: {artifactPath: join(tempRoot, digitalOceanOpenApiArtifactPath)},
+      level: 'info',
+      message: '[syncDigitalOceanOpenApi] validating sanitized OpenAPI artefact'
+    });
+    expect(dependencies.logEntries).toContainEqual({
+      fields: {elapsedMs: 0, pin: fakePin},
+      level: 'info',
+      message: '[syncDigitalOceanOpenApi] completed'
+    });
+    expect(dependencies.logEntries).toContainEqual({
+      fields: {artifactPath: join(tempRoot, digitalOceanOpenApiArtifactPath)},
+      level: 'info',
+      message: '[syncDigitalOceanOpenApi] wrote artefact to'
+    });
+    expect(dependencies.logEntries).toContainEqual({
+      fields: {provenancePath: join(tempRoot, digitalOceanOpenApiProvenancePath)},
+      level: 'info',
+      message: '[syncDigitalOceanOpenApi] wrote provenance to'
+    });
+    expect(dependencies.logEntries).toContainEqual({
+      fields: {artifactHash: provenance.generatedArtifactSha256},
+      level: 'info',
+      message: '[syncDigitalOceanOpenApi] artefact sha256'
+    });
   });
 
   test('logs contextual refresh failures', async () => {
-    const tempRoot = await mkdtemp(join(os.tmpdir(), 'digitalpuddle-sync-failure-'));
+    const tempRoot = await mkTestTempRoot('digitalpuddle-sync-failure-');
     const archiveUrl = getDigitalOceanOpenApiSourceArchiveUrl(fakePin);
     const dependencies = createFakeSyncDependencies({
       fetchBytes: async () => {
@@ -134,149 +194,84 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
       }
     });
 
-    try {
-      await expect(
-        refreshDigitalOceanOpenApi(
-          {
-            argv: ['bun', 'sync-digitalocean-openapi.ts', `--pin=${fakePin}`],
-            repoRoot: tempRoot,
-            tempRootParent: tempRoot
-          },
-          dependencies
-        )
-      ).rejects.toThrow(/fixture fetch failed/);
+    await expect(
+      refreshDigitalOceanOpenApi(
+        {
+          argv: ['bun', 'sync-digitalocean-openapi.ts', `--pin=${fakePin}`],
+          repoRoot: tempRoot,
+          tempRootParent: tempRoot
+        },
+        dependencies
+      )
+    ).rejects.toThrow(/fixture fetch failed/);
 
-      expect(dependencies.logEntries[0]).toEqual({
-        level: 'info',
-        message: '[syncDigitalOceanOpenApi] fetching source archive',
-        values: [{archiveUrl, pin: fakePin}]
-      });
-      expect(dependencies.logEntries.at(-1)).toMatchObject({
-        level: 'error',
-        message: '[syncDigitalOceanOpenApi] failed',
-        values: [
-          {
-            archiveUrl,
-            artifactPath: join(tempRoot, digitalOceanOpenApiArtifactPath),
-            elapsedMs: 0,
-            pin: fakePin
-          }
-        ]
-      });
-    } finally {
-      await rm(tempRoot, {recursive: true, force: true});
-    }
+    expect(dependencies.logEntries[0]).toEqual({
+      fields: {archiveUrl, pin: fakePin},
+      level: 'info',
+      message: '[syncDigitalOceanOpenApi] fetching source archive'
+    });
+    expect(dependencies.logEntries.at(-1)).toMatchObject({
+      fields: {
+        archiveUrl,
+        artifactPath: join(tempRoot, digitalOceanOpenApiArtifactPath),
+        elapsedMs: 0,
+        pin: fakePin
+      },
+      level: 'error',
+      message: '[syncDigitalOceanOpenApi] failed'
+    });
   });
 
   test('keeps temporary output paths unique with a frozen clock', async () => {
     const outputPath = join(repoRoot, digitalOceanOpenApiArtifactPath);
 
-    expect(createTempOutputPath(outputPath, () => fixedNow)).not.toBe(createTempOutputPath(outputPath, () => fixedNow));
+    expect(
+      createTempOutputPath(
+        outputPath,
+        () => fixedNow,
+        () => 12345
+      )
+    ).not.toBe(
+      createTempOutputPath(
+        outputPath,
+        () => fixedNow,
+        () => 12345
+      )
+    );
   });
 
   test('supports concurrent refresh calls with a frozen clock', async () => {
-    const leftRoot = await mkdtemp(join(os.tmpdir(), 'digitalpuddle-sync-left-'));
-    const rightRoot = await mkdtemp(join(os.tmpdir(), 'digitalpuddle-sync-right-'));
-    const dependencies = createFakeSyncDependencies();
+    const leftRoot = await mkTestTempRoot('digitalpuddle-sync-left-');
+    const rightRoot = await mkTestTempRoot('digitalpuddle-sync-right-');
+    const leftDependencies = createFakeSyncDependencies();
+    const rightDependencies = createFakeSyncDependencies();
 
-    try {
-      await Promise.all([
-        refreshDigitalOceanOpenApi(
-          {
-            argv: ['bun', 'sync-digitalocean-openapi.ts', `--pin=${fakePin}`],
-            repoRoot: leftRoot,
-            tempRootParent: leftRoot
-          },
-          dependencies
-        ),
-        refreshDigitalOceanOpenApi(
-          {
-            argv: ['bun', 'sync-digitalocean-openapi.ts', `--pin=${fakePin}`],
-            repoRoot: rightRoot,
-            tempRootParent: rightRoot
-          },
-          dependencies
-        )
-      ]);
+    await Promise.all([
+      refreshDigitalOceanOpenApi(
+        {
+          argv: ['bun', 'sync-digitalocean-openapi.ts', `--pin=${fakePin}`],
+          repoRoot: leftRoot,
+          tempRootParent: leftRoot
+        },
+        leftDependencies
+      ),
+      refreshDigitalOceanOpenApi(
+        {
+          argv: ['bun', 'sync-digitalocean-openapi.ts', `--pin=${fakePin}`],
+          repoRoot: rightRoot,
+          tempRootParent: rightRoot
+        },
+        rightDependencies
+      )
+    ]);
 
-      await expect(readFile(join(leftRoot, digitalOceanOpenApiArtifactPath), 'utf8')).resolves.toContain(
-        'SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY'
-      );
-      await expect(readFile(join(rightRoot, digitalOceanOpenApiArtifactPath), 'utf8')).resolves.toContain(
-        'SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY'
-      );
-    } finally {
-      await Promise.all([rm(leftRoot, {recursive: true, force: true}), rm(rightRoot, {recursive: true, force: true})]);
-    }
+    expect(leftDependencies.calls).toEqual(['fetch', 'tar', 'bundle']);
+    expect(rightDependencies.calls).toEqual(['fetch', 'tar', 'bundle']);
+    await expect(readFile(join(leftRoot, digitalOceanOpenApiArtifactPath), 'utf8')).resolves.toContain(
+      'SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY'
+    );
+    await expect(readFile(join(rightRoot, digitalOceanOpenApiArtifactPath), 'utf8')).resolves.toContain(
+      'SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY'
+    );
   });
 });
-
-type FakeSyncDependencies = SyncDependencies & {
-  readonly calls: string[];
-  readonly logEntries: SyncLogEntry[];
-};
-
-type SyncLogEntry = {
-  readonly level: 'error' | 'info';
-  readonly message: string;
-  readonly values: readonly unknown[];
-};
-
-type FakeSyncDependencyOverrides = {
-  readonly fetchBytes?: SyncDependencies['fetchBytes'];
-};
-
-const createFakeSyncDependencies = (overrides: FakeSyncDependencyOverrides = {}): FakeSyncDependencies => {
-  const calls: string[] = [];
-  const logEntries: SyncLogEntry[] = [];
-  const execFileAsync = (async (command: string, args?: readonly string[] | null) => {
-    const commandArgs = args ?? [];
-
-    if (command === 'tar') {
-      calls.push('tar');
-      const destination = String(commandArgs[3]);
-      await fs.mkdir(join(destination, `openapi-${fakePin}`, 'specification'), {recursive: true});
-      await writeFile(join(destination, `openapi-${fakePin}`, digitalOceanOpenApiSourcePath), 'openapi: 3.0.0\n');
-      return {stderr: '', stdout: ''};
-    }
-
-    if (command === 'bun') {
-      calls.push('bundle');
-      const outputPath = String(commandArgs[commandArgs.indexOf('--output') + 1]);
-      await writeFile(
-        outputPath,
-        JSON.stringify({
-          openapi: '3.0.0',
-          paths: {},
-          xCredentialExamples: [
-            'https://hooks.slack.com/services/T000/B000/SECRET',
-            '-----BEGIN PRIVATE KEY-----\nsecret\n-----END PRIVATE KEY-----',
-            '-----BEGIN CERTIFICATE-----\nsecret\n-----END CERTIFICATE-----'
-          ]
-        })
-      );
-      return {stderr: '', stdout: ''};
-    }
-
-    throw new Error(`unexpected command: ${command}`);
-  }) as SyncDependencies['execFileAsync'];
-  const dependencies: FakeSyncDependencies = {
-    calls,
-    execFileAsync,
-    fetchBytes:
-      overrides.fetchBytes ??
-      (async () => {
-        calls.push('fetch');
-        return new Uint8Array([1, 2, 3]);
-      }),
-    fs,
-    logger: {
-      error: (message, ...values) => logEntries.push({level: 'error', message: String(message), values}),
-      info: (message, ...values) => logEntries.push({level: 'info', message: String(message), values})
-    },
-    logEntries,
-    now: () => fixedNow
-  };
-
-  return dependencies;
-};
