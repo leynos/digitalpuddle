@@ -24,6 +24,11 @@ const userAnomalyDetails = (user: RawAuthenticatedUser) => ({
   hasOrganizations: Array.isArray(user.organizations)
 });
 
+const shouldNormalizeUser = (user: RawAuthenticatedUser) => {
+  const details = userAnomalyDetails(user);
+  return !details.hasNumericId || !details.hasOrganizations;
+};
+
 const logUserNormalization = (operationId: string, user: RawAuthenticatedUser) => {
   console.error(
     JSON.stringify({
@@ -34,13 +39,9 @@ const logUserNormalization = (operationId: string, user: RawAuthenticatedUser) =
   );
 };
 
-const normalizeUser = (operationId: string, user: AuthenticatedUser | RawAuthenticatedUser): AuthenticatedUser => {
+const normalizeUser = (user: AuthenticatedUser | RawAuthenticatedUser): AuthenticatedUser => {
   const hasNumericId = typeof user.id === 'number' && Number.isFinite(user.id);
   const hasOrganizations = Array.isArray(user.organizations);
-
-  if (!hasNumericId || !hasOrganizations) {
-    logUserNormalization(operationId, user);
-  }
 
   return {
     ...user,
@@ -65,9 +66,13 @@ export const serializeMembershipResponse = (
 export const createUserHandlers = (simulationStore: ExtendedSimulationStore): SimulationHandlers => {
   const getState = () => simulationStore.store.getState();
   const getUsers = (operationId: string) =>
-    simulationStore.schema.users
-      .selectTableAsList(getState())
-      .map((user) => normalizeUser(operationId, user as AuthenticatedUser | RawAuthenticatedUser));
+    simulationStore.schema.users.selectTableAsList(getState()).map((user) => {
+      const rawUser = user as AuthenticatedUser | RawAuthenticatedUser;
+      if (shouldNormalizeUser(rawUser)) {
+        logUserNormalization(operationId, rawUser);
+      }
+      return normalizeUser(rawUser);
+    });
 
   return {
     // GET /user

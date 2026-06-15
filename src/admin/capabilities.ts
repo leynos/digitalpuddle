@@ -1,24 +1,27 @@
 /**
  * @file Admin-facing capability documentation API.
  *
- * This module initialises and caches the capability documentation payload
+ * This module creates a lazy cache for the capability documentation payload
  * served by the `/_digitalpuddle/capabilities` endpoint. The manifest is
- * immutable after startup, so the admin route can reuse this payload instead
- * of rebuilding it on every request.
+ * immutable after startup, so the admin route can reuse this payload after the
+ * first request instead of rebuilding it on every request.
  *
  * The module depends on `src/openapi/projections.ts` for the pure
  * `buildCapabilityDocumentationMetadata()` projection and exposes
- * `capabilitiesPayload()` as its public API. `src/admin/routes.ts` consumes
- * that function when registering the private admin route, keeping admin
- * routing independent of projection details while still allowing the payload
- * cache to report startup failures through structured logs.
+ * `createCapabilitiesPayloadProvider()` plus the default `capabilitiesPayload()`
+ * provider as its public API. `src/admin/routes.ts` consumes that function when
+ * registering the private admin route, keeping admin routing independent of
+ * projection details while still allowing the payload cache to report startup
+ * failures through structured logs.
  */
 import {buildCapabilityDocumentationMetadata} from '../openapi/projections.ts';
 import type {CapabilityDocumentationMetadata} from '../openapi/projections.ts';
 
-const initialiseCapabilitiesPayload = (): CapabilityDocumentationMetadata => {
+type CapabilitiesPayloadBuilder = () => CapabilityDocumentationMetadata;
+
+const initialiseCapabilitiesPayload = (builder: CapabilitiesPayloadBuilder): CapabilityDocumentationMetadata => {
   try {
-    const payload = buildCapabilityDocumentationMetadata();
+    const payload = builder();
     console.info(
       JSON.stringify({
         event: 'digitalpuddle.admin.capabilities.cached',
@@ -37,6 +40,15 @@ const initialiseCapabilitiesPayload = (): CapabilityDocumentationMetadata => {
   }
 };
 
-const cachedPayload = initialiseCapabilitiesPayload();
+export const createCapabilitiesPayloadProvider = (
+  builder: CapabilitiesPayloadBuilder = buildCapabilityDocumentationMetadata
+) => {
+  let cachedPayload: CapabilityDocumentationMetadata | undefined;
 
-export const capabilitiesPayload = () => cachedPayload;
+  return () => {
+    cachedPayload ??= initialiseCapabilitiesPayload(builder);
+    return cachedPayload;
+  };
+};
+
+export const capabilitiesPayload = createCapabilitiesPayloadProvider();

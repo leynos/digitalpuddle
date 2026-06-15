@@ -2,7 +2,6 @@
 
 exports[`startup output prints DigitalPuddle route guidance for the built CommonJS CLI 1`] = `
 "{"event":"digitalpuddle.manifest.validated","entryCount":27}
-{"event":"digitalpuddle.admin.capabilities.cached","rowCount":26}
 DigitalPuddle simulation server started at http://localhost:<PORT>
 Visit http://localhost:<PORT>/simulation to view all available routes.
 "
@@ -10,7 +9,6 @@ Visit http://localhost:<PORT>/simulation to view all available routes.
 
 exports[`startup output prints DigitalPuddle route guidance for the TypeScript example 1`] = `
 "{"event":"digitalpuddle.manifest.validated","entryCount":27}
-{"event":"digitalpuddle.admin.capabilities.cached","rowCount":26}
 (node:<PID>) ExperimentalWarning: Transform Types is an experimental feature and might change at any time
 (Use \`node --trace-warnings ...\` to show where the warning was created)
 DigitalPuddle baseline server started at http://localhost:<PORT>
