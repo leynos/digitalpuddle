@@ -12,6 +12,43 @@ type MembershipProjection = {
   readonly state: 'active';
 };
 
+type RawAuthenticatedUser = Partial<AuthenticatedUser> & {
+  readonly login: string;
+};
+
+const fallbackUserId = 0;
+
+const userAnomalyDetails = (user: RawAuthenticatedUser) => ({
+  login: user.login,
+  hasNumericId: typeof user.id === 'number' && Number.isFinite(user.id),
+  hasOrganizations: Array.isArray(user.organizations)
+});
+
+const logUserNormalization = (operationId: string, user: RawAuthenticatedUser) => {
+  console.error(
+    JSON.stringify({
+      event: 'digitalpuddle.rest.user.normalized',
+      operationId,
+      user: userAnomalyDetails(user)
+    })
+  );
+};
+
+const normalizeUser = (operationId: string, user: AuthenticatedUser | RawAuthenticatedUser): AuthenticatedUser => {
+  const hasNumericId = typeof user.id === 'number' && Number.isFinite(user.id);
+  const hasOrganizations = Array.isArray(user.organizations);
+
+  if (!hasNumericId || !hasOrganizations) {
+    logUserNormalization(operationId, user);
+  }
+
+  return {
+    ...user,
+    id: hasNumericId ? user.id : fallbackUserId,
+    organizations: hasOrganizations ? user.organizations : []
+  } as AuthenticatedUser;
+};
+
 export const serializeMembershipResponse = (
   membership: MembershipProjection,
   organization: MembershipOrganization,
@@ -27,6 +64,10 @@ export const serializeMembershipResponse = (
 
 export const createUserHandlers = (simulationStore: ExtendedSimulationStore): SimulationHandlers => {
   const getState = () => simulationStore.store.getState();
+  const getUsers = (operationId: string) =>
+    simulationStore.schema.users
+      .selectTableAsList(getState())
+      .map((user) => normalizeUser(operationId, user as AuthenticatedUser | RawAuthenticatedUser));
 
   return {
     // GET /user
@@ -35,13 +76,13 @@ export const createUserHandlers = (simulationStore: ExtendedSimulationStore): Si
       _request: Parameters<SimulationHandler>[1],
       response: Parameters<SimulationHandler>[2]
     ) => {
-      const users = simulationStore.schema.users.selectTableAsList(getState());
+      const users = getUsers('users/get-authenticated');
       const user = users[0];
       if (!user) {
         return response.status(401).json({message: 'Authentication required'});
       }
       const data = {
-        id: parseInt(user.id.toString(), 10) as number,
+        id: user.id,
         login: user.login,
         email: user.email,
         name: user.name
@@ -55,15 +96,16 @@ export const createUserHandlers = (simulationStore: ExtendedSimulationStore): Si
       request: Parameters<SimulationHandler>[1],
       response: Parameters<SimulationHandler>[2]
     ) => {
-      const users = simulationStore.schema.users.selectTableAsList(getState());
+      const users = getUsers('orgs/list-memberships-for-authenticated-user');
       const requestedLogin = request.get('x-simulacat-user') ?? request.get('x-github-user');
       const user = requestedLogin ? users.find((candidate) => candidate.login === requestedLogin) : users[0];
       if (!user) {
         return response.status(401).json({message: 'Authentication required'});
       }
+      const membershipOrganizationLogins = new Set(user.organizations);
       const organizations = simulationStore.selectors.allGithubOrganizations(getState());
       const memberships = organizations
-        .filter((organization) => user.organizations.includes(organization.login))
+        .filter((organization) => membershipOrganizationLogins.has(organization.login))
         .map((organization) => serializeMembershipResponse({state: 'active', role: 'member'}, organization, user));
       return response.status(200).json(memberships);
     }

@@ -753,8 +753,8 @@ docs/
 ```
 
 The current transitional implementation has introduced the target homes
-incrementally. `src/index.ts` remains the package and build entry facade, while
-`src/simulation.ts` owns the Simulacrum server assembly. `src/openapi/index.ts`
+incrementally. `src/index.ts` remains the package and build entry-point facade,
+while `src/simulation.ts` owns the Simulacrum server assembly. `src/openapi/index.ts`
 re-exports the existing capability policy and projections. Private
 DigitalPuddle admin routes are owned by `src/admin/routes.ts`, with
 `src/extend-api.ts` kept as the Simulacrum composition facade. The first
