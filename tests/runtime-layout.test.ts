@@ -22,6 +22,14 @@ describe('target runtime layout', () => {
       name: 'noop-kubernetes',
       capability: 'kubernetes'
     });
+    expect({
+      ports: {
+        clock: runtime.ports.clock,
+        kubernetesEngine: {
+          descriptor: runtime.ports.kubernetesEngine?.descriptor
+        }
+      }
+    }).toMatchSnapshot();
   });
 
   it('accepts request journal appends without persistence side effects', async () => {
