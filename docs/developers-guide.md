@@ -197,6 +197,9 @@ The refresh command downloads the pinned upstream repository archive, bundles
 `specification/DigitalOcean-public.v2.yaml` with `@redocly/cli`, canonicalizes
 the generated JSON, sanitizes secret-like examples, writes the artefact and
 provenance through atomic rename, and records the generated SHA-256 hash.
+It expects a Unix-compatible `tar` executable on `PATH`, uses the
+repository-pinned `@redocly/cli` from `node_modules`, and rejects source archive
+downloads larger than 50 MiB before writing them to disk.
 
 The reusable contract helpers live in `src/openapi/artifact.ts`. Keep that
 module free of filesystem, network, process, and command-runner dependencies.
@@ -213,7 +216,6 @@ It owns:
 When changing the pin, refresh script, bundled output, or provenance schema,
 update the artefact and provenance together and add or update `bun:test`
 coverage for both the pure helpers and the command path.
-
 
 ## 9. Transitional architecture rules
 

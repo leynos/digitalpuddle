@@ -23,6 +23,7 @@ import {
 import {
   assertNoCredentialLikeExamples,
   assertNoSlackWebhookUrls,
+  createDefaultSyncDependencies,
   createTempOutputPath,
   refreshDigitalOceanOpenApi,
   scrubSecretLikeExamples
@@ -121,6 +122,32 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
     ).rejects.toThrow(/40-character/);
     expect(dependencies.calls).toEqual([]);
     expect(dependencies.logEntries).toEqual([]);
+  });
+
+  test('rejects empty command pins before side effects', async () => {
+    const dependencies = createFakeSyncDependencies();
+
+    await expect(
+      refreshDigitalOceanOpenApi({argv: ['bun', 'sync-digitalocean-openapi.ts', '--pin=']}, dependencies)
+    ).rejects.toThrow(/40-character/);
+    expect(dependencies.calls).toEqual([]);
+    expect(dependencies.logEntries).toEqual([]);
+  });
+
+  test('rejects oversized source archive downloads before buffering', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response('', {
+        headers: {'content-length': String(50 * 1024 * 1024 + 1)}
+      })) as unknown as typeof fetch;
+
+    try {
+      await expect(
+        createDefaultSyncDependencies().fetchBytes('https://example.invalid/openapi.tar.gz', 1000)
+      ).rejects.toThrow(/exceeded/);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   test('writes sanitized artefact and provenance through the command flow', async () => {

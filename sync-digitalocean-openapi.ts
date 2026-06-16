@@ -34,11 +34,34 @@ const execFileAsync = promisify(execFile);
 const repoRoot = import.meta.dirname;
 const defaultTimeoutMs = 60000;
 const maxTimeoutMs = 10 * 60 * 1000;
+const maxArchiveBytes = 50 * 1024 * 1024;
 const syncTimeoutEnvKey = 'DIGITALPUDDLE_OPENAPI_SYNC_TIMEOUT_MS';
 const bundlingTool = {
   name: '@redocly/cli',
   version: '2.31.5'
 } as const;
+
+const secretShapeReplacements: readonly {
+  readonly description: string;
+  readonly pattern: RegExp;
+  readonly replacement: string;
+}[] = [
+  {
+    description: 'Slack incoming webhook URL',
+    pattern: /https:\/\/hooks\.slack\.com\/services\/[^\s"'`)\]}]+/g,
+    replacement: 'https://example.invalid/slack-webhook'
+  },
+  {
+    description: 'PEM certificate block',
+    pattern: /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g,
+    replacement: 'SANITIZED DIGITALPUDDLE EXAMPLE CERTIFICATE'
+  },
+  {
+    description: 'PEM private key block',
+    pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,
+    replacement: 'SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY'
+  }
+];
 
 type SyncLogger = {
   info: (...values: readonly unknown[]) => void;
@@ -78,13 +101,66 @@ const parseTimeoutMs = (value: string | undefined): number => {
 
 const readPinArgument = (argv: readonly string[]): string => {
   const pinArg = argv.find((argument) => argument.startsWith('--pin='));
-  const pin = pinArg?.slice('--pin='.length) || digitalOceanOpenApiPin;
+  const pin = pinArg?.slice('--pin='.length) ?? digitalOceanOpenApiPin;
 
   if (!digitalOceanOpenApiCommitPattern.test(pin)) {
     throw new Error(`DigitalOcean OpenAPI pin must be a 40-character lower-case hex commit SHA: ${pin}`);
   }
 
   return pin;
+};
+
+const parseContentLength = (response: Response): number | undefined => {
+  const contentLength = response.headers.get('content-length');
+  if (contentLength === null) {
+    return undefined;
+  }
+
+  const parsed = Number(contentLength);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : undefined;
+};
+
+const assertArchiveSize = (url: string, size: number): void => {
+  if (size > maxArchiveBytes) {
+    throw new Error(`DigitalOcean OpenAPI archive from ${url} exceeded ${maxArchiveBytes} bytes`);
+  }
+};
+
+const readCappedResponseBytes = async (url: string, response: Response): Promise<Uint8Array> => {
+  const contentLength = parseContentLength(response);
+  if (contentLength !== undefined) {
+    assertArchiveSize(url, contentLength);
+  }
+
+  if (response.body === null) {
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    assertArchiveSize(url, bytes.byteLength);
+    return bytes;
+  }
+
+  const chunks: Uint8Array[] = [];
+  let receivedBytes = 0;
+  const reader = response.body.getReader();
+
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) {
+      break;
+    }
+
+    receivedBytes += value.byteLength;
+    assertArchiveSize(url, receivedBytes);
+    chunks.push(value);
+  }
+
+  const bytes = new Uint8Array(receivedBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return bytes;
 };
 
 const fetchBytes = async (url: string, requestTimeoutMs: number): Promise<Uint8Array> => {
@@ -96,7 +172,7 @@ const fetchBytes = async (url: string, requestTimeoutMs: number): Promise<Uint8A
     if (!response.ok) {
       throw new Error(`failed to fetch ${url}: ${response.status} ${response.statusText}`);
     }
-    return new Uint8Array(await response.arrayBuffer());
+    return readCappedResponseBytes(url, response);
   } finally {
     clearTimeout(timeout);
   }
@@ -160,16 +236,10 @@ const parseBundledJson = async (bundledPath: string, dependencies: SyncDependenc
 
 const scrubSecretLikeExamples = (value: JsonValue): JsonValue => {
   if (typeof value === 'string') {
-    return value
-      .replaceAll(/https:\/\/hooks\.slack\.com\/services\/[^\s"'`)\]}]+/g, 'https://example.invalid/slack-webhook')
-      .replaceAll(
-        /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g,
-        'SANITIZED DIGITALPUDDLE EXAMPLE CERTIFICATE'
-      )
-      .replaceAll(
-        /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,
-        'SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY'
-      );
+    return secretShapeReplacements.reduce(
+      (scrubbed, rule) => scrubbed.replaceAll(rule.pattern, rule.replacement),
+      value
+    );
   }
 
   if (Array.isArray(value)) {
@@ -318,10 +388,16 @@ export {
   createTempOutputPath,
   createDefaultSyncDependencies,
   refreshDigitalOceanOpenApi,
+  secretShapeReplacements,
   scrubSecretLikeExamples,
   type SyncDependencies
 };
 
 if (import.meta.main) {
-  await refreshDigitalOceanOpenApi();
+  try {
+    await refreshDigitalOceanOpenApi();
+  } catch (error) {
+    console.error('[syncDigitalOceanOpenApi] exiting after failure', error);
+    process.exitCode = 1;
+  }
 }

@@ -87,7 +87,12 @@
       }
     },
     {
-      "includes": ["schema/api.github.com.json", "schema/schema.docs.graphql"],
+      "includes": [
+        "schema/api.github.com.json",
+        "schema/schema.docs.graphql",
+        "src/openapi/digitalocean.openapi.json",
+        "src/openapi/digitalocean.openapi.provenance.json"
+      ],
       "formatter": {
         "enabled": false
       },

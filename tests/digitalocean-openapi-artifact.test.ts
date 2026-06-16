@@ -23,7 +23,7 @@ import {
   type DigitalOceanOpenApiProvenance,
   type JsonValue
 } from '../src/openapi/artifact.ts';
-import {assertNoCredentialLikeExamples} from '../sync-digitalocean-openapi.ts';
+import {assertNoCredentialLikeExamples, secretShapeReplacements} from '../sync-digitalocean-openapi.ts';
 import {propertyTestSeed} from './support/property-test-seed.ts';
 
 const repoRoot = join(import.meta.dirname, '..');
@@ -43,8 +43,6 @@ const jsonValue: fc.Arbitrary<JsonValue> = fc.letrec((tie) => ({
   )
 })).value as fc.Arbitrary<JsonValue>;
 
-const codeUnitCompare = (left: string, right: string): number => (left < right ? -1 : left > right ? 1 : 0);
-
 const snapshotStableProvenance = (provenance: DigitalOceanOpenApiProvenance): JsonValue => ({
   ...provenance,
   generatedArtifactSha256: '<sha256>',
@@ -52,16 +50,16 @@ const snapshotStableProvenance = (provenance: DigitalOceanOpenApiProvenance): Js
   upstreamCommit: '<commit>'
 });
 
-const independentlyCanonicalizeJson = (value: JsonValue): JsonValue => {
+const reverseObjectKeysRecursive = (value: JsonValue): JsonValue => {
   if (Array.isArray(value)) {
-    return value.map((item) => independentlyCanonicalizeJson(item));
+    return value.map((item) => reverseObjectKeysRecursive(item));
   }
 
   if (value !== null && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value)
-        .sort(([left], [right]) => codeUnitCompare(left, right))
-        .map(([key, item]) => [key, independentlyCanonicalizeJson(item)])
+        .reverse()
+        .map(([key, item]) => [key, reverseObjectKeysRecursive(item)])
     );
   }
 
@@ -87,6 +85,9 @@ describe('DigitalOcean OpenAPI artefact', () => {
     expect(artifactContent).not.toContain('hooks.slack.com/services/');
     expect(artifactContent).not.toContain('-----BEGIN PRIVATE KEY-----');
     expect(artifactContent).not.toContain('-----BEGIN CERTIFICATE-----');
+    for (const rule of secretShapeReplacements) {
+      expect(new RegExp(rule.pattern.source, rule.pattern.flags).test(artifactContent), rule.description).toBe(false);
+    }
     expect(() => assertNoCredentialLikeExamples(artifactContent)).not.toThrow();
   });
 
@@ -181,11 +182,10 @@ describe('DigitalOcean OpenAPI artefact', () => {
       fc.property(jsonValue, (value) => {
         const canonicalJson = stringifyCanonicalJson(value);
         const parsedCanonicalJson = JSON.parse(canonicalJson) as JsonValue;
+        const reversedJson = stringifyCanonicalJson(reverseObjectKeysRecursive(value));
 
         expect(parsedCanonicalJson).toEqual(JSON.parse(JSON.stringify(value)) as JsonValue);
-        expect(stringifyCanonicalJson(value)).toBe(
-          `${JSON.stringify(independentlyCanonicalizeJson(value), null, 2)}\n`
-        );
+        expect(reversedJson).toBe(canonicalJson);
       }),
       {numRuns: 100, seed: propertyTestSeed}
     );

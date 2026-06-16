@@ -82,6 +82,9 @@ export const canonicalizeJson = (value: JsonValue): JsonValue => {
 };
 
 export const stringifyCanonicalJson = (value: JsonValue): string =>
+  // JSON.stringify still emits integer-string keys before other keys, per the
+  // ECMAScript property-order rules. The output remains deterministic, but it
+  // is not strict lexicographic ordering for mixed numeric and textual keys.
   `${JSON.stringify(canonicalizeJson(value), null, 2)}\n`;
 
 export const sha256Hex = (content: string | Uint8Array): string => createHash('sha256').update(content).digest('hex');
