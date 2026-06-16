@@ -597,6 +597,14 @@ Observable success after implementation:
   tarball preserves source provenance, avoids a persistent checkout, and keeps
   runtime code free of Redocly imports.
 
+- Decision: Pause and accept scope tolerance overrun to add explicit command,
+  documentation, and tests seams when the refresh and provenance work started to
+  affect adjacent execution pathways.
+  Rationale: Tying the command and documentation updates together while
+  adding bounded validation seams for provenance, hash checks, and canonical
+  serialisation kept this task feasible without expanding into full route
+  registry implementation in roadmap task 1.3.2.
+
 ## Outcomes & Retrospective
 
 Execution is complete. The pinned OpenAPI artefact, refresh tooling,

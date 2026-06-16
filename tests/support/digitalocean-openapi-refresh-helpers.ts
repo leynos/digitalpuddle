@@ -1,5 +1,11 @@
 /**
  * @file Shared fixtures for DigitalOcean OpenAPI refresh command tests.
+ *
+ * These helpers provide a fake sync dependency adapter that records command
+ * calls and structured logger payloads while writing minimal fixture artefacts
+ * into caller-owned temporary directories. Refresh command tests use them to
+ * verify side effects and observability without depending on live network,
+ * archive, or Redocly execution.
  */
 import fs, {writeFile} from 'node:fs/promises';
 import {join} from 'node:path';

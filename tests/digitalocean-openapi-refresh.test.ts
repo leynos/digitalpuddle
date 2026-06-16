@@ -1,5 +1,10 @@
 /**
  * @file Tests for the DigitalOcean OpenAPI refresh command.
+ *
+ * This suite exercises the command boundary with fake filesystem, process, and
+ * logger dependencies. It covers credential-example sanitisation, fail-closed
+ * error handling, deterministic provenance output, structured observability,
+ * and concurrent temporary-file naming without reaching the network.
  */
 import {mkdtemp, readFile, rm} from 'node:fs/promises';
 import os from 'node:os';
@@ -23,6 +28,7 @@ import {
   scrubSecretLikeExamples
 } from '../sync-digitalocean-openapi.ts';
 import {createFakeSyncDependencies, fakePin, fixedNow} from './support/digitalocean-openapi-refresh-helpers.ts';
+import {propertyTestSeed} from './support/property-test-seed.ts';
 
 const repoRoot = join(import.meta.dirname, '..');
 const testTempRoots: string[] = [];
@@ -91,7 +97,7 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
         expect(scrubbedContent).not.toContain('-----BEGIN CERTIFICATE-----');
         expect(() => assertNoCredentialLikeExamples(scrubbedContent)).not.toThrow();
       }),
-      {numRuns: 100}
+      {numRuns: 100, seed: propertyTestSeed}
     );
   });
 

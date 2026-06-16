@@ -1,5 +1,11 @@
 /**
- * @file Tests for the pinned DigitalOcean OpenAPI artefact and provenance.
+ * @file Tests for the checked-in DigitalOcean OpenAPI artefact.
+ *
+ * This suite treats the pinned contract and provenance record as repository
+ * data, then checks their shape, hash relationship, URL provenance, snapshots,
+ * and canonical JSON invariants. It depends on the OpenAPI artefact helpers in
+ * `src/openapi/artifact.ts` and the refresh-command credential guard so that
+ * generated file validation stays aligned with sync-time validation.
  */
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
@@ -18,6 +24,7 @@ import {
   type JsonValue
 } from '../src/openapi/artifact.ts';
 import {assertNoCredentialLikeExamples} from '../sync-digitalocean-openapi.ts';
+import {propertyTestSeed} from './support/property-test-seed.ts';
 
 const repoRoot = join(import.meta.dirname, '..');
 
@@ -180,7 +187,7 @@ describe('DigitalOcean OpenAPI artefact', () => {
           `${JSON.stringify(independentlyCanonicalizeJson(value), null, 2)}\n`
         );
       }),
-      {numRuns: 100}
+      {numRuns: 100, seed: propertyTestSeed}
     );
   });
   test('serialises canonical JSON idempotently after parsing', () => {
@@ -190,7 +197,7 @@ describe('DigitalOcean OpenAPI artefact', () => {
 
         expect(stringifyCanonicalJson(JSON.parse(canonicalJson) as JsonValue)).toBe(canonicalJson);
       }),
-      {numRuns: 100}
+      {numRuns: 100, seed: propertyTestSeed}
     );
   });
 });
