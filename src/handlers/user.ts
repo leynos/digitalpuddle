@@ -19,7 +19,6 @@ type RawAuthenticatedUser = Partial<AuthenticatedUser> & {
 const fallbackUserId = 0;
 
 const userAnomalyDetails = (user: RawAuthenticatedUser) => ({
-  login: user.login,
   hasNumericId: typeof user.id === 'number' && Number.isFinite(user.id),
   hasOrganizations: Array.isArray(user.organizations)
 });

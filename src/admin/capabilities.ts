@@ -12,7 +12,7 @@
  * provider as its public API. `src/admin/routes.ts` consumes that function when
  * registering the private admin route, keeping admin routing independent of
  * projection details while still allowing the payload cache to report startup
- * failures through structured logs.
+ * first-use initialization failures through structured logs.
  */
 import {buildCapabilityDocumentationMetadata} from '../openapi/projections.ts';
 import type {CapabilityDocumentationMetadata} from '../openapi/projections.ts';

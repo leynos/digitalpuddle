@@ -218,7 +218,7 @@ describe('handler layout compatibility', () => {
           }
         }
       ),
-      {numRuns: 50}
+      {numRuns: 50, seed: 1337}
     );
   });
 });

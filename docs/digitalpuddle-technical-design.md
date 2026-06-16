@@ -699,6 +699,7 @@ src/
   index.ts
   simulation.ts
   config.ts
+  extend-api.ts
   openapi/
     index.ts
     capabilities.ts
