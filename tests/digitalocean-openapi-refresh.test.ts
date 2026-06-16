@@ -114,6 +114,12 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
     ).toThrow(/sanitization failed/);
   });
 
+  test('fails closed when a labelled private key PEM block survives sanitization', () => {
+    expect(() =>
+      assertNoCredentialLikeExamples('-----BEGIN RSA PRIVATE KEY-----\nsecret\n-----END RSA PRIVATE KEY-----')
+    ).toThrow(/sanitization failed/);
+  });
+
   test('rejects malformed command pins before side effects', async () => {
     const dependencies = createFakeSyncDependencies();
 

@@ -482,7 +482,7 @@ Observable success after implementation:
 - [x] 2026-06-02T01:55:00+02:00: Reran CodeRabbit after the first fixes. It
       reported three valid follow-up findings: export the shared commit-SHA
       regex, pin the `bunx` Redocly package version, and add a JSON parse
-      round-trip assertion to the canonicalisation property test.
+      round-trip assertion to the canonicalization property test.
 - [x] 2026-06-02T02:02:00+02:00: Fixed the follow-up CodeRabbit findings and
       reran `bun fmt`, focused OpenAPI tests, `make check-fmt`,
       `make typecheck`, `make lint`, and `make test`; all gates passed.
@@ -602,7 +602,7 @@ Observable success after implementation:
   affect adjacent execution pathways.
   Rationale: Tying the command and documentation updates together while
   adding bounded validation seams for provenance, hash checks, and canonical
-  serialisation kept this task feasible without expanding into full route
+  serialization kept this task feasible without expanding into full route
   registry implementation in roadmap task 1.3.2.
 
 ## Outcomes & Retrospective

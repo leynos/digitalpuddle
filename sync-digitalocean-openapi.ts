@@ -258,7 +258,7 @@ const assertNoCredentialLikeExamples = (content: string): void => {
     throw new Error('DigitalOcean OpenAPI artefact sanitization failed: Slack webhook URL remains');
   }
 
-  if (content.includes('-----BEGIN PRIVATE KEY-----') || content.includes('-----BEGIN CERTIFICATE-----')) {
+  if (/-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(content) || content.includes('-----BEGIN CERTIFICATE-----')) {
     throw new Error('DigitalOcean OpenAPI artefact sanitization failed: PEM block remains');
   }
 };
