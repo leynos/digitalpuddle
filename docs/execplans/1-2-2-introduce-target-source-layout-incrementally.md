@@ -153,6 +153,8 @@ conflict in `Decision log`, and ask for direction.
   0 findings.
 - [x] (2026-06-02T00:24:00Z) Pushed the branch and updated draft PR #7 with
   the implementation summary and validation results.
+- [x] (2026-06-16T14:18:19Z) Recorded post-closeout review findings for user
+  handler hardening, audit override pins, and final validation count drift.
 
 ## Surprises & discoveries
 
@@ -292,6 +294,30 @@ conflict in `Decision log`, and ask for direction.
   Evidence: `gh pr edit 7 --body-file ...` returned
   `https://github.com/leynos/digitalpuddle/pull/7`.
   Impact: reviewers can use the PR body as the implementation review guide.
+- Observation: user handler extraction included defensive normalization for
+  malformed legacy rows, including structured anomaly logging that deliberately
+  avoids raw user identifiers.
+  Evidence: `src/handlers/user.ts` contains `normalizeUser(...)`,
+  `shouldNormalizeUser(...)`, and `digitalpuddle.rest.user.normalized`
+  logging; `tests/handlers-layout.test.ts` covers malformed rows and pins the
+  property test with `seed: 1337`.
+  Impact: the extraction is not only a file move on out-of-contract legacy
+  rows. The hardening is accepted because it is covered by targeted tests and
+  protects handlers from malformed imported data during the transition.
+- Observation: CI audit follow-up required exact transitive dependency
+  overrides unrelated to the source-layout structure.
+  Evidence: `package.json` now pins `@babel/core`, `brace-expansion`,
+  `fast-uri`, `js-yaml`, `lodash`, `qs`, `shell-quote`, and `ws` in
+  `overrides`, and `bun audit` reported no vulnerabilities after the lockfile
+  refresh.
+  Impact: the dependency pins are recorded as security maintenance on the PR,
+  not as a new runtime dependency or a source-layout design choice.
+- Observation: post-closeout review fixes increased the test count from the
+  earlier final milestone result.
+  Evidence: the latest `make test` run reported 151 passing tests across
+  18 files with 5 snapshots.
+  Impact: the retrospective validation count must use 151 rather than the
+  earlier 146-test milestone result.
 
 ## Decision log
 
@@ -348,6 +374,20 @@ conflict in `Decision log`, and ask for direction.
   architecture, while this roadmap item only establishes incremental homes and
   compatibility facades.
   Date/Author: 2026-06-01T23:56:00Z / Codex.
+- Decision: keep user handler hardening introduced during extraction.
+  Rationale: malformed legacy user rows are outside the normal seeding
+  contract, but defensive normalization prevents runtime exceptions while the
+  imported baseline is still being adapted. The behaviour delta is bounded by
+  targeted behavioural and property tests, and anomaly logs omit raw user
+  identifiers.
+  Date/Author: 2026-06-16T14:18:19Z / Codex.
+- Decision: keep audit override pins in this PR and record them as
+  supply-chain maintenance.
+  Rationale: the overrides pin existing transitive packages to patched exact
+  versions so `bun audit` passes. They do not add a new package, change public
+  runtime APIs, or alter the target source layout, but recording them keeps the
+  PR scope honest.
+  Date/Author: 2026-06-16T14:18:19Z / Codex.
 
 ## Outcomes & retrospective
 
@@ -359,12 +399,18 @@ journalling, scenario registration, and CLI command contracts. The roadmap item
 1.2.2 is marked done.
 
 Validation passed for `make check-fmt`, `make lint`, `make typecheck`, and
-`make test`. The final test run reported 146 passing tests across 18 files.
+`make test`. The latest test run reported 151 passing tests across 18 files
+with 5 snapshots.
 `bun fmt`, `make nixie`, and `make markdownlint` also passed. The imported
 Simulacrum guidance document keeps a file-level MD013 exception so its stable
 long prose lines do not need to be reflowed for this layout migration.
 CodeRabbit reviews after Milestones 1, 2, 3, 4, and final closeout all
 completed with 0 findings.
+
+After final closeout, review follow-ups added deterministic property-test
+seeding, snapshot and compile-time type coverage, user handler hardening for
+malformed legacy rows, and exact audit override pins for patched transitive
+dependencies. The roadmap remains current: `docs/roadmap.md` marks 1.2.2 done.
 
 ## Context and orientation
 
