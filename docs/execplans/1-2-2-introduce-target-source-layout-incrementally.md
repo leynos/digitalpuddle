@@ -16,12 +16,12 @@ under `src/simulation.ts`, `src/openapi/`, `src/store/`, `src/handlers/`,
 `src/worker/`, `src/engines/`, `src/journal/`, `src/admin/`,
 `src/scenarios/`, and `src/cli/`.
 
-This plan did not authorize implementation until it was explicitly approved.
-After approval, the first observable outcome was structural: a contributor can
-add the next DigitalOcean route, store slice, worker transition, engine adapter,
-admin endpoint, journal query, scenario loader, or CLI command in the target
-directory without reopening the package boundary question. Existing inherited
-Simulacat tests continued to pass during the transition.
+This plan was approved before implementation began. The first observable
+outcome was structural: a contributor can add the next DigitalOcean route,
+store slice, worker transition, engine adapter, admin endpoint, journal query,
+scenario loader, or CLI command in the target directory without reopening the
+package boundary question. Existing inherited Simulacat tests continued to pass
+during the transition.
 
 ## Constraints
 
@@ -321,8 +321,8 @@ conflict in `Decision log`, and ask for direction.
 
 ## Decision log
 
-- Decision: kept this execplan as a pre-implementation document and stopped for
-  approval before source moves.
+- Decision: kept this execplan as a pre-implementation document until approval,
+  then used it to guide the source moves.
   Rationale: the user explicitly stated that the plan had to be approved before
   implementation, and implementation began only after that approval.
   Date/Author: 2026-05-25T01:05:42Z / Codex.

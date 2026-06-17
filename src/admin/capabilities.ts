@@ -3,8 +3,8 @@
  *
  * This module creates a lazy cache for the capability documentation payload
  * served by the `/_digitalpuddle/capabilities` endpoint. The manifest is
- * immutable after startup, so the admin route can reuse this payload after the
- * first request instead of rebuilding it on every request.
+ * immutable for a running process, so the admin route can reuse this payload
+ * after the first request instead of rebuilding it on every request.
  *
  * The module depends on `src/openapi/projections.ts` for the pure
  * `buildCapabilityDocumentationMetadata()` projection and exposes
