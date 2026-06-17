@@ -1,4 +1,11 @@
-/** @file Private DigitalPuddle admin route registration. */
+/**
+ * @file Private DigitalPuddle admin route registration.
+ *
+ * This module owns DigitalPuddle-only admin endpoints that are mounted onto the
+ * Simulacrum router. It consumes the capability payload provider from
+ * `src/admin/capabilities.ts` and keeps private route wiring separate from the
+ * OpenAPI projection and Foundation router compatibility types.
+ */
 import type {createFoundationSimulationServer} from '@simulacrum/foundation-simulator';
 
 import type {ExtendedSimulationStore} from '../store/index.ts';

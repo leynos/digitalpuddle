@@ -1,4 +1,11 @@
-/** @file Request journal contracts for future persistence-backed auditing. */
+/**
+ * @file Request journal contracts for future persistence-backed auditing.
+ *
+ * This module defines the request journal port and a no-op implementation used
+ * during the layout transition. Future persistence backends can implement the
+ * same append contract while current tests can exercise composition without
+ * introducing storage side effects.
+ */
 
 export type JournalEntry = {
   readonly id: string;

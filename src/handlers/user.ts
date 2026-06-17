@@ -1,4 +1,12 @@
-/** @file User and membership REST handlers for the transitional GitHub API. */
+/**
+ * @file User and membership REST handlers for the transitional GitHub API.
+ *
+ * This module extracts the authenticated-user handler group from the inherited
+ * REST adapter while DigitalPuddle still carries GitHub compatibility
+ * scaffolding. It normalizes malformed legacy rows before serialization,
+ * delegates membership response shape construction to a serializer, and returns
+ * handlers for composition by `src/rest/index.ts`.
+ */
 import type {SimulationHandlers} from '@simulacrum/foundation-simulator';
 
 import type {ExtendedSimulationStore} from '../store/index.ts';

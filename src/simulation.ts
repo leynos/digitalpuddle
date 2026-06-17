@@ -1,4 +1,11 @@
-/** @file Simulation assembly for building and seeding a DigitalPuddle server. */
+/**
+ * @file Simulation assembly for building and seeding a DigitalPuddle server.
+ *
+ * This module owns the internal server assembly point used by the package
+ * facade. It wires the Foundation simulator, extended store, OpenAPI document,
+ * REST handlers, and router extensions while keeping `src/index.ts` as the
+ * public compatibility entry during the layout transition.
+ */
 import {
   createFoundationSimulationServer,
   type FoundationSimulator,

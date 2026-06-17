@@ -1,4 +1,11 @@
-/** @file OpenAPI-backed REST handlers for the simulated GitHub API. */
+/**
+ * @file OpenAPI-backed REST handlers for the simulated GitHub API.
+ *
+ * This module remains the transitional REST adapter for inherited GitHub
+ * compatibility routes. It composes extracted handler groups with existing
+ * OpenAPI-backed route implementations, maps handler errors to structured
+ * logs, and supplies the handler map consumed by `src/simulation.ts`.
+ */
 import type {Document, SimulationHandlers} from '@simulacrum/foundation-simulator';
 import {createUserHandlers} from '../handlers/user.ts';
 import type {ExtendedSimulationStore} from '../store/index.ts';
