@@ -691,7 +691,7 @@ entry point stable.
 
 ```typescript
 // src/admin/routes.ts
-export const extendDigitalPuddleAdminRoutes: FoundationExtendRouter;
+export const extendDigitalPuddleAdminRoutes: DigitalPuddleAdminRouter;
 ```
 
 `src/extend-api.ts` should remain as a compatibility facade until task 1.2.3 or
