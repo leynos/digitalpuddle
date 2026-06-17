@@ -172,7 +172,7 @@ const fetchBytes = async (url: string, requestTimeoutMs: number): Promise<Uint8A
     if (!response.ok) {
       throw new Error(`failed to fetch ${url}: ${response.status} ${response.statusText}`);
     }
-    return readCappedResponseBytes(url, response);
+    return await readCappedResponseBytes(url, response);
   } finally {
     clearTimeout(timeout);
   }
@@ -371,7 +371,7 @@ const refreshDigitalOceanOpenApi = async (
       archiveUrl,
       artifactPath: path.join(commandRepoRoot, digitalOceanOpenApiArtifactPath),
       elapsedMs: dependencies.now().getTime() - startedAt.getTime(),
-      error,
+      errorMessage: error instanceof Error ? error.message : String(error),
       pin
     });
     throw error;

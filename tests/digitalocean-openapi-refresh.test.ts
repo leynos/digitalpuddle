@@ -142,15 +142,32 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
 
   test('rejects oversized source archive downloads before buffering', async () => {
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async () =>
-      new Response('', {
-        headers: {'content-length': String(50 * 1024 * 1024 + 1)}
-      })) as unknown as typeof fetch;
+    let readAttempted = false;
+    const response = {
+      get body() {
+        readAttempted = true;
+        throw new Error('response body should not be read');
+      },
+      arrayBuffer: async () => {
+        readAttempted = true;
+        throw new Error('response body should not be buffered');
+      },
+      headers: new Headers({'content-length': String(50 * 1024 * 1024 + 1)}),
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: async () => {
+        readAttempted = true;
+        throw new Error('response body should not be decoded');
+      }
+    };
+    globalThis.fetch = (async () => response as unknown as Response) as unknown as typeof fetch;
 
     try {
       await expect(
         createDefaultSyncDependencies().fetchBytes('https://example.invalid/openapi.tar.gz', 1000)
       ).rejects.toThrow(/exceeded/);
+      expect(readAttempted).toBe(false);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -254,6 +271,7 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
         archiveUrl,
         artifactPath: join(tempRoot, digitalOceanOpenApiArtifactPath),
         elapsedMs: 0,
+        errorMessage: 'fixture fetch failed',
         pin: fakePin
       },
       level: 'error',

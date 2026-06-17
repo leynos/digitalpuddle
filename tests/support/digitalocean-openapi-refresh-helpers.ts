@@ -30,7 +30,7 @@ type SyncLogEntry = {
 
 type SyncLogFields = Record<string, unknown> & {
   readonly elapsedMs?: unknown;
-  readonly error?: unknown;
+  readonly errorMessage?: unknown;
 };
 
 type FakeSyncDependencyOverrides = {
