@@ -173,6 +173,42 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
     }
   });
 
+  test('cancels streaming source archive downloads that exceed the byte cap', async () => {
+    const originalFetch = globalThis.fetch;
+    let readCount = 0;
+    let cancelCount = 0;
+    const chunkSize = 25 * 1024 * 1024 + 1;
+    const reader = {
+      cancel: async () => {
+        cancelCount += 1;
+      },
+      read: async () => {
+        readCount += 1;
+        return {done: false, value: new Uint8Array(chunkSize)};
+      }
+    };
+    const response = {
+      body: {
+        getReader: () => reader
+      },
+      headers: new Headers(),
+      ok: true,
+      status: 200,
+      statusText: 'OK'
+    };
+    globalThis.fetch = (async () => response as unknown as Response) as unknown as typeof fetch;
+
+    try {
+      await expect(
+        createDefaultSyncDependencies().fetchBytes('https://example.invalid/openapi.tar.gz', 1000)
+      ).rejects.toThrow(/exceeded/);
+      expect(readCount).toBe(2);
+      expect(cancelCount).toBe(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   test('writes sanitized artefact and provenance through the command flow', async () => {
     const tempRoot = await mkTestTempRoot('digitalpuddle-sync-test-');
     const dependencies = createFakeSyncDependencies();

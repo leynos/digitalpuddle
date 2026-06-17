@@ -142,15 +142,20 @@ const readCappedResponseBytes = async (url: string, response: Response): Promise
   let receivedBytes = 0;
   const reader = response.body.getReader();
 
-  while (true) {
-    const {done, value} = await reader.read();
-    if (done) {
-      break;
-    }
+  try {
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) {
+        break;
+      }
 
-    receivedBytes += value.byteLength;
-    assertArchiveSize(url, receivedBytes);
-    chunks.push(value);
+      receivedBytes += value.byteLength;
+      assertArchiveSize(url, receivedBytes);
+      chunks.push(value);
+    }
+  } catch (error) {
+    await reader.cancel().catch(() => undefined);
+    throw error;
   }
 
   const bytes = new Uint8Array(receivedBytes);
