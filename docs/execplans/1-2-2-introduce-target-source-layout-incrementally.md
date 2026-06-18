@@ -628,14 +628,14 @@ remaining work into a follow-up decision in `Decision log`.
 
 If a test or gate fails, inspect the matching `/tmp/*-digitalpuddle-${BRANCH}.out`
 log before rerunning. Do not run format, lint, typecheck, or tests in parallel.
-Do not create an isolated Cargo cache or build cache. Do not kill processes
-owned by other agents.
+Do not create an isolated build cache. Do not kill processes owned by other
+agents.
 
 Rollback is ordinary Git rollback to the last passing milestone commit. Do not
 use destructive commands such as `git reset --hard` or `git checkout --` unless
 the user explicitly approves that action.
 
-## Artifacts and notes
+## Artefacts and notes
 
 Local evidence gathered for the draft:
 
