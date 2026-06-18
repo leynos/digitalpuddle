@@ -236,44 +236,24 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
     expect(dependencies.calls).toContain('fetch');
     expect(dependencies.calls).toContain('tar');
     expect(dependencies.calls).toContain('bundle');
-    expect(dependencies.logEntries.map((entry) => entry.message)).toEqual([
-      '[syncDigitalOceanOpenApi] fetching source archive',
-      '[syncDigitalOceanOpenApi] extracting source archive',
-      '[syncDigitalOceanOpenApi] bundling source OpenAPI document',
-      '[syncDigitalOceanOpenApi] parsing bundled OpenAPI document',
-      '[syncDigitalOceanOpenApi] scrubbed credential-like examples',
-      '[syncDigitalOceanOpenApi] validating sanitized OpenAPI artefact',
-      '[syncDigitalOceanOpenApi] validating OpenAPI provenance',
-      '[syncDigitalOceanOpenApi] wrote artefact to',
-      '[syncDigitalOceanOpenApi] wrote provenance to',
-      '[syncDigitalOceanOpenApi] artefact sha256',
-      '[syncDigitalOceanOpenApi] completed'
-    ]);
-    expect(dependencies.logEntries).toContainEqual({
-      fields: {artifactPath: join(tempRoot, digitalOceanOpenApiArtifactPath)},
-      level: 'info',
-      message: '[syncDigitalOceanOpenApi] validating sanitized OpenAPI artefact'
-    });
-    expect(dependencies.logEntries).toContainEqual({
-      fields: {elapsedMs: 0, pin: fakePin},
-      level: 'info',
-      message: '[syncDigitalOceanOpenApi] completed'
-    });
-    expect(dependencies.logEntries).toContainEqual({
-      fields: {artifactPath: join(tempRoot, digitalOceanOpenApiArtifactPath)},
-      level: 'info',
-      message: '[syncDigitalOceanOpenApi] wrote artefact to'
-    });
-    expect(dependencies.logEntries).toContainEqual({
-      fields: {provenancePath: join(tempRoot, digitalOceanOpenApiProvenancePath)},
-      level: 'info',
-      message: '[syncDigitalOceanOpenApi] wrote provenance to'
-    });
-    expect(dependencies.logEntries).toContainEqual({
-      fields: {artifactHash: provenance.generatedArtifactSha256},
-      level: 'info',
-      message: '[syncDigitalOceanOpenApi] artefact sha256'
-    });
+    expect(dependencies.logEntries.map((entry) => entry.message)).toMatchSnapshot();
+    const stableEntries = dependencies.logEntries.map((entry) => ({
+      ...entry,
+      fields:
+        entry.fields === undefined
+          ? undefined
+          : Object.fromEntries(
+              Object.entries(entry.fields).map(([key, value]) => [
+                key,
+                key === 'elapsedMs'
+                  ? 0
+                  : typeof value === 'string'
+                    ? value.replaceAll(tempRoot, '<tempRoot>').replace(/digitalpuddle-openapi-[^/]+/g, '<syncTempRoot>')
+                    : value
+              ])
+            )
+    }));
+    expect(stableEntries).toMatchSnapshot();
   });
 
   test('logs contextual refresh failures', async () => {
