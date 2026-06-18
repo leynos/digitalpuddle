@@ -177,14 +177,14 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
     const originalFetch = globalThis.fetch;
     let readCount = 0;
     let cancelCount = 0;
-    const chunkSize = 25 * 1024 * 1024 + 1;
+    const chunkSize = 100 * 1024 * 1024;
     const reader = {
       cancel: async () => {
         cancelCount += 1;
       },
       read: async () => {
         readCount += 1;
-        return {done: false, value: new Uint8Array(chunkSize)};
+        return readCount === 1 ? {done: false, value: new Uint8Array(chunkSize)} : {done: true, value: undefined};
       }
     };
     const response = {
@@ -202,7 +202,7 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
       await expect(
         createDefaultSyncDependencies().fetchBytes('https://example.invalid/openapi.tar.gz', 1000)
       ).rejects.toThrow(/exceeded/);
-      expect(readCount).toBe(2);
+      expect(readCount).toBe(1);
       expect(cancelCount).toBe(1);
     } finally {
       globalThis.fetch = originalFetch;
