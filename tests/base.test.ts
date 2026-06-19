@@ -1,8 +1,10 @@
 /** @file Integration tests for top-level router extension hooks. */
 import {afterAll, beforeAll, describe, expect, it} from 'bun:test';
 import express from 'express';
+import {createCapabilitiesPayloadProvider} from '../src/admin/capabilities.ts';
 import {registerCapabilitiesRoute} from '../src/admin/routes.ts';
 import {simulation} from '../src/index.ts';
+import {buildCapabilityDocumentationMetadata} from '../src/openapi/projections.ts';
 
 type SimulationServer = Awaited<ReturnType<ReturnType<typeof simulation>['listen']>>;
 type CapabilitiesRouter = Parameters<typeof registerCapabilitiesRoute>[0];
@@ -123,6 +125,50 @@ describe('router extension tests', () => {
           });
         });
       }
+    }
+  });
+});
+
+describe('capabilities payload provider', () => {
+  it('lazily builds and independently caches capability payloads', () => {
+    const originalConsoleInfo = console.info;
+    console.info = () => undefined;
+
+    try {
+      let firstCallCount = 0;
+      const firstBuilder = () => {
+        firstCallCount += 1;
+        return buildCapabilityDocumentationMetadata();
+      };
+
+      const firstProvider = createCapabilitiesPayloadProvider(firstBuilder);
+
+      expect(firstCallCount).toBe(0);
+
+      const firstPayload = firstProvider();
+
+      expect(firstCallCount).toBe(1);
+      expect(firstProvider()).toBe(firstPayload);
+      expect(firstCallCount).toBe(1);
+
+      let secondCallCount = 0;
+      const secondBuilder = () => {
+        secondCallCount += 1;
+        return buildCapabilityDocumentationMetadata();
+      };
+
+      const secondProvider = createCapabilitiesPayloadProvider(secondBuilder);
+
+      expect(secondCallCount).toBe(0);
+
+      const secondPayload = secondProvider();
+
+      expect(secondCallCount).toBe(1);
+      expect(secondPayload).not.toBe(firstPayload);
+      expect(secondProvider()).toBe(secondPayload);
+      expect(secondCallCount).toBe(1);
+    } finally {
+      console.info = originalConsoleInfo;
     }
   });
 });

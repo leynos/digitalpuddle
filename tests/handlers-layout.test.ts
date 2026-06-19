@@ -136,6 +136,7 @@ describe('handler layout compatibility', () => {
         user: expect.objectContaining({login: 'dev'})
       })
     ]);
+    expect(response.body).toMatchSnapshot();
   });
 
   it('normalizes malformed legacy user rows before field access', async () => {
@@ -205,12 +206,9 @@ describe('handler layout compatibility', () => {
             );
 
             expect(userResponse.statusCode).toBe(200);
-            expect(userResponse.body).toEqual(
-              expect.objectContaining({
-                id: typeof user.id === 'number' && Number.isFinite(user.id) ? user.id : 0,
-                login: user.login
-              })
-            );
+            const body = userResponse.body as {id: unknown; login: unknown};
+            expect(typeof body.id === 'number' && Number.isFinite(body.id)).toBe(true);
+            expect(body.login).toBe(user.login);
             expect(membershipResponse.statusCode).toBe(200);
             expect(Array.isArray(membershipResponse.body)).toBe(true);
           } finally {

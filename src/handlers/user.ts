@@ -9,32 +9,12 @@
  */
 import type {SimulationHandlers} from '@simulacrum/foundation-simulator';
 
+import {normalizeUser, serializeMembershipResponse, shouldNormalizeUser, userAnomalyDetails} from '../domain/user.ts';
+import type {AuthenticatedUser, RawAuthenticatedUser} from '../domain/user.ts';
 import type {ExtendedSimulationStore} from '../store/index.ts';
 import type {SimulationHandler} from './types.ts';
 
-type AuthenticatedUser = ReturnType<ExtendedSimulationStore['schema']['users']['selectTableAsList']>[number];
-type MembershipOrganization = ReturnType<ExtendedSimulationStore['selectors']['allGithubOrganizations']>[number];
-
-type MembershipProjection = {
-  readonly role: 'member';
-  readonly state: 'active';
-};
-
-type RawAuthenticatedUser = Partial<AuthenticatedUser> & {
-  readonly login: string;
-};
-
-const fallbackUserId = 0;
-
-const userAnomalyDetails = (user: RawAuthenticatedUser) => ({
-  hasNumericId: typeof user.id === 'number' && Number.isFinite(user.id),
-  hasOrganizations: Array.isArray(user.organizations)
-});
-
-const shouldNormalizeUser = (user: RawAuthenticatedUser) => {
-  const details = userAnomalyDetails(user);
-  return !details.hasNumericId || !details.hasOrganizations;
-};
+export {serializeMembershipResponse} from '../domain/user.ts';
 
 const logUserNormalization = (operationId: string, user: RawAuthenticatedUser) => {
   console.error(
@@ -45,30 +25,6 @@ const logUserNormalization = (operationId: string, user: RawAuthenticatedUser) =
     })
   );
 };
-
-const normalizeUser = (user: AuthenticatedUser | RawAuthenticatedUser): AuthenticatedUser => {
-  const hasNumericId = typeof user.id === 'number' && Number.isFinite(user.id);
-  const hasOrganizations = Array.isArray(user.organizations);
-
-  return {
-    ...user,
-    id: hasNumericId ? user.id : fallbackUserId,
-    organizations: hasOrganizations ? user.organizations : []
-  } as AuthenticatedUser;
-};
-
-export const serializeMembershipResponse = (
-  membership: MembershipProjection,
-  organization: MembershipOrganization,
-  user: AuthenticatedUser
-) => ({
-  url: `${organization.url}/memberships/${user.login}`,
-  organization_url: organization.url,
-  state: membership.state,
-  role: membership.role,
-  organization,
-  user
-});
 
 export const createUserHandlers = (simulationStore: ExtendedSimulationStore): SimulationHandlers => {
   const getState = () => simulationStore.store.getState();
