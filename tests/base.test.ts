@@ -1,5 +1,6 @@
 /** @file Integration tests for top-level router extension hooks. */
 import {afterAll, beforeAll, describe, expect, it} from 'bun:test';
+import type {AddressInfo} from 'node:net';
 import express from 'express';
 import {createCapabilitiesPayloadProvider} from '../src/admin/capabilities.ts';
 import {registerCapabilitiesRoute} from '../src/admin/routes.ts';
@@ -115,6 +116,55 @@ describe('router extension tests', () => {
       console.error = originalConsoleError;
       if (errorServer) {
         const serverToClose = errorServer;
+        await new Promise<void>((resolve, reject) => {
+          serverToClose.close((error) => {
+            if (error) {
+              reject(error);
+              return;
+            }
+            resolve();
+          });
+        });
+      }
+    }
+  });
+
+  it('serves a consistent cached capability payload to concurrent requests', async () => {
+    const app = express();
+    const router: CapabilitiesRouter = express.Router();
+    const originalConsoleInfo = console.info;
+    let callCount = 0;
+    let concurrentServer: ReturnType<typeof app.listen> | undefined;
+
+    console.info = () => undefined;
+    registerCapabilitiesRoute(
+      router,
+      createCapabilitiesPayloadProvider(() => {
+        callCount += 1;
+        return buildCapabilityDocumentationMetadata();
+      })
+    );
+    app.use(router);
+
+    try {
+      concurrentServer = await new Promise<ReturnType<typeof app.listen>>((resolve) => {
+        const listeningServer = app.listen(0, () => {
+          resolve(listeningServer);
+        });
+      });
+      const address = concurrentServer.address() as AddressInfo;
+      const concurrentUrl = `${host}:${address.port}/_digitalpuddle/capabilities`;
+
+      const responses = await Promise.all(Array.from({length: 8}, () => fetch(concurrentUrl)));
+      const bodies = await Promise.all(responses.map((response) => response.json()));
+
+      expect(responses.every((response) => response.status === 200)).toBe(true);
+      expect(callCount).toBe(1);
+      expect(bodies).toEqual(bodies.map(() => bodies[0]));
+    } finally {
+      console.info = originalConsoleInfo;
+      if (concurrentServer) {
+        const serverToClose = concurrentServer;
         await new Promise<void>((resolve, reject) => {
           serverToClose.close((error) => {
             if (error) {

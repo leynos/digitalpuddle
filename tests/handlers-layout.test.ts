@@ -180,6 +180,62 @@ describe('handler layout compatibility', () => {
     }
   });
 
+  it('logs authentication failures for empty user lookups', async () => {
+    const originalConsoleError = console.error;
+    const logs: string[] = [];
+    console.error = (message?: unknown) => {
+      logs.push(String(message));
+    };
+
+    try {
+      const handlers = createUserHandlers(createStore([], []));
+
+      const userResponse = await invokeHandler(requireHandler(handlers, 'users/get-authenticated'));
+
+      expect(userResponse.statusCode).toBe(401);
+      expect(logs.map((entry) => JSON.parse(entry))).toEqual([
+        {
+          event: 'digitalpuddle.rest.user.authentication_failed',
+          operationId: 'users/get-authenticated',
+          userCount: 0,
+          reason: 'no-users-seeded'
+        }
+      ]);
+    } finally {
+      console.error = originalConsoleError;
+    }
+  });
+
+  it('logs authentication failures for requested users missing from memberships', async () => {
+    const originalConsoleError = console.error;
+    const logs: string[] = [];
+    console.error = (message?: unknown) => {
+      logs.push(String(message));
+    };
+
+    try {
+      const handlers = createUserHandlers(createStore([{id: 123, login: 'dev', organizations: []}], []));
+
+      const response = await invokeHandler(
+        requireHandler(handlers, 'orgs/list-memberships-for-authenticated-user'),
+        createRequest(new Map([['x-simulacat-user', 'other-dev']]))
+      );
+
+      expect(response.statusCode).toBe(401);
+      expect(logs.map((entry) => JSON.parse(entry))).toEqual([
+        {
+          event: 'digitalpuddle.rest.user.authentication_failed',
+          operationId: 'orgs/list-memberships-for-authenticated-user',
+          requestedLogin: 'other-dev',
+          userCount: 1,
+          reason: 'requested-user-not-found'
+        }
+      ]);
+    } finally {
+      console.error = originalConsoleError;
+    }
+  });
+
   it('safely serializes arbitrary malformed user id and organization values', async () => {
     await fc.assert(
       fc.asyncProperty(

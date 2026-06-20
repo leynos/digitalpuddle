@@ -16,12 +16,28 @@ import type {SimulationHandler} from './types.ts';
 
 export {serializeMembershipResponse} from '../domain/user.ts';
 
+type AuthenticationFailureDetails = {
+  readonly operationId: string;
+  readonly requestedLogin?: string;
+  readonly userCount: number;
+  readonly reason: 'no-users-seeded' | 'requested-user-not-found';
+};
+
 const logUserNormalization = (operationId: string, user: RawAuthenticatedUser) => {
   console.error(
     JSON.stringify({
       event: 'digitalpuddle.rest.user.normalized',
       operationId,
       user: userAnomalyDetails(user)
+    })
+  );
+};
+
+const logAuthenticationFailure = (details: AuthenticationFailureDetails) => {
+  console.error(
+    JSON.stringify({
+      event: 'digitalpuddle.rest.user.authentication_failed',
+      ...details
     })
   );
 };
@@ -44,9 +60,15 @@ export const createUserHandlers = (simulationStore: ExtendedSimulationStore): Si
       _request: Parameters<SimulationHandler>[1],
       response: Parameters<SimulationHandler>[2]
     ) => {
-      const users = getUsers('users/get-authenticated');
+      const operationId = 'users/get-authenticated';
+      const users = getUsers(operationId);
       const user = users[0];
       if (!user) {
+        logAuthenticationFailure({
+          operationId,
+          userCount: users.length,
+          reason: 'no-users-seeded'
+        });
         return response.status(401).json({message: 'Authentication required'});
       }
       const data = {
@@ -64,10 +86,17 @@ export const createUserHandlers = (simulationStore: ExtendedSimulationStore): Si
       request: Parameters<SimulationHandler>[1],
       response: Parameters<SimulationHandler>[2]
     ) => {
-      const users = getUsers('orgs/list-memberships-for-authenticated-user');
+      const operationId = 'orgs/list-memberships-for-authenticated-user';
+      const users = getUsers(operationId);
       const requestedLogin = request.get('x-simulacat-user') ?? request.get('x-github-user');
       const user = requestedLogin ? users.find((candidate) => candidate.login === requestedLogin) : users[0];
       if (!user) {
+        logAuthenticationFailure({
+          operationId,
+          userCount: users.length,
+          reason: requestedLogin ? 'requested-user-not-found' : 'no-users-seeded',
+          ...(requestedLogin ? {requestedLogin} : {})
+        });
         return response.status(401).json({message: 'Authentication required'});
       }
       const membershipOrganizationLogins = new Set(user.organizations);
