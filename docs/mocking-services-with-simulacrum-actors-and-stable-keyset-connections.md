@@ -1,5 +1,8 @@
 # Mocking services with Simulacrum, actors, and stable keyset connections
 
+<!-- markdownlint-disable-file MD013 -->
+<!-- Long imported prose lines are kept stable intentionally. -->
+
 A useful service mock does not merely answer requests. It remembers, enforces rules, and exposes the same little world through every protocol surface. The goal is not a papier-mâché endpoint that returns JSON-shaped confetti. The goal is a simulator: a compact, deterministic model of a service with state, identity, permissions, pagination, latency, failure modes, and scenario control.
 
 For experienced TypeScript developers, the core architecture should look like this:

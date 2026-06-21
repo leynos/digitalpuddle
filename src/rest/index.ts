@@ -1,21 +1,23 @@
-/** @file OpenAPI-backed REST handlers for the simulated GitHub API. */
+/**
+ * @file OpenAPI-backed REST handlers for the simulated GitHub API.
+ *
+ * This module remains the transitional REST adapter for inherited GitHub
+ * compatibility routes. It composes extracted handler groups with existing
+ * OpenAPI-backed route implementations, maps handler errors to structured
+ * logs, and supplies the handler map consumed by `src/simulation.ts`.
+ */
 import type {Document, SimulationHandlers} from '@simulacrum/foundation-simulator';
+import {createUserHandlers} from '../handlers/user.ts';
 import type {ExtendedSimulationStore} from '../store/index.ts';
 import {getSchema, type SchemaFile} from '../utils.ts';
 import {blobAsBase64, commitStatusResponse, gitTrees} from './utils.ts';
-
-/**
- * Creates the REST handler table consumed by the foundation simulator's
- * OpenAPI adapter.
- */
-type SimulationHandler = SimulationHandlers[string];
+import type {SimulationHandler} from '../handlers/types.ts';
 
 export const errorDetails = (error: unknown) => {
   if (error instanceof Error) {
     return {
       name: error.name,
-      message: error.message,
-      stack: error.stack
+      message: error.message
     };
   }
 
@@ -277,52 +279,6 @@ const handlers =
               });
               response.status(200).json(tree);
             }
-          },
-
-          // GET /user
-          'users/get-authenticated': async (
-            _context: Parameters<SimulationHandler>[0],
-            _request: Parameters<SimulationHandler>[1],
-            response: Parameters<SimulationHandler>[2]
-          ) => {
-            const users = simulationStore.schema.users.selectTableAsList(simulationStore.store.getState());
-            const user = users[0];
-            if (!user) {
-              return response.status(401).json({message: 'Authentication required'});
-            }
-            const data = {
-              id: parseInt(user.id.toString(), 10) as number,
-              login: user.login,
-              email: user.email,
-              name: user.name
-            };
-            response.status(200).json(data);
-          },
-
-          // GET /user/memberships/orgs
-          'orgs/list-memberships-for-authenticated-user': async (
-            _context: Parameters<SimulationHandler>[0],
-            request: Parameters<SimulationHandler>[1],
-            response: Parameters<SimulationHandler>[2]
-          ) => {
-            const users = simulationStore.schema.users.selectTableAsList(getState());
-            const requestedLogin = request.get('x-simulacat-user') ?? request.get('x-github-user');
-            const user = requestedLogin ? users.find((candidate) => candidate.login === requestedLogin) : users[0];
-            if (!user) {
-              return response.status(401).json({message: 'Authentication required'});
-            }
-            const organizations = simulationStore.selectors.allGithubOrganizations(getState());
-            const memberships = organizations
-              .filter((organization) => user.organizations.includes(organization.login))
-              .map((organization) => ({
-                url: `${organization.url}/memberships/${user.login}`,
-                state: 'active',
-                organization,
-                role: 'member',
-                organization_url: organization.url,
-                user
-              }));
-            return response.status(200).json(memberships);
           }
         };
 
@@ -330,6 +286,7 @@ const handlers =
     //  that will validate the response per the schema
     return withErrorLoggingForHandlers({
       ...baseHandlers,
+      ...(initialState ? createUserHandlers(simulationStore) : {}),
       ...(extendedHandlers ? extendedHandlers(simulationStore) : {})
     });
   };

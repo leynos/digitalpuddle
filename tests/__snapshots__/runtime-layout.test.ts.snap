@@ -1,0 +1,17 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`target runtime layout uses injected worker ports as the runtime behaviour source 1`] = `
+{
+  "ports": {
+    "clock": {
+      "now": [Function],
+    },
+    "kubernetesEngine": {
+      "descriptor": {
+        "capability": "kubernetes",
+        "name": "noop-kubernetes",
+      },
+    },
+  },
+}
+`;

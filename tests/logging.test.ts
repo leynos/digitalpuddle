@@ -291,12 +291,11 @@ describe('REST error logging helpers', () => {
     console.error = originalConsoleError;
   });
 
-  it('errorDetails returns name, message, and stack for Error instances', () => {
+  it('errorDetails returns name and message for Error instances', () => {
     const error = new Error('boom');
     expect(errorDetails(error)).toEqual({
       name: error.name,
-      message: error.message,
-      stack: error.stack
+      message: error.message
     });
   });
 
@@ -325,7 +324,7 @@ describe('REST error logging helpers', () => {
     expect(payload.operationId).toBe('my.operation');
     expect(payload.error.name).toBe('Error');
     expect(payload.error.message).toBe('failed');
-    expect(typeof payload.error.stack).toBe('string');
+    expect(payload.error.stack).toBeUndefined();
   });
 
   it('withErrorLogging returns the handler result when the handler succeeds', async () => {

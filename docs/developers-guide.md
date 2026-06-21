@@ -35,6 +35,16 @@ The inherited GitHub-oriented `src/graphql`, `src/rest`, and store entity files
 are transitional. Do not expand their public surface unless a review task
 explicitly requires keeping the baseline healthy.
 
+The current transitional layout keeps `src/index.ts` as the package-facing
+facade and moves server assembly to `src/simulation.ts`. Internal OpenAPI work
+can import from `src/openapi/index.ts`, private `/_digitalpuddle` routes live
+under `src/admin/routes.ts`, and new REST handler groups should land under
+`src/handlers/` before they are composed by the inherited `src/rest` adapter.
+The `src/worker/`, `src/engines/`, `src/journal/`, `src/scenarios/`, and
+`src/cli/` directories currently expose narrow contracts and no-op factories
+only; do not wire engine side effects or persistence through them until the
+owned roadmap slice implements that behaviour.
+
 ## 2. Architectural decisions
 
 Durable architectural decisions live in `docs/adr/`. Each entry is an
@@ -89,7 +99,8 @@ make nixie 2>&1 | tee /tmp/nixie-digitalpuddle-${BRANCH}.out
 Build the package when changing the CommonJS CLI:
 
 ```bash
-make build 2>&1 | tee /tmp/build-digitalpuddle-$(git branch --show).out
+BRANCH=$(git branch --show-current | tr '/ ' '__')
+make build 2>&1 | tee /tmp/build-digitalpuddle-${BRANCH}.out
 ```
 
 ## 4. Testing expectations
@@ -120,6 +131,13 @@ duration. Future DigitalPuddle route work should also write request, response,
 transition, engine-call, and fault events to the request journal. The journal is
 the assertion surface; operational logs are diagnostic support.
 
+Operational log fields must have bounded cardinality. Prefer stable reason
+codes and counts over stack traces, raw request headers, user identifiers,
+cursor values, fixture payloads, or arbitrary exception messages. High-detail
+failure context belongs in deterministic tests, response envelopes, or the
+request journal when that journal entry is part of an explicit debugging
+contract.
+
 ## 6. Client compatibility tests
 
 Client compatibility tests should follow ADR 0006. Terraform and doctl coverage
@@ -141,8 +159,9 @@ The current implementation keeps the source and projections in:
   metadata, and unsupported operation lookup;
 - `src/handlers/unsupported.ts` for pure DigitalOcean-shaped `501` response
   helpers;
-- `src/admin/capabilities.ts` and `src/extend-api.ts` for the private
-  `/_digitalpuddle/capabilities` route.
+- `src/admin/capabilities.ts` for the cached private capability payload;
+- `src/admin/routes.ts` for the private `/_digitalpuddle/capabilities` route;
+- `src/extend-api.ts` for transitional Simulacrum route composition.
 
 Use these rules when changing classifications:
 

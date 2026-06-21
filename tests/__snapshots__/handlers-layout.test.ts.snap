@@ -1,0 +1,25 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`handler layout compatibility filters memberships through normalized user organization data 1`] = `
+[
+  {
+    "organization": {
+      "login": "lovely-org",
+      "url": "https://api.example.test/orgs/lovely-org",
+    },
+    "organization_url": "https://api.example.test/orgs/lovely-org",
+    "role": "member",
+    "state": "active",
+    "url": "https://api.example.test/orgs/lovely-org/memberships/dev",
+    "user": {
+      "email": "dev@example.test",
+      "id": 123,
+      "login": "dev",
+      "name": "Dev",
+      "organizations": [
+        "lovely-org",
+      ],
+    },
+  },
+]
+`;

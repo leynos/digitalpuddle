@@ -699,7 +699,9 @@ src/
   index.ts
   simulation.ts
   config.ts
+  extend-api.ts
   openapi/
+    index.ts
     capabilities.ts
     registry.ts
     operations.ts
@@ -718,6 +720,7 @@ src/
     actions.ts
     kubernetes.ts
     unsupported.ts
+    user.ts
   worker/
     scheduler.ts
     clock.ts
@@ -737,7 +740,6 @@ src/
     leak-detector.ts
   admin/
     routes.ts
-    handlers/
   scenarios/
     schema.ts
     loader.ts
@@ -750,6 +752,19 @@ examples/
 testenv/
 docs/
 ```
+
+The current transitional implementation has introduced the target homes
+incrementally. `src/index.ts` remains the package and build entry-point facade,
+while `src/simulation.ts` owns the Simulacrum server assembly. `src/openapi/index.ts`
+re-exports the existing capability policy and projections. Private
+DigitalPuddle admin routes are owned by `src/admin/routes.ts`, with
+`src/extend-api.ts` kept as the Simulacrum composition facade. The first
+extracted inherited REST handlers live in `src/handlers/user.ts`; deeper
+GitHub compatibility separation remains a follow-on task. `src/worker/`,
+`src/engines/`, `src/journal/`, `src/scenarios/`, and `src/cli/` currently
+contain contracts and no-op factories only, so they define boundaries without
+claiming scheduler, engine, persistence, scenario loading, or CLI behaviour
+that is not implemented yet.
 
 ## 17. Testing strategy
 
