@@ -33,6 +33,34 @@ describe('OpenAPI layout compatibility', () => {
   it('snapshots the full v1 capability matrix shape', () => {
     const result = buildCapabilityMatrix(v1CapabilityManifest);
 
+    expect(result).toHaveLength(v1CapabilityManifest.length);
+    expect(result.every((row) => row.releaseStage === 'v1')).toBe(true);
+    expect(result.map((row) => row.operationKey)).toEqual(
+      result.map((row) => createOperationKey(row.method, row.path))
+    );
+    expect(new Set(result.map((row) => row.operationKey)).size).toBe(result.length);
+    for (const row of result) {
+      expect(row).toEqual(
+        expect.objectContaining({
+          operationId: expect.any(String),
+          operationKey: expect.any(String),
+          method: expect.any(String),
+          path: expect.stringMatching(/^\/v2/),
+          capability: expect.any(String),
+          productArea: expect.any(String),
+          runtimeBehaviour: expect.any(String),
+          exposeInDocs: expect.any(Boolean)
+        })
+      );
+    }
+    expect(result.filter((row) => row.capability === 'unsupported')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          unsupported: {behaviour: 'not-implemented'},
+          runtimeBehaviour: 'not-implemented'
+        })
+      ])
+    );
     expect(result).toMatchSnapshot();
   });
 });

@@ -1,12 +1,27 @@
 /** @file Behavioural tests for target runtime module contracts. */
 import {describe, expect, it} from 'bun:test';
 import type {CliCommand} from '../src/cli/index.ts';
-import type {KubernetesEngine} from '../src/engines/index.ts';
+import type {EngineDescriptor, KubernetesEngine} from '../src/engines/index.ts';
 import {createNoopRequestJournal} from '../src/journal/index.ts';
 import {createEmptyScenarioRegistry} from '../src/scenarios/index.ts';
 import {createWorkerRuntime} from '../src/worker/index.ts';
 
 describe('target runtime layout', () => {
+  it('keeps engine contracts type-only at runtime while preserving descriptor shapes', async () => {
+    const engineModule = await import('../src/engines/index.ts');
+    const descriptor: EngineDescriptor = {
+      name: 'noop-kubernetes',
+      capability: 'kubernetes'
+    };
+    const engine: KubernetesEngine = {descriptor};
+
+    expect(Object.keys(engineModule)).toEqual([]);
+    expect(engine.descriptor).toEqual({
+      name: 'noop-kubernetes',
+      capability: 'kubernetes'
+    });
+  });
+
   it('uses injected worker ports as the runtime behaviour source', () => {
     const clock = {now: () => new Date('2026-06-01T00:00:00.000Z')};
     const engine: KubernetesEngine = {
