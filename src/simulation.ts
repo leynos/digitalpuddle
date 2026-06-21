@@ -48,6 +48,42 @@ type _GitHubActions =
 type _GitHubSelectors =
   ExtendedSimulationStore extends FoundationSimulationStore<infer _S, infer _A, infer Sel> ? Sel : never;
 
+type SimulationAssemblyFailureReason = 'schema-validation-failed' | 'store-composition-failed';
+
+const logSimulationAssemblyFailure = (reason: SimulationAssemblyFailureReason) => {
+  console.error(
+    JSON.stringify({
+      event: 'digitalpuddle.simulation.assembly_failed',
+      reason
+    })
+  );
+};
+
+const parseInitialState = (initialState: GitHubInitialStore | undefined) => {
+  if (!initialState) {
+    return undefined;
+  }
+
+  try {
+    return githubInitialStoreSchema.parse(initialState);
+  } catch (error) {
+    logSimulationAssemblyFailure('schema-validation-failed');
+    throw error;
+  }
+};
+
+const composeStoreConfig = (
+  initialState: ReturnType<typeof parseInitialState>,
+  extendStore: GitHubExtendStoreInput | undefined
+) => {
+  try {
+    return mergeStoreConfig(initialState, extendStore);
+  } catch (error) {
+    logSimulationAssemblyFailure('store-composition-failed');
+    throw error;
+  }
+};
+
 /**
  * Builds a GitHub API simulation server from seeded state and optional
  * extensions.
@@ -66,8 +102,8 @@ type _GitHubSelectors =
  * ```
  */
 export const simulation = (args: GitHubSimulatorArgs = {}): FoundationSimulator<ExtendedSimulationStore> => {
-  const parsedInitialState = !args?.initialState ? undefined : githubInitialStoreSchema.parse(args?.initialState);
-  const extendStoreConfig = mergeStoreConfig(parsedInitialState, args?.extend?.extendStore);
+  const parsedInitialState = parseInitialState(args.initialState);
+  const extendStoreConfig = composeStoreConfig(parsedInitialState, args.extend?.extendStore);
 
   return createFoundationSimulationServer<_GitHubSchema, _GitHubActions, _GitHubSelectors>({
     port: 3300, // default port

@@ -6,6 +6,7 @@ import {createCapabilitiesPayloadProvider} from '../src/admin/capabilities.ts';
 import {registerCapabilitiesRoute} from '../src/admin/routes.ts';
 import {simulation} from '../src/index.ts';
 import {buildCapabilityDocumentationMetadata} from '../src/openapi/projections.ts';
+import type {GitHubExtendStoreInput} from '../src/store/index.ts';
 
 type SimulationServer = Awaited<ReturnType<ReturnType<typeof simulation>['listen']>>;
 type CapabilitiesRouter = Parameters<typeof registerCapabilitiesRoute>[0];
@@ -219,6 +220,78 @@ describe('capabilities payload provider', () => {
       expect(secondCallCount).toBe(1);
     } finally {
       console.info = originalConsoleInfo;
+    }
+  });
+});
+
+describe('simulation assembly observability', () => {
+  const captureConsoleErrors = () => {
+    const originalConsoleError = console.error;
+    const lines: string[] = [];
+    console.error = (message?: unknown) => {
+      lines.push(String(message));
+    };
+
+    return {
+      lines,
+      restore: () => {
+        console.error = originalConsoleError;
+      }
+    };
+  };
+
+  it('logs a bounded reason when initial state schema validation fails', () => {
+    const captured = captureConsoleErrors();
+
+    try {
+      expect(() =>
+        simulation({
+          initialState: {
+            users: [{login: '   ', organizations: []}],
+            organizations: [],
+            repositories: [],
+            branches: [],
+            blobs: []
+          }
+        })
+      ).toThrow();
+
+      expect(captured.lines.map((entry) => JSON.parse(entry))).toEqual([
+        {
+          event: 'digitalpuddle.simulation.assembly_failed',
+          reason: 'schema-validation-failed'
+        }
+      ]);
+    } finally {
+      captured.restore();
+    }
+  });
+
+  it('logs a bounded reason when store composition fails', () => {
+    const captured = captureConsoleErrors();
+    const extendStore = Object.defineProperty({} as GitHubExtendStoreInput, 'schema', {
+      get() {
+        throw new Error('schema extension unavailable');
+      }
+    });
+
+    try {
+      expect(() =>
+        simulation({
+          extend: {
+            extendStore
+          }
+        })
+      ).toThrow('schema extension unavailable');
+
+      expect(captured.lines.map((entry) => JSON.parse(entry))).toEqual([
+        {
+          event: 'digitalpuddle.simulation.assembly_failed',
+          reason: 'store-composition-failed'
+        }
+      ]);
+    } finally {
+      captured.restore();
     }
   });
 });
