@@ -18,7 +18,6 @@ export {serializeMembershipResponse} from '../domain/user.ts';
 
 type AuthenticationFailureDetails = {
   readonly operationId: string;
-  readonly requestedLogin?: string;
   readonly userCount: number;
   readonly reason: 'no-users-seeded' | 'requested-user-not-found';
 };
@@ -94,8 +93,7 @@ export const createUserHandlers = (simulationStore: ExtendedSimulationStore): Si
         logAuthenticationFailure({
           operationId,
           userCount: users.length,
-          reason: requestedLogin ? 'requested-user-not-found' : 'no-users-seeded',
-          ...(requestedLogin ? {requestedLogin} : {})
+          reason: requestedLogin ? 'requested-user-not-found' : 'no-users-seeded'
         });
         return response.status(401).json({message: 'Authentication required'});
       }

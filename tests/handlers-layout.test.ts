@@ -226,7 +226,6 @@ describe('handler layout compatibility', () => {
         {
           event: 'digitalpuddle.rest.user.authentication_failed',
           operationId: 'orgs/list-memberships-for-authenticated-user',
-          requestedLogin: 'other-dev',
           userCount: 1,
           reason: 'requested-user-not-found'
         }
