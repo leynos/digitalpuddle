@@ -179,7 +179,6 @@ Use these rules when changing classifications:
   projection invariants, whenever the manifest shape or classification rules
   change.
 
-
 ## 8. DigitalOcean OpenAPI artefact refresh
 
 The pinned DigitalOcean OpenAPI contract is checked in at
@@ -217,23 +216,6 @@ When changing the pin, refresh script, bundled output, or provenance schema,
 update the artefact and provenance together and add or update `bun:test`
 coverage for both the pure helpers and the command path.
 
-## 9. Transitional architecture rules
-
-The imported Simulacat code embeds GitHub URLs in entities and keeps some HTTP
-details inside handlers. That is acceptable only as a temporary baseline. New
-DigitalPuddle code should follow these rules:
-
-- keep domain state free of transport URLs unless the upstream API contract
-  stores that URL as data;
-- build response URLs in serializers or response translators;
-- map domain outcomes to HTTP status codes in handler adapters;
-- translate request headers into explicit domain-level decisions before core
-  logic runs;
-- keep engine side effects in worker-owned adapters, not public handlers.
-
-See
-[ADR 0005](adr/0005-transitional-simulacat-boundaries.md)
-for the transition policy.
 ## 9. Transitional architecture rules
 
 The imported Simulacat code embeds GitHub URLs in entities and keeps some HTTP
