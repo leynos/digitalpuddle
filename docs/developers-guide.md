@@ -131,6 +131,13 @@ duration. Future DigitalPuddle route work should also write request, response,
 transition, engine-call, and fault events to the request journal. The journal is
 the assertion surface; operational logs are diagnostic support.
 
+Operational log fields must have bounded cardinality. Prefer stable reason
+codes and counts over stack traces, raw request headers, user identifiers,
+cursor values, fixture payloads, or arbitrary exception messages. High-detail
+failure context belongs in deterministic tests, response envelopes, or the
+request journal when that journal entry is part of an explicit debugging
+contract.
+
 ## 6. Client compatibility tests
 
 Client compatibility tests should follow ADR 0006. Terraform and doctl coverage

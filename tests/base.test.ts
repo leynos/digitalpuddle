@@ -109,7 +109,7 @@ describe('router extension tests', () => {
       expect(errorLogs.map((entry) => JSON.parse(entry))).toEqual([
         {
           event: 'digitalpuddle.admin.capabilities.error',
-          message: 'capability projection failed'
+          reason: 'payload-provider-failed'
         }
       ]);
     } finally {

@@ -33,7 +33,7 @@ const initialiseCapabilitiesPayload = (builder: CapabilitiesPayloadBuilder): Cap
     console.error(
       JSON.stringify({
         event: 'digitalpuddle.admin.capabilities.cache_error',
-        message: error instanceof Error ? error.message : String(error)
+        reason: 'payload-builder-failed'
       })
     );
     throw new Error('Failed to initialise DigitalPuddle capabilities payload.', {cause: error});

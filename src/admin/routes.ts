@@ -25,11 +25,11 @@ export const registerCapabilitiesRoute = (
   router.get('/_digitalpuddle/capabilities', (_request, response) => {
     try {
       response.status(200).json(payloadProvider());
-    } catch (error: unknown) {
+    } catch {
       console.error(
         JSON.stringify({
           event: 'digitalpuddle.admin.capabilities.error',
-          message: error instanceof Error ? error.message : String(error)
+          reason: 'payload-provider-failed'
         })
       );
       response.status(500).json({

@@ -174,7 +174,7 @@ const validateV1CapabilityManifest = (
     console.error(
       JSON.stringify({
         event: 'digitalpuddle.manifest.validation_failed',
-        message: error instanceof Error ? error.message : String(error)
+        reason: 'capability-manifest-invalid'
       })
     );
     throw error;
