@@ -2442,3 +2442,5 @@ Make the simulator boringly truthful.
 A strong Simulacrum-based simulator does not need to mirror an entire external service. It needs to model the behaviour your application actually relies on, with stable identity, actor-aware visibility, deterministic state transitions, honest capability boundaries, fast selectors, scenario control, and stable keyset cursors.
 
 The reward is a test harness that does not merely return expected JSON. It hosts a small pocket universe with laws. Your application can poke it, anger it, page through it, mutate it, authenticate to it, retry against it, and still receive answers that make sense.
+
+<!-- markdownlint-disable MD013 -- Imported long-form guide keeps source paragraphs intact. -->

@@ -179,7 +179,44 @@ Use these rules when changing classifications:
   projection invariants, whenever the manifest shape or classification rules
   change.
 
-## 8. Transitional architecture rules
+## 8. DigitalOcean OpenAPI artefact refresh
+
+The pinned DigitalOcean OpenAPI contract is checked in at
+`src/openapi/digitalocean.openapi.json`. Its machine-readable provenance is
+checked in beside it at
+`src/openapi/digitalocean.openapi.provenance.json`.
+
+Refresh the artefact with:
+
+```bash
+bun run sync:openapi:digitalocean
+```
+
+The refresh command downloads the pinned upstream repository archive, bundles
+`specification/DigitalOcean-public.v2.yaml` with `@redocly/cli`, canonicalizes
+the generated JSON, sanitizes secret-like examples, writes the artefact and
+provenance through atomic rename, and records the generated SHA-256 hash.
+It expects a Unix-compatible `tar` executable on `PATH`, uses the
+repository-pinned `@redocly/cli` from `node_modules`, and rejects source archive
+downloads larger than 50 MiB before writing them to disk.
+
+The reusable contract helpers live in `src/openapi/artifact.ts`. Keep that
+module free of filesystem, network, process, and command-runner dependencies.
+It owns:
+
+- the artefact and provenance paths;
+- the upstream repository, source path, and commit pin;
+- the recorded refresh command;
+- canonical JSON serialization;
+- SHA-256 hashing;
+- provenance validation, including raw-source and source-archive URLs tied to
+  the pinned upstream commit.
+
+When changing the pin, refresh script, bundled output, or provenance schema,
+update the artefact and provenance together and add or update `bun:test`
+coverage for both the pure helpers and the command path.
+
+## 9. Transitional architecture rules
 
 The imported Simulacat code embeds GitHub URLs in entities and keeps some HTTP
 details inside handlers. That is acceptable only as a temporary baseline. New

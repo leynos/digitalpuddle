@@ -1,0 +1,50 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`DigitalOcean OpenAPI artefact matches the pinned provenance structure snapshot 1`] = `
+{
+  "bundlingTool": {
+    "name": "@redocly/cli",
+    "version": "2.31.5",
+  },
+  "generatedArtifactPath": "src/openapi/digitalocean.openapi.json",
+  "generatedArtifactSha256": "<sha256>",
+  "rawSourceUrl": "https://raw.githubusercontent.com/digitalocean/openapi/ef3868ee4cadd34fd4f9624371f7a45d7a205fc1/specification/DigitalOcean-public.v2.yaml",
+  "refreshCommand": "bun run sync:openapi:digitalocean",
+  "refreshedAt": "<iso-date>",
+  "sourceArchiveUrl": "https://codeload.github.com/digitalocean/openapi/tar.gz/ef3868ee4cadd34fd4f9624371f7a45d7a205fc1",
+  "sourcePath": "specification/DigitalOcean-public.v2.yaml",
+  "upstreamCommit": "<commit>",
+  "upstreamRepository": "https://github.com/digitalocean/openapi",
+}
+`;
+
+exports[`DigitalOcean OpenAPI artefact matches the pinned artefact critical properties snapshot 1`] = `
+{
+  "firstPaths": [
+    "/<upload_url>",
+    "/api/v1/chat/completions",
+    "/v1/async-invoke",
+    "/v1/batches",
+    "/v1/batches/files",
+  ],
+  "lastPaths": [
+    "/v2/vpcs",
+    "/v2/vpcs/{vpc_id}",
+    "/v2/vpcs/{vpc_id}/members",
+    "/v2/vpcs/{vpc_id}/peerings",
+    "/v2/vpcs/{vpc_id}/peerings/{vpc_peering_id}",
+  ],
+  "openapi": "3.0.0",
+  "pathCount": 430,
+  "representativePaths": {
+    "account": [
+      "get",
+    ],
+    "kubernetesClusters": [
+      "get",
+      "post",
+    ],
+  },
+  "schemaCount": 842,
+}
+`;

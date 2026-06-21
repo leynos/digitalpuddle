@@ -1,0 +1,203 @@
+/**
+ * @file Tests for the checked-in DigitalOcean OpenAPI artefact.
+ *
+ * This suite treats the pinned contract and provenance record as repository
+ * data, then checks their shape, hash relationship, URL provenance, snapshots,
+ * and canonical JSON invariants. It depends on the OpenAPI artefact helpers in
+ * `src/openapi/artifact.ts` and the refresh-command credential guard so that
+ * generated file validation stays aligned with sync-time validation.
+ */
+import {readFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {describe, expect, test} from 'bun:test';
+import fc from 'fast-check';
+import {
+  assertDigitalOceanOpenApiProvenanceMatchesArtifact,
+  digitalOceanOpenApiArtifactPath,
+  digitalOceanOpenApiProvenancePath,
+  getDigitalOceanOpenApiRawSourceUrl,
+  getDigitalOceanOpenApiSourceArchiveUrl,
+  sha256Hex,
+  stringifyCanonicalJson,
+  validateDigitalOceanOpenApiProvenance,
+  type DigitalOceanOpenApiProvenance,
+  type JsonValue
+} from '../src/openapi/artifact.ts';
+import {assertNoCredentialLikeExamples, secretShapeReplacements} from '../sync-digitalocean-openapi.ts';
+import {propertyTestSeed} from './support/property-test-seed.ts';
+
+const repoRoot = join(import.meta.dirname, '..');
+
+const readJsonFile = async (relativePath: string): Promise<unknown> =>
+  JSON.parse(await readFile(join(repoRoot, relativePath), 'utf8')) as unknown;
+
+const readTextFile = async (relativePath: string): Promise<string> => readFile(join(repoRoot, relativePath), 'utf8');
+
+const jsonPrimitive = fc.oneof(fc.constant(null), fc.boolean(), fc.double({noNaN: true}), fc.string());
+
+const jsonValue: fc.Arbitrary<JsonValue> = fc.letrec((tie) => ({
+  value: fc.oneof(
+    jsonPrimitive,
+    fc.array(tie('value'), {maxLength: 4}),
+    fc.dictionary(fc.string({maxLength: 8}), tie('value'), {maxKeys: 4})
+  )
+})).value as fc.Arbitrary<JsonValue>;
+
+const snapshotStableProvenance = (provenance: DigitalOceanOpenApiProvenance): JsonValue => ({
+  ...provenance,
+  generatedArtifactSha256: '<sha256>',
+  refreshedAt: '<iso-date>',
+  upstreamCommit: '<commit>'
+});
+
+const reverseObjectKeysRecursive = (value: JsonValue): JsonValue => {
+  if (Array.isArray(value)) {
+    return value.map((item) => reverseObjectKeysRecursive(item));
+  }
+
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .reverse()
+        .map(([key, item]) => [key, reverseObjectKeysRecursive(item)])
+    );
+  }
+
+  return value;
+};
+
+describe('DigitalOcean OpenAPI artefact', () => {
+  test('is an OpenAPI 3 document with representative v2 paths', async () => {
+    const artifact = (await readJsonFile(digitalOceanOpenApiArtifactPath)) as {
+      openapi?: unknown;
+      paths?: Record<string, unknown>;
+    };
+
+    expect(artifact.openapi).toBeString();
+    expect(String(artifact.openapi)).toStartWith('3.');
+    expect(artifact.paths?.['/v2/account']).toBeDefined();
+    expect(artifact.paths?.['/v2/kubernetes/clusters']).toBeDefined();
+  });
+
+  test('does not contain credential-like examples', async () => {
+    const artifactContent = await readTextFile(digitalOceanOpenApiArtifactPath);
+
+    expect(artifactContent).not.toContain('hooks.slack.com/services/');
+    expect(artifactContent).not.toContain('-----BEGIN PRIVATE KEY-----');
+    expect(artifactContent).not.toContain('-----BEGIN CERTIFICATE-----');
+    for (const rule of secretShapeReplacements) {
+      expect(new RegExp(rule.pattern.source, rule.pattern.flags).test(artifactContent), rule.description).toBe(false);
+    }
+    expect(() => assertNoCredentialLikeExamples(artifactContent)).not.toThrow();
+  });
+
+  test('records valid provenance for the checked-in artefact', async () => {
+    const provenance = validateDigitalOceanOpenApiProvenance(await readJsonFile(digitalOceanOpenApiProvenancePath));
+    const artifactContent = await readTextFile(digitalOceanOpenApiArtifactPath);
+
+    expect(provenance.upstreamRepository).toBe('https://github.com/digitalocean/openapi');
+    expect(provenance.sourcePath).toBe('specification/DigitalOcean-public.v2.yaml');
+    expect(provenance.refreshCommand).toBe('bun run sync:openapi:digitalocean');
+    expect(provenance.generatedArtifactPath).toBe(digitalOceanOpenApiArtifactPath);
+    expect(provenance.generatedArtifactSha256).toBe(sha256Hex(artifactContent));
+    expect(assertDigitalOceanOpenApiProvenanceMatchesArtifact(provenance, artifactContent)).toEqual(provenance);
+  });
+
+  test('matches the pinned provenance structure snapshot', async () => {
+    const provenance = validateDigitalOceanOpenApiProvenance(await readJsonFile(digitalOceanOpenApiProvenancePath));
+
+    expect(snapshotStableProvenance(provenance)).toMatchSnapshot();
+  });
+
+  test('matches the pinned artefact critical properties snapshot', async () => {
+    const artifact = (await readJsonFile(digitalOceanOpenApiArtifactPath)) as {
+      components?: {schemas?: Record<string, unknown>};
+      openapi?: unknown;
+      paths?: Record<string, unknown>;
+    };
+    const paths = Object.keys(artifact.paths ?? {});
+    const schemas = Object.keys(artifact.components?.schemas ?? {});
+
+    expect({
+      firstPaths: paths.slice(0, 5),
+      lastPaths: paths.slice(-5),
+      openapi: artifact.openapi,
+      pathCount: paths.length,
+      representativePaths: {
+        account: Object.keys((artifact.paths?.['/v2/account'] as Record<string, unknown> | undefined) ?? {}),
+        kubernetesClusters: Object.keys(
+          (artifact.paths?.['/v2/kubernetes/clusters'] as Record<string, unknown> | undefined) ?? {}
+        )
+      },
+      schemaCount: schemas.length
+    }).toMatchSnapshot();
+  });
+
+  test('rejects incomplete provenance data', () => {
+    expect(() =>
+      validateDigitalOceanOpenApiProvenance({
+        upstreamRepository: 'https://github.com/digitalocean/openapi'
+      })
+    ).toThrow();
+  });
+
+  test('rejects provenance URLs that do not match the stated upstream commit', async () => {
+    const provenance = validateDigitalOceanOpenApiProvenance(await readJsonFile(digitalOceanOpenApiProvenancePath));
+    const otherCommit = '0123456789abcdef0123456789abcdef01234567';
+
+    const mismatchedRawSource: DigitalOceanOpenApiProvenance = {
+      ...provenance,
+      rawSourceUrl: getDigitalOceanOpenApiRawSourceUrl(otherCommit)
+    };
+    expect(() => validateDigitalOceanOpenApiProvenance(mismatchedRawSource)).toThrow(/rawSourceUrl/);
+
+    const mismatchedArchive: DigitalOceanOpenApiProvenance = {
+      ...provenance,
+      sourceArchiveUrl: getDigitalOceanOpenApiSourceArchiveUrl(otherCommit)
+    };
+    expect(() => validateDigitalOceanOpenApiProvenance(mismatchedArchive)).toThrow(/sourceArchiveUrl/);
+  });
+
+  test('rejects provenance with a different upstream repository', async () => {
+    const provenance = validateDigitalOceanOpenApiProvenance(await readJsonFile(digitalOceanOpenApiProvenancePath));
+
+    expect(() =>
+      validateDigitalOceanOpenApiProvenance({
+        ...provenance,
+        upstreamRepository: 'https://example.invalid/digitalocean/openapi'
+      })
+    ).toThrow();
+  });
+
+  test('rejects provenance when the artefact hash differs', async () => {
+    const provenance = await readJsonFile(digitalOceanOpenApiProvenancePath);
+
+    expect(() => assertDigitalOceanOpenApiProvenanceMatchesArtifact(provenance, '{"openapi":"3.0.0"}\n')).toThrow(
+      /hash mismatch/
+    );
+  });
+
+  test('serialises equivalent objects with stable key ordering', () => {
+    fc.assert(
+      fc.property(jsonValue, (value) => {
+        const canonicalJson = stringifyCanonicalJson(value);
+        const parsedCanonicalJson = JSON.parse(canonicalJson) as JsonValue;
+        const reversedJson = stringifyCanonicalJson(reverseObjectKeysRecursive(value));
+
+        expect(parsedCanonicalJson).toEqual(JSON.parse(JSON.stringify(value)) as JsonValue);
+        expect(reversedJson).toBe(canonicalJson);
+      }),
+      {numRuns: 100, seed: propertyTestSeed}
+    );
+  });
+  test('serialises canonical JSON idempotently after parsing', () => {
+    fc.assert(
+      fc.property(jsonValue, (value) => {
+        const canonicalJson = stringifyCanonicalJson(value);
+
+        expect(stringifyCanonicalJson(JSON.parse(canonicalJson) as JsonValue)).toBe(canonicalJson);
+      }),
+      {numRuns: 100, seed: propertyTestSeed}
+    );
+  });
+});

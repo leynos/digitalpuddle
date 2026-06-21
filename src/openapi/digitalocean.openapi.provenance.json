@@ -1,0 +1,15 @@
+{
+  "bundlingTool": {
+    "name": "@redocly/cli",
+    "version": "2.31.5"
+  },
+  "generatedArtifactPath": "src/openapi/digitalocean.openapi.json",
+  "generatedArtifactSha256": "c0909990db650e3d3e1fe19bb0a9ebbeddb4ebd9ab5306721c3d41442700c884",
+  "rawSourceUrl": "https://raw.githubusercontent.com/digitalocean/openapi/ef3868ee4cadd34fd4f9624371f7a45d7a205fc1/specification/DigitalOcean-public.v2.yaml",
+  "refreshCommand": "bun run sync:openapi:digitalocean",
+  "refreshedAt": "2026-06-14T17:10:12.811Z",
+  "sourceArchiveUrl": "https://codeload.github.com/digitalocean/openapi/tar.gz/ef3868ee4cadd34fd4f9624371f7a45d7a205fc1",
+  "sourcePath": "specification/DigitalOcean-public.v2.yaml",
+  "upstreamCommit": "ef3868ee4cadd34fd4f9624371f7a45d7a205fc1",
+  "upstreamRepository": "https://github.com/digitalocean/openapi"
+}

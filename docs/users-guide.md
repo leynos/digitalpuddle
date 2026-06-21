@@ -7,23 +7,26 @@ surface is being built in roadmap order.
 
 ## Current status
 
-The current package is useful as a working Simulacrum adaptation baseline. It
-does not yet implement the DigitalOcean v2 API. Use the roadmap to distinguish
-working behaviour from planned behaviour:
+The current package is useful as a working Simulacrum adaptation baseline. The
+DigitalOcean v2 API contract is now pinned in-repo, and the roadmap distinguishes
+what is available now from what is still in flight:
 
 - the inherited baseline starts locally and exposes `/simulation`;
 - the package metadata, README, design, and roadmap now describe
   DigitalPuddle;
 - the planned public DigitalOcean API root is `/v2`;
 - the private harness API root is `/_digitalpuddle`;
+- the pinned contract now exists as
+  `src/openapi/digitalocean.openapi.json` with provenance in
+  `src/openapi/digitalocean.openapi.provenance.json`;
 - capability classifications now have a machine-readable policy source, so the
   generated capability metadata and unsupported response helpers use the same
   data;
 - `GET /_digitalpuddle/capabilities` exposes the current capability
   documentation metadata for local harnesses and debugging;
 - unsupported DigitalOcean operations will return explicit
-  DigitalOcean-shaped `501 Not Implemented` responses once the `/v2` route
-  registry exists.
+  DigitalOcean-shaped `501 Not Implemented` responses once roadmap tasks wire the
+  `/v2` route registry and unsupported fallback behaviour.
 
 ## Installation
 
@@ -175,10 +178,14 @@ DigitalPuddle-specific orchestration and inspection routes will live under
 
 - `GET /_digitalpuddle/capabilities` for the machine-readable capability
   legend and operation rows.
+- `src/openapi/digitalocean.openapi.json` plus
+  `src/openapi/digitalocean.openapi.provenance.json`, which provide the pinned
+  contract snapshot and source metadata used by maintainers and reviewers.
 
-Planned routes include health, version, state, journal, leak reports, reset,
-scenario loading, clock advancement, queue drain, and the pinned OpenAPI
-contract.
+Planned routes still include health, version, state, journal, leak reports,
+reset, scenario loading, clock advancement, and queue drain. The pinned
+DigitalOcean OpenAPI contract is already available as checked-in artefact, while
+full `/v2` behaviour remains a later roadmap task.
 
 These routes are for local harnesses and debugging. They are not part of the
 DigitalOcean API contract.

@@ -1,0 +1,104 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`DigitalOcean OpenAPI refresh sanitization writes sanitized artefact and provenance through the command flow 1`] = `
+[
+  "[syncDigitalOceanOpenApi] fetching source archive",
+  "[syncDigitalOceanOpenApi] extracting source archive",
+  "[syncDigitalOceanOpenApi] bundling source OpenAPI document",
+  "[syncDigitalOceanOpenApi] parsing bundled OpenAPI document",
+  "[syncDigitalOceanOpenApi] scrubbed credential-like examples",
+  "[syncDigitalOceanOpenApi] validating sanitized OpenAPI artefact",
+  "[syncDigitalOceanOpenApi] validating OpenAPI provenance",
+  "[syncDigitalOceanOpenApi] wrote artefact to",
+  "[syncDigitalOceanOpenApi] wrote provenance to",
+  "[syncDigitalOceanOpenApi] artefact sha256",
+  "[syncDigitalOceanOpenApi] completed",
+]
+`;
+
+exports[`DigitalOcean OpenAPI refresh sanitization writes sanitized artefact and provenance through the command flow 2`] = `
+[
+  {
+    "fields": {
+      "archiveUrl": "https://codeload.github.com/digitalocean/openapi/tar.gz/0123456789abcdef0123456789abcdef01234567",
+      "pin": "0123456789abcdef0123456789abcdef01234567",
+    },
+    "level": "info",
+    "message": "[syncDigitalOceanOpenApi] fetching source archive",
+  },
+  {
+    "fields": {
+      "archivePath": "<tempRoot>/<syncTempRoot>/openapi.tar.gz",
+      "tempRoot": "<tempRoot>/<syncTempRoot>",
+    },
+    "level": "info",
+    "message": "[syncDigitalOceanOpenApi] extracting source archive",
+  },
+  {
+    "fields": {
+      "bundlePath": "<tempRoot>/<syncTempRoot>/digitalocean.openapi.raw.json",
+      "sourceFile": "<tempRoot>/<syncTempRoot>/openapi-0123456789abcdef0123456789abcdef01234567/specification/DigitalOcean-public.v2.yaml",
+    },
+    "level": "info",
+    "message": "[syncDigitalOceanOpenApi] bundling source OpenAPI document",
+  },
+  {
+    "fields": {
+      "bundlePath": "<tempRoot>/<syncTempRoot>/digitalocean.openapi.raw.json",
+    },
+    "level": "info",
+    "message": "[syncDigitalOceanOpenApi] parsing bundled OpenAPI document",
+  },
+  {
+    "fields": {
+      "artifactPath": "<tempRoot>/src/openapi/digitalocean.openapi.json",
+    },
+    "level": "info",
+    "message": "[syncDigitalOceanOpenApi] scrubbed credential-like examples",
+  },
+  {
+    "fields": {
+      "artifactPath": "<tempRoot>/src/openapi/digitalocean.openapi.json",
+    },
+    "level": "info",
+    "message": "[syncDigitalOceanOpenApi] validating sanitized OpenAPI artefact",
+  },
+  {
+    "fields": {
+      "artifactHash": "a8c3e6ee5925b6bf407095e0bdb2429cb5d2d02ed2cbe05aab8e3939ab489260",
+      "pin": "0123456789abcdef0123456789abcdef01234567",
+    },
+    "level": "info",
+    "message": "[syncDigitalOceanOpenApi] validating OpenAPI provenance",
+  },
+  {
+    "fields": {
+      "artifactPath": "<tempRoot>/src/openapi/digitalocean.openapi.json",
+    },
+    "level": "info",
+    "message": "[syncDigitalOceanOpenApi] wrote artefact to",
+  },
+  {
+    "fields": {
+      "provenancePath": "<tempRoot>/src/openapi/digitalocean.openapi.provenance.json",
+    },
+    "level": "info",
+    "message": "[syncDigitalOceanOpenApi] wrote provenance to",
+  },
+  {
+    "fields": {
+      "artifactHash": "a8c3e6ee5925b6bf407095e0bdb2429cb5d2d02ed2cbe05aab8e3939ab489260",
+    },
+    "level": "info",
+    "message": "[syncDigitalOceanOpenApi] artefact sha256",
+  },
+  {
+    "fields": {
+      "elapsedMs": 0,
+      "pin": "0123456789abcdef0123456789abcdef01234567",
+    },
+    "level": "info",
+    "message": "[syncDigitalOceanOpenApi] completed",
+  },
+]
+`;
