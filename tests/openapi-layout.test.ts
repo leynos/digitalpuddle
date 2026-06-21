@@ -53,14 +53,9 @@ describe('OpenAPI layout compatibility', () => {
         })
       );
     }
-    expect(result.filter((row) => row.capability === 'unsupported')).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          unsupported: {behaviour: 'not-implemented'},
-          runtimeBehaviour: 'not-implemented'
-        })
-      ])
-    );
+    const unsupportedRows = result.filter((row) => row.capability === 'unsupported');
+    expect(unsupportedRows.every((row) => row.runtimeBehaviour === 'not-implemented')).toBe(true);
+    expect(unsupportedRows.every((row) => row.unsupported?.behaviour === 'not-implemented')).toBe(true);
     expect(result).toMatchSnapshot();
   });
 });
