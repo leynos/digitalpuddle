@@ -83,7 +83,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@arethetypeswrong/core": "^0.18.2",
+    "@arethetypeswrong/core": "^0.18.4",
     "@biomejs/biome": "^2.3.13",
     "@graphql-codegen/cli": "^5.0.7",
     "@graphql-codegen/typescript": "^4.1.6",
