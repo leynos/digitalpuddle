@@ -1,5 +1,12 @@
 node_modules
+__pycache__/
+*.py[cod]
 .memdb/
+.coverage
+.typos-oxendict-base.json
+.typos-oxendict-base.toml
+.uv-cache/
+.uv-tools/
 *.tsbuildinfo
 dist
 dist-ui

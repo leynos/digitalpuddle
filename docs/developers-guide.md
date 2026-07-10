@@ -96,6 +96,34 @@ make markdownlint 2>&1 | tee /tmp/markdownlint-digitalpuddle-${BRANCH}.out
 make nixie 2>&1 | tee /tmp/nixie-digitalpuddle-${BRANCH}.out
 ```
 
+### 3.1. Spelling policy
+
+`make all` and `make markdownlint` enforce en-GB-oxendict spelling with the
+`TYPOS_VERSION` pin in the `Makefile`. The gate first tests the policy helper,
+refreshes the shared base dictionary, generates `typos.toml`, and scans tracked
+Markdown files.
+
+The cross-estate policy helper is the documented exception to the repository's
+Bun-first scripting rule. It uses Python 3.13 through `uv` because the shared
+implementation is maintained in `leynos/agent-helper-scripts` and reused by
+repositories with different application toolchains.
+
+The shared dictionary cache and its freshness metadata are untracked. The
+helper replaces the cache only when the authoritative copy is newer and can
+reuse a valid cached copy while offline. A clean checkout with an unavailable
+network retains the reviewed, tracked `typos.toml` policy.
+
+Do not edit generated entries in `typos.toml`. Put only repository-specific
+proper nouns, quoted upstream titles, fixtures, stems or exclusions in
+`typos.local.toml`, then regenerate with:
+
+```bash
+uv run scripts/generate_typos_config.py
+```
+
+Keep upstream API spellings in inline or fenced code where practical. The
+spelling gate deliberately ignores code spans and fenced code blocks.
+
 Build the package when changing the CommonJS CLI:
 
 ```bash

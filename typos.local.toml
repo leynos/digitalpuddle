@@ -1,0 +1,19 @@
+# Repository-specific identifiers, quotations and deliberate fixtures.
+
+schema = 1
+
+[oxford]
+stems = []
+
+[words]
+# Official name: "GitHub Flavored Markdown".
+accepted = ["Flavored"]
+
+[words.corrections]
+
+[patterns]
+# Abbreviated hexadecimal commit IDs may begin with dictionary words.
+ignore = ["\\bba[0-9a-f]{5,39}\\b"]
+
+[files]
+exclude = []
