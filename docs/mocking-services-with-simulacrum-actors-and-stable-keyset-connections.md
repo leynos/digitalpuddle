@@ -1982,7 +1982,7 @@ schema-stubbed endpoint does not claim stateful behaviour
 inspection route reports capability matrix
 ```
 
-## 28. Benchmark selectors before optimising everything else
+## 28. Benchmark selectors before optimizing everything else
 
 Most simulator slowness comes from repeated filtering and nested resolver scans, not from JSON serialization or cursor encoding.
 

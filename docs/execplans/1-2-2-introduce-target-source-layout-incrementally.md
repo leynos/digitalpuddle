@@ -543,7 +543,7 @@ leta files src | head -n 240
 leta grep "simulation|extendRouter|toUnsupportedOperationResponse" -k function,method,constant,variable --head 80
 ```
 
-For each approved milestone, first create the red or characterisation tests
+For each approved milestone, first create the red or characterization tests
 that prove the intended behaviour. For pure moves, this can be a compatibility
 test that fails when the old public import no longer re-exports the moved
 module. Then make the smallest source move, run the focused test, and only then

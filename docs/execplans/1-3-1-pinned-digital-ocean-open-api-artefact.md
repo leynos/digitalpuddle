@@ -540,12 +540,12 @@ Observable success after implementation:
   will be retried.
 - After all known CodeRabbit findings were fixed and deterministic gates
   passed, repeated final CodeRabbit retries were blocked by recoverable
-  `rate_limit` errors reporting that the organisation had run out of usage
+  `rate_limit` errors reporting that the organization had run out of usage
   credits. Backoffs of 17, 17, 28, 23, 20, and 16 minutes all ended with the
   same rate-limit response.
 - GitHub secret scanning treats realistic upstream Slack webhook examples as
   push-protection violations, even when they are examples rather than live
-  credentials. Generated artefact output needs deterministic sanitisation
+  credentials. Generated artefact output needs deterministic sanitization
   before hashing and provenance recording.
 - Importing the refresh script for direct unit coverage brought it under the
   stricter TypeScript checks used for tests. The script now uses indexed
