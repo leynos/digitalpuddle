@@ -87,6 +87,13 @@ BRANCH=$(git branch --show-current | tr '/ ' '__')
 make all 2>&1 | tee /tmp/all-digitalpuddle-${BRANCH}.out
 ```
 
+`make all` includes `docs-check` (`bun run docs:check`): TypeDoc's
+`notDocumented` validation over the package entry point (`typedoc.json`),
+requiring a JSDoc block on every declaration in the public surface, treating
+warnings as errors, and emitting no documentation artefacts. Zod schema
+constants are tagged `@internal` so their field definitions stay out of the
+documented surface.
+
 Run documentation gates when Markdown changes:
 
 ```bash
