@@ -148,7 +148,7 @@ clarity, strictness, and reproducibility goals used elsewhere in this guide.
 
 - **ESM-first with a documented CLI exception**: Source modules and the
   published library surface are expected to be ESM. This repository retains a
-  CommonJS build artifact for the Node CLI because `bin/start.cjs` requires
+  CommonJS build artefact for the Node CLI because `bin/start.cjs` requires
   `../dist/index.cjs` so it can run under Node without transpilation. Treat
   that CommonJS output as a narrow operational exception, not as the default
   module model.
