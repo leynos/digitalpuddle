@@ -1,5 +1,8 @@
 # DigitalPuddle
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](
+https://deepwiki.com/leynos/digitalpuddle)
+
 *A local DigitalOcean-shaped API simulator for deterministic infrastructure
 tests.*
 
