@@ -6,9 +6,9 @@ Status: Accepted
 
 The imported Simulacat Core code still contains GitHub-specific entities,
 transport URLs, REST handlers, GraphQL handlers, and tests. Some of that code
-mixes domain data with response URL construction or inspects HTTP details inside
-handler logic. Those patterns are inherited baseline behaviour, not the target
-DigitalPuddle architecture.
+mixes domain data with response URL construction or inspects HTTP details
+inside handler logic. Those patterns are inherited baseline behaviour, not the
+target DigitalPuddle architecture.
 
 ## Decision
 
@@ -19,14 +19,14 @@ side effects, and journal emission.
 
 ## Rejected alternatives
 
-- Keeping inherited transport URLs in domain entities was rejected because it erodes
-  route-contract visibility and leaks HTTP shape into state models.
+- Keeping inherited transport URLs in domain entities was rejected because it
+  erodes route-contract visibility and leaks HTTP shape into state models.
 - Embedding HTTP mapping inside domain entities was rejected because it couples
   core logic to transport details instead of handler boundaries.
-- Parsing headers implicitly was rejected so that header decisions remain explicit
-  and testable before core logic runs.
-- Postponing splitting GitHub scaffolding was rejected because it hides transition
-  work and blocks the production boundary from becoming explicit.
+- Parsing headers implicitly was rejected so that header decisions remain
+  explicit and testable before core logic runs.
+- Postponing splitting GitHub scaffolding was rejected because it hides
+  transition work and blocks the production boundary from becoming explicit.
 
 ## Consequences
 

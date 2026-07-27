@@ -118,6 +118,6 @@ ______________________________________________________________________
 ## Contributing
 
 Contributions are welcome once the initial shape settles. Please follow
-[AGENTS.md](AGENTS.md), keep changes atomic, run the relevant gates with durable
-logs, and update the design or roadmap whenever implementation decisions
-change.
+[AGENTS.md](AGENTS.md), keep changes atomic, run the relevant gates with
+durable logs, and update the design or roadmap whenever implementation
+decisions change.

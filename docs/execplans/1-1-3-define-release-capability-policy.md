@@ -1,9 +1,8 @@
 # Define the release capability policy
 
-This ExecPlan (execution plan) is a living document. The sections
-`Constraints`, `Tolerances`, `Risks`, `Progress`, `Surprises & Discoveries`,
-`Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work
-proceeds.
+This ExecPlan (execution plan) is a living document. The sections `Constraints`,
+`Tolerances`, `Risks`, `Progress`, `Surprises & Discoveries`, `Decision Log`,
+and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
 Status: COMPLETE
 
@@ -15,9 +14,9 @@ predictable unsupported responses. This plan covers roadmap task 1.1.3:
 defining and implementing the policy for `scriptable`, `engine-backed`,
 `stubbed`, and `unsupported` operations.
 
-After the approved implementation lands, a maintainer can classify every
-pinned DigitalOcean OpenAPI operation once, then use that classification to
-drive generated documentation and runtime `501 Not Implemented` responses. The
+After the approved implementation lands, a maintainer can classify every pinned
+DigitalOcean OpenAPI operation once, then use that classification to drive
+generated documentation and runtime `501 Not Implemented` responses. The
 observable result is that an operation classified as `unsupported` appears as
 unsupported in the machine-readable matrix and receives a DigitalOcean-shaped
 `501` response when requested through `/v2`. Supported operations remain
@@ -87,8 +86,8 @@ conflict in `Decision Log`, and ask the user how to proceed.
   rather than adding a new DigitalPuddle-specific API, stop and present options.
 - Dependencies: if a new runtime dependency is needed, stop and ask for
   approval. A dev dependency for OpenAPI validation, property testing, or
-  LemmaScript proof checking also requires approval unless it is already present
-  in `package.json`.
+  LemmaScript proof checking also requires approval unless it is already
+  present in `package.json`.
 - OpenAPI pin: if the DigitalOcean OpenAPI artefact must be added or refreshed
   to complete this task, stop and ask whether to merge roadmap task 1.3.1 into
   this slice.
@@ -105,49 +104,39 @@ conflict in `Decision Log`, and ask the user how to proceed.
 ## Risks
 
 - Risk: capability classifications drift between documentation, registry data,
-  and runtime fallback behaviour.
-  Severity: high.
-  Likelihood: medium.
+  and runtime fallback behaviour. Severity: high. Likelihood: medium.
   Mitigation: make one manifest or OpenAPI extension the source of truth, then
   derive the matrix, admin response, generated docs metadata, and unsupported
   handler from that source.
 
 - Risk: `stubbed` can become a false claim of real behavioural support.
-  Severity: medium.
-  Likelihood: medium.
-  Mitigation: define `stubbed` as deterministic and intentionally lightweight,
-  require docs to label it separately, and test that stubbed operations do not
-  enqueue engine work.
+  Severity: medium. Likelihood: medium. Mitigation: define `stubbed` as
+  deterministic and intentionally lightweight, require docs to label it
+  separately, and test that stubbed operations do not enqueue engine work.
 
 - Risk: `engine-backed` can leak infrastructure side effects into HTTP
-  handlers.
-  Severity: high.
-  Likelihood: medium.
-  Mitigation: the policy may identify an operation as engine-backed, but the
-  implementation path must still go through worker-owned ports and adapters.
+  handlers. Severity: high. Likelihood: medium. Mitigation: the policy may
+  identify an operation as engine-backed, but the implementation path must
+  still go through worker-owned ports and adapters.
 
 - Risk: unsupported route semantics can blur `404`, `405`, and `501`.
-  Severity: medium.
-  Likelihood: high.
-  Mitigation: define status semantics centrally. Unknown non-DigitalPuddle
-  routes stay normal routing misses, known paths with unsupported methods
-  return `405` with `Allow`, and classified unsupported DigitalOcean operations
-  under `/v2` return a DigitalOcean-shaped `501` envelope.
+  Severity: medium. Likelihood: high. Mitigation: define status semantics
+  centrally. Unknown non-DigitalPuddle routes stay normal routing misses, known
+  paths with unsupported methods return `405` with `Allow`, and classified
+  unsupported DigitalOcean operations under `/v2` return a DigitalOcean-shaped
+  `501` envelope.
 
 - Risk: the repository is still in the imported GitHub-shaped baseline.
-  Severity: medium.
-  Likelihood: high.
-  Mitigation: implement a narrow DigitalPuddle capability-policy spine under
-  target paths such as `src/openapi/`, `src/handlers/`, and `src/admin/` without
-  moving the whole repository layout in this task.
+  Severity: medium. Likelihood: high. Mitigation: implement a narrow
+  DigitalPuddle capability-policy spine under target paths such as
+  `src/openapi/`, `src/handlers/`, and `src/admin/` without moving the whole
+  repository layout in this task.
 
 - Risk: route classification may require the pinned DigitalOcean OpenAPI
-  contract, which roadmap task 1.3.1 has not yet added.
-  Severity: high.
-  Likelihood: medium.
-  Mitigation: keep this task focused on the policy schema, seed v1 manifest,
-  invariants, and runtime behaviour shape. If a real pin is required, escalate
-  rather than silently absorbing 1.3.1.
+  contract, which roadmap task 1.3.1 has not yet added. Severity: high.
+  Likelihood: medium. Mitigation: keep this task focused on the policy schema,
+  seed v1 manifest, invariants, and runtime behaviour shape. If a real pin is
+  required, escalate rather than silently absorbing 1.3.1.
 
 ## Capability policy definitions
 
@@ -164,8 +153,8 @@ The approved implementation should define a closed capability vocabulary:
   deterministic response from policy-approved data, examples, or fixtures, and
   is not evidence of full control-plane modelling.
 - `unsupported`: the operation is intentionally unavailable in this release.
-  When a request resolves to this operation under `/v2`, DigitalPuddle returns a
-  DigitalOcean-shaped `501 Not Implemented` envelope.
+  When a request resolves to this operation under `/v2`, DigitalPuddle returns
+  a DigitalOcean-shaped `501 Not Implemented` envelope.
 
 The policy should also define implementation metadata that can be used without
 guesswork:
@@ -211,13 +200,12 @@ should not add those tools unless an approved later change needs them.
 
 ### Milestone 1: record the policy decision
 
-Create a narrow ADR, probably
-`docs/adr/0007-release-capability-policy.md`, that makes the capability
-vocabulary and source-of-truth rule durable. The ADR should state that every
-public DigitalOcean operation known to the pinned contract must have exactly
-one DigitalPuddle capability classification before release, and that generated
-docs plus unsupported runtime responses must be derived from the same
-classification source.
+Create a narrow ADR, probably `docs/adr/0007-release-capability-policy.md`,
+that makes the capability vocabulary and source-of-truth rule durable. The ADR
+should state that every public DigitalOcean operation known to the pinned
+contract must have exactly one DigitalPuddle capability classification before
+release, and that generated docs plus unsupported runtime responses must be
+derived from the same classification source.
 
 Update `docs/digitalpuddle-technical-design.md` sections 7.1, 8.2, 16, 17.2,
 and 20 so the design explains how the policy feeds the operation registry,
@@ -289,8 +277,7 @@ env -u FORCE_COLOR make test 2>&1 | tee /tmp/test-digitalpuddle-${BRANCH}.out
 coderabbit review --agent 2>&1 | tee /tmp/coderabbit-policy-digitalpuddle-${BRANCH}.out
 ```
 
-Commit the policy model and tests after gates and CodeRabbit concerns are
-clear.
+Commit the policy model and tests after gates and CodeRabbit concerns are clear.
 
 ### Milestone 3: derive docs and runtime projections
 
@@ -343,8 +330,8 @@ The approved implementation may add DigitalPuddle-specific seams, but it must
 not complete the full repository layout migration promised by roadmap task
 1.2.2.
 
-If safe within the tolerances, add an internal assembly hook that can expose the
-capability matrix through the future `/_digitalpuddle/capabilities` admin
+If safe within the tolerances, add an internal assembly hook that can expose
+the capability matrix through the future `/_digitalpuddle/capabilities` admin
 surface or through a pure function consumed by that future route. If this
 requires changing the public `simulation()` API or disturbing the inherited
 baseline, stop and record the integration as a follow-on dependency.
@@ -403,9 +390,9 @@ repository. If the admin route is deferred, test the pure route payload shape
 and record the dependency.
 
 Property tests should cover invariants over manifest entries and projections.
-Useful invariants include: every operation key appears once in the matrix, every
-matrix row has one of the four capability values, unsupported rows always have
-`501` response metadata, and projecting the same manifest twice gives
+Useful invariants include: every operation key appears once in the matrix,
+every matrix row has one of the four capability values, unsupported rows always
+have `501` response metadata, and projecting the same manifest twice gives
 byte-identical JSON after stable sorting.
 
 LemmaScript proof is not automatically required. If the implementation adds a
@@ -418,9 +405,8 @@ finite table tests are the appropriate validation.
 ## Progress
 
 - [x] 2026-05-19: Loaded the `leta`, `execplans`,
-  `hexagonal-architecture`, `firecrawl-mcp`, `commit-message`,
-  `pr-creation`, and `en-gb-oxendict-style` skills needed for this planning
-  pass.
+  `hexagonal-architecture`, `firecrawl-mcp`, `commit-message`, `pr-creation`,
+  and `en-gb-oxendict-style` skills needed for this planning pass.
 - [x] 2026-05-19: Created the Leta workspace for this checkout.
 - [x] 2026-05-19: Renamed the branch to
   `1-1-3-define-release-capability-policy`.
@@ -438,8 +424,8 @@ finite table tests are the appropriate validation.
 - [x] 2026-05-20: Implemented milestone 1 documentation: added ADR 0007
   and updated the technical design, users' guide, and developers' guide.
 - [x] 2026-05-20: Milestone 1 gates passed:
-  `bun fmt`, `make markdownlint`, `make nixie`, and
-  `coderabbit review --agent` with 0 findings after one wording fix.
+  `bun fmt`, `make markdownlint`, `make nixie`, and `coderabbit review --agent`
+  with 0 findings after one wording fix.
 - [ ] Commit milestone 1.
 - [x] 2026-05-20: Implemented milestone 2 policy model in
   `src/openapi/capabilities.ts` with Zod validation, canonical operation keys,
@@ -486,16 +472,16 @@ finite table tests are the appropriate validation.
   the capability policy source/projection files.
 - [x] 2026-05-20: Final full gate passed:
   `bun fmt`, `make check-fmt`, `make lint`, `make generate`,
-  `env -u FORCE_COLOR make test` with 132 passing tests,
-  `make markdownlint`, and `make nixie`.
+  `env -u FORCE_COLOR make test` with 132 passing tests, `make markdownlint`,
+  and `make nixie`.
 - [x] 2026-05-20: Final `coderabbit review --agent` completed with
   0 findings.
 - [x] 2026-05-20: Reran the full gate and CodeRabbit after final ExecPlan and
-  documentation edits; all gates passed again and CodeRabbit completed with
-  0 findings.
+  documentation edits; all gates passed again and CodeRabbit completed with 0
+  findings.
 - [x] 2026-05-20: Committed implementation milestones:
-  `72613f1` documentation policy, `9d786a4` policy manifest,
-  `25879b9` projections, and `63105f5` admin route integration.
+  `72613f1` documentation policy, `9d786a4` policy manifest, `25879b9`
+  projections, and `63105f5` admin route integration.
 - [x] 2026-05-20: Prepared milestone 5 for commit, including roadmap and final
   documentation closure.
 - [x] 2026-05-20: Pushed the completed implementation branch to
@@ -515,43 +501,40 @@ finite table tests are the appropriate validation.
 - Observation: the current source tree is still the imported GitHub-shaped
   baseline. `src/index.ts`, `src/extend-api.ts`, and `src/rest/index.ts`
   assemble GitHub schema and handlers, while target DigitalPuddle paths such as
-  `src/openapi/`, `src/handlers/`, and `src/admin/` do not yet exist.
-  Impact: the implementation should add a narrow capability-policy spine rather
-  than attempting the larger layout migration from roadmap task 1.2.2.
+  `src/openapi/`, `src/handlers/`, and `src/admin/` do not yet exist. Impact:
+  the implementation should add a narrow capability-policy spine rather than
+  attempting the larger layout migration from roadmap task 1.2.2.
 
 - Observation: roadmap task 1.3.1, which adds the pinned DigitalOcean OpenAPI
-  artefact, has not landed yet.
-  Impact: this plan must not require a real pin unless the user explicitly
-  expands scope. A v1 seed manifest can express the policy now and later attach
-  to the pinned contract.
+  artefact, has not landed yet. Impact: this plan must not require a real pin
+  unless the user explicitly expands scope. A v1 seed manifest can express the
+  policy now and later attach to the pinned contract.
 
 - Observation: existing documentation already states the planned `/v2` and
-  `/_digitalpuddle` split and unsupported behaviour.
-  Impact: documentation updates should sharpen policy and maintainer rules
-  without overstating current runtime support before implementation lands.
+  `/_digitalpuddle` split and unsupported behaviour. Impact: documentation
+  updates should sharpen policy and maintainer rules without overstating
+  current runtime support before implementation lands.
 
 - Observation: Firecrawl and Wyvern prior-art research agree that OpenAPI
   `x-*` extensions are the conventional metadata channel, while mock servers
   commonly separate routing misses, unsupported methods, and not-implemented
-  operations.
-  Impact: DigitalPuddle should preserve separate `404`, `405`, and `501`
-  meanings instead of using `501` as a catch-all for every unmatched request.
+  operations. Impact: DigitalPuddle should preserve separate `404`, `405`, and
+  `501` meanings instead of using `501` as a catch-all for every unmatched
+  request.
 
 - Observation: the existing test suite imports
-  `src/__generated__/resolvers-types.ts`, and a fresh checkout may not have that
-  ignored generated file present.
-  Impact: validation commands that run tests must run `make generate` first.
+  `src/__generated__/resolvers-types.ts`, and a fresh checkout may not have
+  that ignored generated file present. Impact: validation commands that run
+  tests must run `make generate` first.
 
 - Observation: in this Lody shell, `FORCE_COLOR` causes Node to print a warning
-  that changes the startup-output snapshots.
-  Impact: validation commands that run `make test` should unset `FORCE_COLOR`
-  for the test process while still invoking the repository's `make test`
-  target.
+  that changes the startup-output snapshots. Impact: validation commands that
+  run `make test` should unset `FORCE_COLOR` for the test process while still
+  invoking the repository's `make test` target.
 
 - Observation: the approved plan still used draft-phase wording after the user
-  approved implementation.
-  Impact: the first execution edit changed this plan to `IN PROGRESS` and
-  recorded the approval date before product changes began.
+  approved implementation. Impact: the first execution edit changed this plan to
+  `IN PROGRESS` and recorded the approval date before product changes began.
 
 - Observation: `requiresEngineBackedWorker` was an imprecise name because the
   predicate checked the capability plus both worker and engine-port metadata.
@@ -559,33 +542,32 @@ finite table tests are the appropriate validation.
   the decision a caller can make from it.
 
 - Observation: `expect.objectContaining({unsupported: undefined})` requires an
-  `unsupported` property to exist with the value `undefined`.
-  Impact: projection tests now assert that supported matrix rows do not have
-  the `unsupported` property at all.
+  `unsupported` property to exist with the value `undefined`. Impact:
+  projection tests now assert that supported matrix rows do not have the
+  `unsupported` property at all.
 
 - Observation: the first schema version rejected unsupported entries without
   `501` response metadata, but did not reject supported entries that supplied
-  `unsupportedResponseStatus`.
-  Impact: the manifest schema now treats that as a configuration error and the
-  negative test suite covers each custom validation branch directly.
+  `unsupportedResponseStatus`. Impact: the manifest schema now treats that as a
+  configuration error and the negative test suite covers each custom validation
+  branch directly.
 
 ## Decision Log
 
 - Decision: define capability policy as a source-of-truth manifest or
-  OpenAPI-side extension, not as prose-only documentation.
-  Rationale: roadmap task 1.1.3 requires the classifications to drive generated
-  docs and runtime `501` responses. Prose cannot provide that guarantee.
+  OpenAPI-side extension, not as prose-only documentation. Rationale: roadmap
+  task 1.1.3 requires the classifications to drive generated docs and runtime
+  `501` responses. Prose cannot provide that guarantee.
 
 - Decision: allow a sidecar v1 manifest before the pinned DigitalOcean OpenAPI
-  artefact exists.
-  Rationale: roadmap task 1.3.1 owns the pin. This task can still define the
-  policy model and v1 classifications without pretending the pin has landed.
+  artefact exists. Rationale: roadmap task 1.3.1 owns the pin. This task can
+  still define the policy model and v1 classifications without pretending the
+  pin has landed.
 
 - Decision: keep the capability model independent of HTTP and engine
-  adapters.
-  Rationale: the policy is domain/application logic. HTTP response translation,
-  Simulacrum routing, and engine calls are adapters and should not leak into the
-  classification rules.
+  adapters. Rationale: the policy is domain/application logic. HTTP response
+  translation, Simulacrum routing, and engine calls are adapters and should not
+  leak into the classification rules.
 
 - Decision: treat LemmaScript as conditional for this task.
   Rationale: the planned policy is a finite manifest plus closed vocabulary. If
@@ -599,46 +581,44 @@ finite table tests are the appropriate validation.
   changing scope.
 
 - Decision: milestone 3 stops at pure projection and response helpers rather
-  than adding a real `/v2/*` catch-all route.
-  Rationale: the pinned OpenAPI artefact and operation registry are owned by
-  roadmap tasks 1.3.1 and 1.3.2. Adding runtime routing now would either rely
-  on a fake registry or broaden this slice beyond the approved tolerances.
+  than adding a real `/v2/*` catch-all route. Rationale: the pinned OpenAPI
+  artefact and operation registry are owned by roadmap tasks 1.3.1 and 1.3.2.
+  Adding runtime routing now would either rely on a fake registry or broaden
+  this slice beyond the approved tolerances.
 
 - Decision: keep the review-follow-up tests explicit rather than deriving
-  invalid entries by recursively rewriting existing manifest rows.
-  Rationale: small constructed fixtures make each custom validation rule and
-  expected error message visible, which improves diagnosis when a future policy
-  change breaks one rule.
+  invalid entries by recursively rewriting existing manifest rows. Rationale:
+  small constructed fixtures make each custom validation rule and expected
+  error message visible, which improves diagnosis when a future policy change
+  breaks one rule.
 
 ## Outcomes & retrospective
 
-The implementation defines the release capability policy for roadmap task
-1.1.3 and leaves the repository with a tested DigitalPuddle capability spine.
-ADR 0007 is now the durable policy record. `src/openapi/capabilities.ts` owns
-the closed vocabulary, Zod validation, canonical operation keys, predicates,
-and v1 seed manifest. `src/openapi/projections.ts` derives capability matrix
-rows, documentation metadata, and unsupported operation lookup data from that
+The implementation defines the release capability policy for roadmap task 1.1.3
+and leaves the repository with a tested DigitalPuddle capability spine. ADR
+0007 is now the durable policy record. `src/openapi/capabilities.ts` owns the
+closed vocabulary, Zod validation, canonical operation keys, predicates, and v1
+seed manifest. `src/openapi/projections.ts` derives capability matrix rows,
+documentation metadata, and unsupported operation lookup data from that
 manifest. `src/handlers/unsupported.ts` provides a pure DigitalOcean-shaped
 `501` response helper. The existing router now exposes
 `GET /_digitalpuddle/capabilities` from the derived documentation metadata.
 
-Validation evidence: the final full gate passed on 2026-05-20 with
-`bun fmt`, `make check-fmt`, `make lint`, `make generate`,
-`env -u FORCE_COLOR make test` producing 132 passing tests, `make markdownlint`,
-and `make nixie`. Final `coderabbit review --agent` completed with
-0 findings.
+Validation evidence: the final full gate passed on 2026-05-20 with `bun fmt`,
+`make check-fmt`, `make lint`, `make generate`, `env -u FORCE_COLOR make test`
+producing 132 passing tests, `make markdownlint`, and `make nixie`. Final
+`coderabbit review --agent` completed with 0 findings.
 
 Review follow-up on 2026-05-21 tightened the schema so only unsupported
 operations may carry `unsupportedResponseStatus`, and added negative tests for
 unsupported response metadata, `not-implemented` behaviour, engine-backed
-worker orchestration, and stubbed deterministic fixture rules.
-The follow-up gate passed with `make all` reporting 137 passing tests,
-Markdown linting and Mermaid validation clean, and CodeRabbit reporting
-0 findings.
+worker orchestration, and stubbed deterministic fixture rules. The follow-up
+gate passed with `make all` reporting 137 passing tests, Markdown linting and
+Mermaid validation clean, and CodeRabbit reporting 0 findings.
 
-LemmaScript was not used. The implemented policy is a finite validated
-manifest plus closed vocabulary and projection invariants; table tests and
-`fast-check` properties provide the appropriate evidence for this slice.
+LemmaScript was not used. The implemented policy is a finite validated manifest
+plus closed vocabulary and projection invariants; table tests and `fast-check`
+properties provide the appropriate evidence for this slice.
 
 Follow-on work remains for roadmap tasks 1.3.1, 1.3.2, and 1.3.3: add the
 pinned DigitalOcean OpenAPI artefact, build the full operation registry, and

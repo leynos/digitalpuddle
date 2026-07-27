@@ -8,8 +8,8 @@ surface is being built in roadmap order.
 ## Current status
 
 The current package is useful as a working Simulacrum adaptation baseline. The
-DigitalOcean v2 API contract is now pinned in-repo, and the roadmap distinguishes
-what is available now from what is still in flight:
+DigitalOcean v2 API contract is now pinned in-repo, and the roadmap
+distinguishes what is available now from what is still in flight:
 
 - the inherited baseline starts locally and exposes `/simulation`;
 - the package metadata, README, design, and roadmap now describe
@@ -25,8 +25,8 @@ what is available now from what is still in flight:
 - `GET /_digitalpuddle/capabilities` exposes the current capability
   documentation metadata for local harnesses and debugging;
 - unsupported DigitalOcean operations will return explicit
-  DigitalOcean-shaped `501 Not Implemented` responses once roadmap tasks wire the
-  `/v2` route registry and unsupported fallback behaviour.
+  DigitalOcean-shaped `501 Not Implemented` responses once roadmap tasks wire
+  the `/v2` route registry and unsupported fallback behaviour.
 
 ## Installation
 
@@ -71,8 +71,8 @@ PORT=3300 bun run start:bin
 
 ## Planned DigitalOcean usage
 
-The first meaningful DigitalPuddle release targets Nile Valley's DOKS path.
-The expected client configuration is:
+The first meaningful DigitalPuddle release targets Nile Valley's DOKS path. The
+expected client configuration is:
 
 ```bash
 export DIGITALOCEAN_API_URL=http://localhost:3300/v2
@@ -184,8 +184,8 @@ DigitalPuddle-specific orchestration and inspection routes will live under
 
 Planned routes still include health, version, state, journal, leak reports,
 reset, scenario loading, clock advancement, and queue drain. The pinned
-DigitalOcean OpenAPI contract is already available as checked-in artefact, while
-full `/v2` behaviour remains a later roadmap task.
+DigitalOcean OpenAPI contract is already available as checked-in artefact,
+while full `/v2` behaviour remains a later roadmap task.
 
 These routes are for local harnesses and debugging. They are not part of the
 DigitalOcean API contract.
@@ -195,8 +195,8 @@ DigitalOcean API contract.
 DigitalPuddle is not a drop-in replacement for Simulacat Core. It keeps
 Simulacrum as the backplane, but the product direction changes from GitHub API
 mocking to DigitalOcean API simulation. See
-[Migration from Simulacat Core](migration-from-simulacat-core.md) before
-moving any consumer over.
+[Migration from Simulacat Core](migration-from-simulacat-core.md) before moving
+any consumer over.
 
 ## More information
 

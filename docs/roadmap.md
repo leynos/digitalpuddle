@@ -81,8 +81,9 @@ outcome keeps later source moves deliberate instead of cosmetic.
 ### 1.3. Establish the DigitalOcean contract spine
 
 This step answers whether public routing can be driven from a pinned
-DigitalOcean OpenAPI contract while preserving Simulacrum as the HTTP backplane.
-The outcome unlocks route-level implementation and capability reporting.
+DigitalOcean OpenAPI contract while preserving Simulacrum as the HTTP
+backplane. The outcome unlocks route-level implementation and capability
+reporting.
 
 - [x] 1.3.1. Add the pinned DigitalOcean OpenAPI artefact and a repeatable
       refresh script with provenance.
@@ -133,8 +134,8 @@ unlocks the first public DOKS routes.
 ## 2. DOKS vertical slice: make the first fake cloud useful
 
 Idea: if DigitalPuddle can support Nile Valley's DOKS path end to end, with
-realistic actions, kubeconfig retrieval, and explicit unsupported behaviour, the
-project has a useful v1 before it attempts broader DigitalOcean coverage.
+realistic actions, kubeconfig retrieval, and explicit unsupported behaviour,
+the project has a useful v1 before it attempts broader DigitalOcean coverage.
 
 This phase delivers the public `/v2` slice that Terraform, doctl, and Nile
 Valley need for cluster-oriented tests. The implementation should be narrow,
@@ -162,8 +163,8 @@ pagination, envelope, and rate-limit helpers reused by later routes.
 ### 2.2. Model keys, projects, and actions as stateful resources
 
 This step answers whether stateful DigitalOcean resources can share the same
-store, tombstone, and action contracts before Kubernetes enters the picture. The
-outcome reduces risk in the cluster handlers.
+store, tombstone, and action contracts before Kubernetes enters the picture.
+The outcome reduces risk in the cluster handlers.
 
 - [ ] 2.2.1. Implement SSH key create, read, list, and delete behaviour.
   - Requires 2.1.1.
@@ -235,8 +236,8 @@ deterministic failures, and makes post-run assertions cheap.
 ### 3.1. Load typed scenarios
 
 This step answers whether tests can configure deterministic hostile behaviour
-without executable scenario code. The outcome informs the fault engine and admin
-scenario routes.
+without executable scenario code. The outcome informs the fault engine and
+admin scenario routes.
 
 - [ ] 3.1.1. Implement the scenario schema, loader, and validation errors.
   - Requires 1.4.1.
@@ -293,9 +294,9 @@ end-to-end runs.
 
 ## 4. Harness and substrate integration: prove the full loop
 
-Idea: if the same deterministic API surface can drive k3d, MinIO, Terraform, and
-Terratest in a repeatable local stack, DigitalPuddle is useful as a Nile Valley
-test dependency rather than only as a unit-test library.
+Idea: if the same deterministic API surface can drive k3d, MinIO, Terraform,
+and Terratest in a repeatable local stack, DigitalPuddle is useful as a Nile
+Valley test dependency rather than only as a unit-test library.
 
 This phase validates the engine room and developer ergonomics. The important
 result is not breadth; it is a boring, repeatable loop from compose startup
@@ -340,8 +341,8 @@ readable and repeatable.
 
 ### 4.3. Gate determinism and customer value
 
-This step answers whether the simulator is repeatable enough to trust in CI. The
-outcome becomes a hard release gate for future slices.
+This step answers whether the simulator is repeatable enough to trust in CI.
+The outcome becomes a hard release gate for future slices.
 
 - [ ] 4.3.1. Add a deterministic replay test that runs the same scenario twice
       and compares byte-identical journals.
@@ -366,8 +367,8 @@ the first useful release unless Nile Valley proves it is needed earlier.
 ### 5.1. Complete optional Kubernetes operations
 
 This step answers whether node-pool management needs to be first-class after
-cluster create, delete, and kubeconfig retrieval are stable. The outcome depends
-on Nile Valley's scaling workflows.
+cluster create, delete, and kubeconfig retrieval are stable. The outcome
+depends on Nile Valley's scaling workflows.
 
 - [ ] 5.1.1. Implement node-pool create, resize, delete, recycle, and upgrade
       behaviour if Nile Valley requires scaling workflows.
@@ -380,8 +381,8 @@ on Nile Valley's scaling workflows.
 ### 5.2. Add Droplets only when they are product-critical
 
 This step answers whether Droplet simulation should remain state-only,
-container-backed, or QEMU-backed. The outcome prevents VM fidelity from entering
-v1 without evidence.
+container-backed, or QEMU-backed. The outcome prevents VM fidelity from
+entering v1 without evidence.
 
 - [ ] 5.2.1. Add a `NullDropletEngine` or small container-backed Droplet slice
       if customer tests require Droplet control-plane behaviour.

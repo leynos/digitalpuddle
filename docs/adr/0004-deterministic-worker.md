@@ -10,9 +10,9 @@ depending on wall-clock sleeps or ambient randomness.
 
 ## Decision
 
-DigitalPuddle will model asynchronous control-plane work through a deterministic
-scheduler, virtual clock, seeded ID allocation, typed scenarios, and a worker
-that owns engine side effects.
+DigitalPuddle will model asynchronous control-plane work through a
+deterministic scheduler, virtual clock, seeded ID allocation, typed scenarios,
+and a worker that owns engine side effects.
 
 ## Consequences
 

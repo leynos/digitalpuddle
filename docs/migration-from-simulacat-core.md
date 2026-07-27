@@ -6,14 +6,14 @@ DigitalOcean API simulator.
 
 ## What changed
 
-| Area | Simulacat Core | DigitalPuddle target |
-| --- | --- | --- |
-| Product purpose | Stateful GitHub API mocking | DigitalOcean-shaped infrastructure simulation |
-| Primary API | GitHub REST and GraphQL | DigitalOcean v2 REST under `/v2` |
-| Main customer | GitHub-oriented fixtures and harnesses | Nile Valley and Terratest workflows |
-| Async model | Mostly immediate fixture responses | Action polling and deterministic worker transitions |
-| Local substrates | None required by design | k3d for DOKS and MinIO for Spaces-shaped workflows |
-| Harness surface | `/simulation` and inherited helper routes | `/_digitalpuddle` admin routes and request journal |
+| Area             | Simulacat Core                            | DigitalPuddle target                                |
+| ---------------- | ----------------------------------------- | --------------------------------------------------- |
+| Product purpose  | Stateful GitHub API mocking               | DigitalOcean-shaped infrastructure simulation       |
+| Primary API      | GitHub REST and GraphQL                   | DigitalOcean v2 REST under `/v2`                    |
+| Main customer    | GitHub-oriented fixtures and harnesses    | Nile Valley and Terratest workflows                 |
+| Async model      | Mostly immediate fixture responses        | Action polling and deterministic worker transitions |
+| Local substrates | None required by design                   | k3d for DOKS and MinIO for Spaces-shaped workflows  |
+| Harness surface  | `/simulation` and inherited helper routes | `/_digitalpuddle` admin routes and request journal  |
 
 _Table 1: Migration-level product differences._
 
@@ -60,5 +60,4 @@ Consumers adopting DigitalPuddle should:
 Until the first DigitalOcean DOKS slice lands, DigitalPuddle is not promising a
 stable user-facing API beyond the repository shape, design, roadmap, and local
 baseline start command. Once `/v2` support begins, compatibility will be tied
-to the pinned DigitalOcean OpenAPI contract and the generated capability
-matrix.
+to the pinned DigitalOcean OpenAPI contract and the generated capability matrix.

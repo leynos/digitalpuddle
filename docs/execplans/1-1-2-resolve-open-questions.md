@@ -1,9 +1,8 @@
 # Resolve the first v1 product questions
 
-This ExecPlan (execution plan) is a living document. The sections
-`Constraints`, `Tolerances`, `Risks`, `Progress`, `Surprises & Discoveries`,
-`Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work
-proceeds.
+This ExecPlan (execution plan) is a living document. The sections `Constraints`,
+`Tolerances`, `Risks`, `Progress`, `Surprises & Discoveries`, `Decision Log`,
+and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
 Status: COMPLETE
 
@@ -42,8 +41,8 @@ until a user message explicitly approves the plan or asks for named revisions.
   the user explicitly expands the task. Task 1.1.2 is a decision-closure task,
   not a route implementation task.
 - Preserve ADRs 0001 through 0005 as accepted historical records. Add a new ADR
-  for the 1.1.2 closure instead of rewriting existing accepted decisions, except
-  for typo-only fixes discovered during editing.
+  for the 1.1.2 closure instead of rewriting existing accepted decisions,
+  except for typo-only fixes discovered during editing.
 - Keep Simulacrum as the HTTP backplane. This follows
   `docs/adr/0001-simulacrum-backplane.md`.
 - Keep the DigitalOcean OpenAPI pinning strategy intact. This follows
@@ -86,38 +85,30 @@ conflict in `Decision Log`, and ask the user how to proceed.
 ## Risks
 
 - Risk: the node-pool decision can expand v1 from cluster lifecycle support
-  into scale-operation support.
-  Severity: medium.
-  Likelihood: medium.
+  into scale-operation support. Severity: medium. Likelihood: medium.
   Mitigation: record mutating node-pool operations as either required v1
   endpoints or a named follow-on slice, and keep the route matrix explicit.
 
 - Risk: Spaces has two surfaces that are easy to conflate: S3-compatible
   object traffic and DigitalOcean `/v2/spaces/keys` access-key management.
-  Severity: medium.
-  Likelihood: high.
-  Mitigation: document object traffic as direct-to-MinIO in v1 and separately
-  decide whether Spaces key management is v1, follow-on, or rejected.
+  Severity: medium. Likelihood: high. Mitigation: document object traffic as
+  direct-to-MinIO in v1 and separately decide whether Spaces key management is
+  v1, follow-on, or rejected.
 
 - Risk: Droplet engine work can pull container or QEMU lifecycle complexity
-  into the DOKS-first release.
-  Severity: high.
-  Likelihood: medium.
-  Mitigation: require explicit evidence before including Droplets in v1, and
-  record the first acceptable follow-on engine type if Droplets are deferred.
+  into the DOKS-first release. Severity: high. Likelihood: medium. Mitigation:
+  require explicit evidence before including Droplets in v1, and record the
+  first acceptable follow-on engine type if Droplets are deferred.
 
 - Risk: doctl compatibility can become an unbounded promise because doctl
-  covers more DigitalOcean products than DigitalPuddle v1.
-  Severity: medium.
-  Likelihood: high.
-  Mitigation: define the compatibility policy in ADR 0006, and keep other docs
-  as references to that ADR.
+  covers more DigitalOcean products than DigitalPuddle v1. Severity: medium.
+  Likelihood: high. Mitigation: define the compatibility policy in ADR 0006,
+  and keep other docs as references to that ADR.
 
 - Risk: documentation-only implementation may be mistaken for feature delivery.
-  Severity: medium.
-  Likelihood: medium.
-  Mitigation: state in the ADR, design, and guides that this task closes
-  decisions only; route implementation remains in later roadmap tasks.
+  Severity: medium. Likelihood: medium. Mitigation: state in the ADR, design,
+  and guides that this task closes decisions only; route implementation remains
+  in later roadmap tasks.
 
 ## Progress
 
@@ -139,27 +130,26 @@ conflict in `Decision Log`, and ask the user how to proceed.
   Impact: this plan creates the directory before adding the plan file.
 
 - Observation: the branch name contains `/`, which makes raw
-  `$(git branch --show-current)` unsafe inside a `/tmp/*.out` filename.
-  Impact: validation commands in this plan sanitize branch names before
-  constructing log paths.
+  `$(git branch --show-current)` unsafe inside a `/tmp/*.out` filename. Impact:
+  validation commands in this plan sanitize branch names before constructing
+  log paths.
 
 - Observation: doctl documents `--api-url` as a global flag, but official
   doctl documentation did not provide matching evidence for a
-  `DIGITALOCEAN_API_URL` endpoint override environment variable.
-  Impact: the implementation should standardize documented doctl compatibility
-  on explicit `--api-url` usage unless later evidence proves an environment
-  variable is supported.
+  `DIGITALOCEAN_API_URL` endpoint override environment variable. Impact: the
+  implementation should standardize documented doctl compatibility on explicit
+  `--api-url` usage unless later evidence proves an environment variable is
+  supported.
 
 - Observation: doctl has Spaces key-management commands, while DigitalOcean
-  documentation also says doctl does not support the Spaces object API.
-  Impact: the implementation must separate Spaces key control-plane decisions
-  from object storage traffic, which remains direct to MinIO for v1.
+  documentation also says doctl does not support the Spaces object API. Impact:
+  the implementation must separate Spaces key control-plane decisions from
+  object storage traffic, which remains direct to MinIO for v1.
 
 - Observation: `make test` expects generated GraphQL resolver types and the
   startup-output snapshots are sensitive to inherited colour-environment
-  warnings.
-  Impact: validation steps generate resolver types before testing and unset
-  `FORCE_COLOR` for the test run.
+  warnings. Impact: validation steps generate resolver types before testing and
+  unset `FORCE_COLOR` for the test run.
 
 - Observation: task 1.1.2 fits the documentation-only tolerance exactly.
   Impact: no tolerance escalation is required, but further tracked files would
@@ -168,21 +158,19 @@ conflict in `Decision Log`, and ask the user how to proceed.
 ## Decision Log
 
 - Decision: create a new ADR for task 1.1.2 instead of editing prior accepted
-  ADRs to carry the new combined decision.
-  Rationale: ADRs 0001 through 0005 already record earlier accepted decisions.
-  A new ADR keeps the product-boundary closure narrow and auditable.
+  ADRs to carry the new combined decision. Rationale: ADRs 0001 through 0005
+  already record earlier accepted decisions. A new ADR keeps the
+  product-boundary closure narrow and auditable.
 
 - Decision: make this plan documentation-first and stop if runtime code changes
-  become necessary.
-  Rationale: roadmap task 1.1.2 asks to resolve open implementation decisions.
-  Runtime route, worker, and engine work belongs to later roadmap tasks after
-  the boundaries are closed.
+  become necessary. Rationale: roadmap task 1.1.2 asks to resolve open
+  implementation decisions. Runtime route, worker, and engine work belongs to
+  later roadmap tasks after the boundaries are closed.
 
 - Decision: use official DigitalOcean documentation as external evidence for
-  the decisions.
-  Rationale: node-pool, Spaces, Droplet, and doctl surfaces can change over
-  time, so current primary-source evidence is required before recording a
-  compatibility policy.
+  the decisions. Rationale: node-pool, Spaces, Droplet, and doctl surfaces can
+  change over time, so current primary-source evidence is required before
+  recording a compatibility policy.
 
 - Decision: start the execution phase for this plan.
   Rationale: the user explicitly asked to proceed with implementation of
@@ -295,22 +283,23 @@ follow-on roadmap phase owns any deferred adapter.
 ### Stage A: confirm evidence and final intended decisions
 
 Re-read the cited roadmap and design sections. Confirm that no newer local ADR
-already closed the four questions. Check official DigitalOcean documentation for
-the current node-pool, Spaces, Droplet, and doctl surfaces. Use Firecrawl or
-ordinary browsing only for primary sources, preferring DigitalOcean official
+already closed the four questions. Check official DigitalOcean documentation
+for the current node-pool, Spaces, Droplet, and doctl surfaces. Use Firecrawl
+or ordinary browsing only for primary sources, preferring DigitalOcean official
 documentation and the doctl repository when checking CLI flags.
 
 The expected decisions to encode, unless new evidence contradicts them, are:
 
 - Kubernetes node pools: include read/list and the initial node pool created as
   part of cluster creation in v1; defer mutating node-pool scale operations
-  such as add, update, delete, delete-node, replace-node, and recycle to a named
-  follow-on "node-pool scale operations" phase unless Nile Valley explicitly
-  requires them before v1.
+  such as add, update, delete, delete-node, replace-node, and recycle to a
+  named follow-on "node-pool scale operations" phase unless Nile Valley
+  explicitly requires them before v1.
 - Spaces: keep ordinary object operations direct-to-MinIO in v1 and do not proxy
   S3 object traffic through DigitalPuddle. Defer `/v2/spaces/keys` access-key
-  management to a named follow-on "Spaces access-key control-plane" phase unless
-  a v1 Terraform or doctl workflow requires key rotation through DigitalPuddle.
+  management to a named follow-on "Spaces access-key control-plane" phase
+  unless a v1 Terraform or doctl workflow requires key rotation through
+  DigitalPuddle.
 - Droplets: omit Droplet routes and engines from v1. Classify Droplet public
   API operations as unsupported until a named follow-on Droplet slice. Prefer a
   `NullDropletEngine` or small container-backed engine for the first follow-on
@@ -543,8 +532,7 @@ risks and ExecPlan completeness.
 
 The default implementation adds no runtime interfaces and no dependencies.
 
-The documentation should name these future interfaces without implementing
-them:
+The documentation should name these future interfaces without implementing them:
 
 - an operation registry that classifies DigitalOcean `/v2` operations as
   `scriptable`, `engine-backed`, `stubbed`, or `unsupported`;

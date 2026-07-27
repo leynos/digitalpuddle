@@ -1,9 +1,8 @@
 # Add the pinned DigitalOcean OpenAPI artefact
 
-This ExecPlan (execution plan) is a living document. The sections
-`Constraints`, `Tolerances`, `Risks`, `Progress`, `Surprises & Discoveries`,
-`Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work
-proceeds.
+This ExecPlan (execution plan) is a living document. The sections `Constraints`,
+`Tolerances`, `Risks`, `Progress`, `Surprises & Discoveries`, `Decision Log`,
+and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
 Status: COMPLETE
 
@@ -19,9 +18,9 @@ provenance for a reviewer to verify exactly where the artefact came from.
 After this plan is approved and implemented, a maintainer can inspect the
 repository and see the upstream source URL, the exact upstream revision, the
 refresh command, and the SHA-256 hash of the generated artefact. Running the
-refresh command with the recorded pin should reproduce the checked-in
-artefact, and the normal repository gates should prove that the metadata,
-artefact shape, documentation, and existing baseline still agree.
+refresh command with the recorded pin should reproduce the checked-in artefact,
+and the normal repository gates should prove that the metadata, artefact shape,
+documentation, and existing baseline still agree.
 
 This plan was approved for implementation by the user on
 2026-06-02T00:08:49+02:00.
@@ -36,9 +35,9 @@ This plan has two phases:
    tooling, tests, documentation updates, CodeRabbit review, commits, and
    roadmap closure described below.
 
-Execution is complete. The pinned OpenAPI artefact, refresh tooling,
-provenance validation, documentation updates, audit overrides, review fixes,
-validation gates, push, and roadmap closure have been implemented and closed.
+Execution is complete. The pinned OpenAPI artefact, refresh tooling, provenance
+validation, documentation updates, audit overrides, review fixes, validation
+gates, push, and roadmap closure have been implemented and closed.
 
 ## Constraints
 
@@ -57,8 +56,8 @@ validation gates, push, and roadmap closure have been implemented and closed.
   loading are adapter/tooling concerns; operation classification policy remains
   in `src/openapi/capabilities.ts` and `src/openapi/projections.ts`.
 - Do not move routing, capability classification, or unsupported-route policy
-  into the refresh script. The script may fetch, bundle, canonicalize, hash, and
-  write files only.
+  into the refresh script. The script may fetch, bundle, canonicalize, hash,
+  and write files only.
 - Do not expand inherited GitHub-specific REST, GraphQL, or store surfaces
   except where needed to keep the imported baseline healthy.
 - Keep generated artefacts deterministic. The same upstream pin and refresh
@@ -122,46 +121,35 @@ conflict in `Decision Log`, and ask the user how to proceed.
 ## Risks
 
 - Risk: upstream DigitalOcean changes can silently alter route shapes.
-  Severity: high.
-  Likelihood: medium.
-  Mitigation: pin a full upstream commit SHA, record the raw source URL, and
-  hash the generated artefact.
+  Severity: high. Likelihood: medium. Mitigation: pin a full upstream commit
+  SHA, record the raw source URL, and hash the generated artefact.
 
 - Risk: a refresh command that depends on floating tools can produce different
-  bytes later.
-  Severity: medium.
-  Likelihood: medium.
-  Mitigation: prefer a committed development dependency and `bun.lock` entry
-  for the bundling tool, write deterministic JSON, and test canonicalization.
+  bytes later. Severity: medium. Likelihood: medium. Mitigation: prefer a
+  committed development dependency and `bun.lock` entry for the bundling tool,
+  write deterministic JSON, and test canonicalization.
 
 - Risk: the OpenAPI artefact location can conflict with current repository
-  precedent.
-  Severity: medium.
-  Likelihood: medium.
-  Mitigation: place the DigitalOcean artefact under the target architecture
-  namespace `src/openapi/` because `docs/developers-guide.md` and the technical
-  design name that as the future contract area. Leave inherited GitHub schemas
-  under `schema/` untouched.
+  precedent. Severity: medium. Likelihood: medium. Mitigation: place the
+  DigitalOcean artefact under the target architecture namespace `src/openapi/`
+  because `docs/developers-guide.md` and the technical design name that as the
+  future contract area. Leave inherited GitHub schemas under `schema/`
+  untouched.
 
 - Risk: provenance can drift from the artefact.
-  Severity: high.
-  Likelihood: medium.
-  Mitigation: add tests that recompute the SHA-256 hash from the checked-in
-  artefact and compare it with the provenance record.
+  Severity: high. Likelihood: medium. Mitigation: add tests that recompute the
+  SHA-256 hash from the checked-in artefact and compare it with the provenance
+  record.
 
 - Risk: implementation accidentally starts roadmap task 1.3.2 by building the
-  full operation registry.
-  Severity: medium.
-  Likelihood: medium.
-  Mitigation: validate only artefact shape, provenance, and refresh behaviour
-  in this slice. Leave registry construction for 1.3.2.
+  full operation registry. Severity: medium. Likelihood: medium. Mitigation:
+  validate only artefact shape, provenance, and refresh behaviour in this
+  slice. Leave registry construction for 1.3.2.
 
 - Risk: documentation claims public `/v2` support before routes exist.
-  Severity: medium.
-  Likelihood: medium.
-  Mitigation: update user-facing docs to say the contract pin exists, while
-  route implementation and unsupported fallback wiring remain later roadmap
-  tasks.
+  Severity: medium. Likelihood: medium. Mitigation: update user-facing docs to
+  say the contract pin exists, while route implementation and unsupported
+  fallback wiring remain later roadmap tasks.
 
 ## Prior art and external references
 
@@ -276,11 +264,11 @@ inside refresh tooling. Do not import Redocly from runtime code.
 
 Add pure exported helpers only where they make tests clear. For example,
 helpers for canonical JSON serialization, SHA-256 hashing, and provenance
-validation are appropriate. Keep network fetch and filesystem writes behind
-the script adapter, so tests can avoid network access.
+validation are appropriate. Keep network fetch and filesystem writes behind the
+script adapter, so tests can avoid network access.
 
-Run the relevant focused tests or type checks for the script if available.
-Then run the full gates sequentially:
+Run the relevant focused tests or type checks for the script if available. Then
+run the full gates sequentially:
 
 ```bash
 BRANCH=$(git branch --show-current | tr '/ ' '__')
@@ -397,9 +385,8 @@ coderabbit review --agent
 ```
 
 Resolve concerns, rerun the gates, and make the final implementation commit.
-Update this ExecPlan's `Progress`, `Surprises & Discoveries`,
-`Decision Log`, and `Outcomes & Retrospective` before the final commit if they
-changed.
+Update this ExecPlan's `Progress`, `Surprises & Discoveries`, `Decision Log`,
+and `Outcomes & Retrospective` before the final commit if they changed.
 
 ## Validation plan
 
@@ -551,29 +538,27 @@ Observable success after implementation:
   stricter TypeScript checks used for tests. The script now uses indexed
   `process.env` access and narrows extracted archive directories explicitly.
 - Bun 1.3.14 could not resolve `@redocly/cli` through either
-  `bunx -p @redocly/cli@2.31.5 redocly` or
-  `bunx @redocly/cli@2.31.5`. The refresh script now runs the declared dev
-  dependency at `node_modules/@redocly/cli/bin/cli.js`, while the provenance
-  still records the pinned tool name and version.
+  `bunx -p @redocly/cli@2.31.5 redocly` or `bunx @redocly/cli@2.31.5`. The
+  refresh script now runs the declared dev dependency at
+  `node_modules/@redocly/cli/bin/cli.js`, while the provenance still records
+  the pinned tool name and version.
 
 ## Decision Log
 
 - Decision: Draft the plan as pre-implementation and leave roadmap task 1.3.1
-  unchecked.
-  Rationale: The user explicitly required approval before implementation.
+  unchecked. Rationale: The user explicitly required approval before
+  implementation.
 
 - Decision: Prefer `src/openapi/digitalocean.openapi.json` and
   `src/openapi/digitalocean.openapi.provenance.json` as the implementation
-  paths.
-  Rationale: `docs/developers-guide.md` names `src/openapi/` as the target
-  home for the pinned DigitalOcean contract and operation registry. Keeping the
-  new DigitalOcean contract there avoids expanding inherited GitHub schema
-  conventions.
+  paths. Rationale: `docs/developers-guide.md` names `src/openapi/` as the
+  target home for the pinned DigitalOcean contract and operation registry.
+  Keeping the new DigitalOcean contract there avoids expanding inherited GitHub
+  schema conventions.
 
 - Decision: Allow `@redocly/cli` as a plan-approved development dependency
-  only if bundling is required.
-  Rationale: Redocly CLI is established OpenAPI tooling for bundling and
-  linting, but runtime code should not depend on it.
+  only if bundling is required. Rationale: Redocly CLI is established OpenAPI
+  tooling for bundling and linting, but runtime code should not depend on it.
 
 - Decision: Do not require LemmaScript for this task.
   Rationale: This slice introduces provenance and deterministic artefact
@@ -582,8 +567,7 @@ Observable success after implementation:
 
 - Decision: Use upstream commit
   `ef3868ee4cadd34fd4f9624371f7a45d7a205fc1` and source path
-  `specification/DigitalOcean-public.v2.yaml` for the first implementation
-  pin.
+  `specification/DigitalOcean-public.v2.yaml` for the first implementation pin.
   Rationale: The planning-time commit
   `3512e763734dbe54871fc0611a025febc1ab7ceb` and the documented lower-case
   source path both return `404` from GitHub raw content. The latest upstream
@@ -591,22 +575,21 @@ Observable success after implementation:
   case-sensitive source file path above.
 
 - Decision: Add `@redocly/cli` as a dev dependency and use the pinned upstream
-  repository tarball as the refresh input.
-  Rationale: The OpenAPI file has repository-local relative references, so
-  single-file fetching cannot produce a bundled artefact. Downloading the
-  tarball preserves source provenance, avoids a persistent checkout, and keeps
-  runtime code free of Redocly imports.
+  repository tarball as the refresh input. Rationale: The OpenAPI file has
+  repository-local relative references, so single-file fetching cannot produce
+  a bundled artefact. Downloading the tarball preserves source provenance,
+  avoids a persistent checkout, and keeps runtime code free of Redocly imports.
 
 - Decision: Pause and accept scope tolerance overrun to add explicit command,
-  documentation, and tests seams when the refresh and provenance work started to
-  affect adjacent execution pathways.
-  Rationale: Tying the command and documentation updates together while
-  adding bounded validation seams for provenance, hash checks, and canonical
-  serialization kept this task feasible without expanding into full route
-  registry implementation in roadmap task 1.3.2.
+  documentation, and tests seams when the refresh and provenance work started
+  to affect adjacent execution pathways. Rationale: Tying the command and
+  documentation updates together while adding bounded validation seams for
+  provenance, hash checks, and canonical serialization kept this task feasible
+  without expanding into full route registry implementation in roadmap task
+  1.3.2.
 
 ## Outcomes & Retrospective
 
-Execution is complete. The pinned OpenAPI artefact, refresh tooling,
-provenance validation, documentation updates, audit overrides, review fixes,
-validation gates, push, and roadmap closure have been implemented and closed.
+Execution is complete. The pinned OpenAPI artefact, refresh tooling, provenance
+validation, documentation updates, audit overrides, review fixes, validation
+gates, push, and roadmap closure have been implemented and closed.

@@ -2,20 +2,20 @@
 
 Status: Proposed  
 Scope: Define the v1 architecture, contracts, and execution model for a
-  DigitalOcean-shaped simulator built on a Simulacrum-based backplane.
-Audience: Implementing engineers  
+DigitalOcean-shaped simulator built on a Simulacrum-based backplane. Audience:
+Implementing engineers
 Precedence: Source of truth for design decisions that affect the public v2
-  simulation contract and runtime architecture.  
+simulation contract and runtime architecture.
 Primary customer: Nile Valley test suites driven through Terratest
 
 ## 1. Purpose
 
 DigitalPuddle is a local, contract-focused, DigitalOcean-shaped cloud simulator
-whose job is to give Nile Valley a deterministic, hostile, and disposable target
-for infrastructure testing. It is not a full DigitalOcean clone. It implements a
-strict subset of the DigitalOcean v2 API that Nile Valley actually uses, backed
-by a stateful simulation core, an asynchronous transition worker, and a very
-small engine room of real local substrates.
+whose job is to give Nile Valley a deterministic, hostile, and disposable
+target for infrastructure testing. It is not a full DigitalOcean clone. It
+implements a strict subset of the DigitalOcean v2 API that Nile Valley actually
+uses, backed by a stateful simulation core, an asynchronous transition worker,
+and a very small engine room of real local substrates.
 
 The design intentionally keeps **Simulacrum** as the mock backplane.
 DigitalPuddle is a DigitalOcean-flavoured sibling to Simulacat Core, not a
@@ -307,8 +307,8 @@ The journal records:
 
 ### 7.6 Engine adapters
 
-The worker uses narrow interfaces for k3d, MinIO, and future Droplet substrates.
-Adapters must not leak into public handlers.
+The worker uses narrow interfaces for k3d, MinIO, and future Droplet
+substrates. Adapters must not leak into public handlers.
 
 ### 7.7 Private admin API
 
@@ -320,8 +320,8 @@ DigitalOcean contract, lives under `/_digitalpuddle/*`.
 ### 8.1 Endpoint strategy
 
 All public endpoints live under `/v2`. The implementation is contract-first:
-route shapes and JSON schemas come from the pinned OpenAPI spec, while behaviour
-is layered in selectively.
+route shapes and JSON schemas come from the pinned OpenAPI spec, while
+behaviour is layered in selectively.
 
 ### 8.2 v1 vertical slice
 
@@ -330,32 +330,32 @@ DigitalOcean surface. The recommended v1 public matrix is:
 
 Table 1: Recommended v1 public DigitalOcean endpoints under `/v2`.
 
-| Method | Path                                                | Classification | Notes                                                   |
-| ------ | --------------------------------------------------- | -------------- | ------------------------------------------------------- |
-| GET    | `/v2/account`                                       | scriptable     | seeded account metadata                                 |
-| GET    | `/v2/account/ratelimit`                             | scriptable     | current simulated limits                                |
-| GET    | `/v2/regions`                                       | scriptable     | paginated                                               |
-| GET    | `/v2/sizes`                                         | scriptable     | paginated                                               |
-| GET    | `/v2/images`                                        | scriptable     | paginated                                               |
-| GET    | `/v2/ssh_keys`                                      | scriptable     | paginated                                               |
-| POST   | `/v2/ssh_keys`                                      | scriptable     | validates public key shape                              |
-| GET    | `/v2/ssh_keys/{id}`                                 | scriptable     |                                                         |
-| DELETE | `/v2/ssh_keys/{id}`                                 | scriptable     | tombstoned delete semantics                             |
-| GET    | `/v2/projects`                                      | scriptable     | paginated                                               |
-| POST   | `/v2/projects`                                      | scriptable     |                                                         |
-| GET    | `/v2/projects/{id}`                                 | scriptable     |                                                         |
-| POST   | `/v2/projects/{id}/resources`                       | scriptable     | attaches existing resources                             |
-| GET    | `/v2/projects/{id}/resources`                       | scriptable     |                                                         |
-| GET    | `/v2/actions/{id}`                                  | scriptable     | action polling                                          |
-| GET    | `/v2/kubernetes/options`                            | stubbed        | static supported versions/options                       |
-| GET    | `/v2/kubernetes/clusters`                           | scriptable     | paginated                                               |
-| POST   | `/v2/kubernetes/clusters`                           | engine-backed  | provisions k3d-backed cluster                           |
-| GET    | `/v2/kubernetes/clusters/{id}`                      | scriptable     | status reflects worker progression                      |
-| DELETE | `/v2/kubernetes/clusters/{id}`                      | engine-backed  | tears down k3d cluster                                  |
-| GET    | `/v2/kubernetes/clusters/{id}/kubeconfig`           | engine-backed  | returns kubeconfig YAML                                 |
-| GET    | `/v2/kubernetes/clusters/{id}/node_pools`           | scriptable     | lists initial pool state created with the cluster       |
-| GET    | `/v2/kubernetes/clusters/{id}/node_pools/{pool_id}` | scriptable     | retrieves initial pool state                            |
-| any    | other `/v2/*`                                       | unsupported    | explicit `501`                                          |
+| Method | Path                                                | Classification | Notes                                             |
+| ------ | --------------------------------------------------- | -------------- | ------------------------------------------------- |
+| GET    | `/v2/account`                                       | scriptable     | seeded account metadata                           |
+| GET    | `/v2/account/ratelimit`                             | scriptable     | current simulated limits                          |
+| GET    | `/v2/regions`                                       | scriptable     | paginated                                         |
+| GET    | `/v2/sizes`                                         | scriptable     | paginated                                         |
+| GET    | `/v2/images`                                        | scriptable     | paginated                                         |
+| GET    | `/v2/ssh_keys`                                      | scriptable     | paginated                                         |
+| POST   | `/v2/ssh_keys`                                      | scriptable     | validates public key shape                        |
+| GET    | `/v2/ssh_keys/{id}`                                 | scriptable     |                                                   |
+| DELETE | `/v2/ssh_keys/{id}`                                 | scriptable     | tombstoned delete semantics                       |
+| GET    | `/v2/projects`                                      | scriptable     | paginated                                         |
+| POST   | `/v2/projects`                                      | scriptable     |                                                   |
+| GET    | `/v2/projects/{id}`                                 | scriptable     |                                                   |
+| POST   | `/v2/projects/{id}/resources`                       | scriptable     | attaches existing resources                       |
+| GET    | `/v2/projects/{id}/resources`                       | scriptable     |                                                   |
+| GET    | `/v2/actions/{id}`                                  | scriptable     | action polling                                    |
+| GET    | `/v2/kubernetes/options`                            | stubbed        | static supported versions/options                 |
+| GET    | `/v2/kubernetes/clusters`                           | scriptable     | paginated                                         |
+| POST   | `/v2/kubernetes/clusters`                           | engine-backed  | provisions k3d-backed cluster                     |
+| GET    | `/v2/kubernetes/clusters/{id}`                      | scriptable     | status reflects worker progression                |
+| DELETE | `/v2/kubernetes/clusters/{id}`                      | engine-backed  | tears down k3d cluster                            |
+| GET    | `/v2/kubernetes/clusters/{id}/kubeconfig`           | engine-backed  | returns kubeconfig YAML                           |
+| GET    | `/v2/kubernetes/clusters/{id}/node_pools`           | scriptable     | lists initial pool state created with the cluster |
+| GET    | `/v2/kubernetes/clusters/{id}/node_pools/{pool_id}` | scriptable     | retrieves initial pool state                      |
+| any    | other `/v2/*`                                       | unsupported    | explicit `501`                                    |
 
 This is deliberately narrower than the full action plan. It reflects the
 assessment that the first release should optimize for Nile Valley’s DOKS path
@@ -605,9 +605,9 @@ This keeps the first release tight.
 
 All non-DigitalOcean control surfaces live under `/_digitalpuddle`.
 
-The first implemented admin surface is `GET /_digitalpuddle/capabilities`.
-It returns the derived capability documentation metadata from the validated
-policy manifest: a legend for `scriptable`, `engine-backed`, `stubbed`, and
+The first implemented admin surface is `GET /_digitalpuddle/capabilities`. It
+returns the derived capability documentation metadata from the validated policy
+manifest: a legend for `scriptable`, `engine-backed`, `stubbed`, and
 `unsupported`, plus one visible row per documented operation. Broader state,
 journal, scenario, and OpenAPI admin routes remain planned.
 
@@ -755,16 +755,16 @@ docs/
 
 The current transitional implementation has introduced the target homes
 incrementally. `src/index.ts` remains the package and build entry-point facade,
-while `src/simulation.ts` owns the Simulacrum server assembly. `src/openapi/index.ts`
-re-exports the existing capability policy and projections. Private
-DigitalPuddle admin routes are owned by `src/admin/routes.ts`, with
-`src/extend-api.ts` kept as the Simulacrum composition facade. The first
-extracted inherited REST handlers live in `src/handlers/user.ts`; deeper
-GitHub compatibility separation remains a follow-on task. `src/worker/`,
-`src/engines/`, `src/journal/`, `src/scenarios/`, and `src/cli/` currently
-contain contracts and no-op factories only, so they define boundaries without
-claiming scheduler, engine, persistence, scenario loading, or CLI behaviour
-that is not implemented yet.
+while `src/simulation.ts` owns the Simulacrum server assembly.
+`src/openapi/index.ts` re-exports the existing capability policy and
+projections. Private DigitalPuddle admin routes are owned by
+`src/admin/routes.ts`, with `src/extend-api.ts` kept as the Simulacrum
+composition facade. The first extracted inherited REST handlers live in
+`src/handlers/user.ts`; deeper GitHub compatibility separation remains a
+follow-on task. `src/worker/`, `src/engines/`, `src/journal/`,
+`src/scenarios/`, and `src/cli/` currently contain contracts and no-op
+factories only, so they define boundaries without claiming scheduler, engine,
+persistence, scenario loading, or CLI behaviour that is not implemented yet.
 
 ## 17. Testing strategy
 
@@ -936,5 +936,5 @@ detection, and deterministic replay. Those ideas fit the original architecture
 well once they are layered **onto** Simulacrum instead of replacing it.
 
 The practical consequence is a smaller, sharper v1: a hostile but reproducible
-fake cloud that teaches Nile Valley the right lessons before it ever touches the
-real ocean.
+fake cloud that teaches Nile Valley the right lessons before it ever touches
+the real ocean.

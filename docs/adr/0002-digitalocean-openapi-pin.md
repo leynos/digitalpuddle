@@ -16,12 +16,13 @@ classified as `scriptable`, `engine-backed`, `stubbed`, or `unsupported`.
 
 ## Rejected alternatives
 
-- Using an unpinned upstream OpenAPI spec was rejected because contract drift can
-  silently break operation classification and test expectations.
+- Using an unpinned upstream OpenAPI spec was rejected because contract drift
+  can silently break operation classification and test expectations.
 - Generating the operation matrix on demand from the latest API was rejected due
   to reproducibility and auditability gaps across CI and release checks.
 - Maintaining a hand-curated operation matrix was rejected because it increases
-  maintenance burden and undermines the contract-first implementation of routing.
+  maintenance burden and undermines the contract-first implementation of
+  routing.
 
 ## Consequences
 

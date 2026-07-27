@@ -1,4 +1,4 @@
-.PHONY: all check-fmt typecheck lint test build clean generate markdownlint \
+.PHONY: all fmt check-fmt typecheck lint test build clean generate markdownlint \
 	nixie spelling spelling-helper-test
 
 MDLINT ?= markdownlint-cli2
@@ -9,6 +9,10 @@ TYPOS = $(UV) tool run typos@$(TYPOS_VERSION)
 XARGS_R := $(shell if xargs --help 2>&1 | grep -q '\\-r'; then printf -- '-r'; fi)
 
 all: check-fmt typecheck lint test spelling
+
+fmt:
+	bun run fmt
+	mdformat-all
 
 check-fmt:
 	bun node_modules/@biomejs/biome/bin/biome check --linter-enabled=false --assist-enabled=false .

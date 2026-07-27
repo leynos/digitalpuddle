@@ -9,10 +9,10 @@ precedence: Informative companion to docs/digitalpuddle-technical-design.md and
 
 # DigitalPuddle developers' guide
 
-This guide is for contributors working on the DigitalPuddle codebase. It
-covers repository layout, architectural decisions, development workflow,
-testing expectations, and transitional rules that apply while the codebase is
-being adapted from Simulacat Core.
+This guide is for contributors working on the DigitalPuddle codebase. It covers
+repository layout, architectural decisions, development workflow, testing
+expectations, and transitional rules that apply while the codebase is being
+adapted from Simulacat Core.
 
 ## 1. Repository shape
 
@@ -156,8 +156,8 @@ DIGITALPUDDLE_REQUEST_LOG=1 bun run start
 
 When enabled, responses are logged as JSON with method, path, status, and
 duration. Future DigitalPuddle route work should also write request, response,
-transition, engine-call, and fault events to the request journal. The journal is
-the assertion surface; operational logs are diagnostic support.
+transition, engine-call, and fault events to the request journal. The journal
+is the assertion surface; operational logs are diagnostic support.
 
 Operational log fields must have bounded cardinality. Prefer stable reason
 codes and counts over stack traces, raw request headers, user identifiers,
@@ -211,8 +211,7 @@ Use these rules when changing classifications:
 
 The pinned DigitalOcean OpenAPI contract is checked in at
 `src/openapi/digitalocean.openapi.json`. Its machine-readable provenance is
-checked in beside it at
-`src/openapi/digitalocean.openapi.provenance.json`.
+checked in beside it at `src/openapi/digitalocean.openapi.provenance.json`.
 
 Refresh the artefact with:
 
@@ -223,10 +222,10 @@ bun run sync:openapi:digitalocean
 The refresh command downloads the pinned upstream repository archive, bundles
 `specification/DigitalOcean-public.v2.yaml` with `@redocly/cli`, canonicalizes
 the generated JSON, sanitizes secret-like examples, writes the artefact and
-provenance through atomic rename, and records the generated SHA-256 hash.
-It expects a Unix-compatible `tar` executable on `PATH`, uses the
-repository-pinned `@redocly/cli` from `node_modules`, and rejects source archive
-downloads larger than 50 MiB before writing them to disk.
+provenance through atomic rename, and records the generated SHA-256 hash. It
+expects a Unix-compatible `tar` executable on `PATH`, uses the repository-pinned
+`@redocly/cli` from `node_modules`, and rejects source archive downloads
+larger than 50 MiB before writing them to disk.
 
 The reusable contract helpers live in `src/openapi/artifact.ts`. Keep that
 module free of filesystem, network, process, and command-runner dependencies.
@@ -258,6 +257,5 @@ DigitalPuddle code should follow these rules:
   logic runs;
 - keep engine side effects in worker-owned adapters, not public handlers.
 
-See
-[ADR 0005](adr/0005-transitional-simulacat-boundaries.md)
-for the transition policy.
+See [ADR 0005](adr/0005-transitional-simulacat-boundaries.md) for the
+transition policy.

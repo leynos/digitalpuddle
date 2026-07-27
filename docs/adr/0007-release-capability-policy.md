@@ -49,8 +49,8 @@ the source of truth.
 `404 Not Found`, `405 Method Not Allowed`, and `501 Not Implemented` keep
 separate meanings. Unknown non-DigitalPuddle routes remain normal routing
 misses. Known paths with methods outside the operation contract return `405`
-with `Allow` once the operation registry can identify them. Known
-DigitalOcean operations classified as `unsupported` return `501`.
+with `Allow` once the operation registry can identify them. Known DigitalOcean
+operations classified as `unsupported` return `501`.
 
 ## Consequences
 

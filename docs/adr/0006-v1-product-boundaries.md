@@ -36,8 +36,8 @@ The first Droplet follow-on should start with either a `NullDropletEngine` or a
 small container-backed engine. QEMU remains a later option for tests that need
 host-bootstrap fidelity.
 
-The normative doctl compatibility policy is command-level, not product-wide.
-CI should cover doctl only for supported v1 workflows after the corresponding
+The normative doctl compatibility policy is command-level, not product-wide. CI
+should cover doctl only for supported v1 workflows after the corresponding
 `/v2` routes exist. Users should configure doctl with the documented
 `--api-url` flag. doctl commands for products or operations outwith the v1
 capability matrix are best-effort at most, and should normally receive explicit
