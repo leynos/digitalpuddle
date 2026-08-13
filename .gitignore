@@ -14,3 +14,9 @@ __generated__
 /.parcel-cache
 .agents/mcp/context_pack/packs/
 .memdb/
+.vtcode/
+.claude/
+.grepai/
+*.swp
+*.swo
+*~
