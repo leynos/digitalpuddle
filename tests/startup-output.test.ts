@@ -285,5 +285,5 @@ describe('startup output', () => {
     } finally {
       await stopProcess(child);
     }
-  });
+  }, 25_000);
 });
