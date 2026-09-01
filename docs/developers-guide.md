@@ -257,5 +257,13 @@ DigitalPuddle code should follow these rules:
   logic runs;
 - keep engine side effects in worker-owned adapters, not public handlers.
 
-See [ADR 0005](adr/0005-transitional-simulacat-boundaries.md) for the
-transition policy.
+See
+[ADR 0005](adr/0005-transitional-simulacat-boundaries.md)
+for the transition policy.
+
+## GitHub Actions runners
+
+The repository-owned CI job uses the uncached shared Namespace profile
+`namespace-profile-default` (Ubuntu 22.04, amd64, 4 vCPU, 16 GB). The profile
+has no cache volume. Namespace does not change the caller-selected runner of
+any externally controlled reusable workflow.
