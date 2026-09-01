@@ -7,13 +7,13 @@ stems = []
 
 [words]
 # Official name: "GitHub Flavored Markdown".
-accepted = ["Flavored"]
+accepted = ["Flavored", "ba"]
 
 [words.corrections]
 
 [patterns]
 # Abbreviated hexadecimal commit IDs may begin with dictionary words.
-ignore = ["\\bba[0-9a-f]{5,39}\\b"]
+ignore = ["\\b[0-9a-f]*ba[0-9a-f]{5,39}\\b", "\\bFORCE_COLOR\\b"]
 
 [files]
 exclude = []

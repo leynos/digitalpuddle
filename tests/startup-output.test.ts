@@ -160,7 +160,16 @@ const startProcess = (command: string, args: string[], port: number, expectedOut
 };
 
 const normalisePortForSnapshot = (output: string, port: number) =>
-  output.replace(/\(node:\d+\)/g, '(node:<PID>)').replace(new RegExp(String(port), 'g'), '<PORT>');
+  output
+    .split('\n')
+    .filter(
+      (line) =>
+        !line.startsWith('(node:') &&
+        !line.startsWith('(Use `node --experimental-transform-types`') &&
+        !line.startsWith('(Use `node --trace-warnings')
+    )
+    .join('\n')
+    .replace(new RegExp(String(port), 'g'), '<PORT>');
 
 const expectSimulationRouteToRespond = async (port: number) => {
   const response = await fetch(`http://localhost:${port}/simulation`);
