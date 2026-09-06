@@ -135,14 +135,20 @@ the correction everywhere.
 CI runs `bun audit` after the gates and fails on any advisory. Almost every
 advisory this repository sees is transitive, through `@graphql-codegen/cli`,
 `express` or the simulator packages, so there is no direct dependency to bump.
-The `overrides` block in `package.json` answers those: each entry names the
-lowest version that clears the advisory while staying inside the dependant's
-major, so no resolution crosses a breaking boundary.
+The `overrides` block in `package.json` answers those.
+
+An override applies to every dependent package at once, so before adding or
+raising one, check the range each dependent declares rather than merely its
+major version. A dependent that names an exact version is the case to watch:
+forcing anything else on it silently replaces the version it asked for. Choose
+the lowest version that clears the advisory and satisfies every declared range.
+If no single version does, prefer upgrading the dependent that pins the
+vulnerable version over forcing a version past its declared range.
 
 Run `bun audit` before pushing. When it reports something new, raise the
 matching `overrides` entry rather than the direct dependency, run `bun install`
-to refresh `bun.lock`, then run `make test`, because an override changes what
-every dependant resolves to.
+to refresh `bun.lock`, then run `make test` because an override changes what
+every dependent resolves to.
 
 Build the package when changing the CommonJS CLI:
 

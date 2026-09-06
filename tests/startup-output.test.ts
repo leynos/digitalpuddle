@@ -4,6 +4,8 @@ import net from 'node:net';
 import path from 'node:path';
 import {describe, expect, it} from 'bun:test';
 
+import {normaliseStartupOutput} from './support/startup-output';
+
 const projectRoot = path.resolve(import.meta.dirname, '..');
 
 type StartedProcess = {
@@ -159,18 +161,6 @@ const startProcess = (command: string, args: string[], port: number, expectedOut
   return {child, output};
 };
 
-const normalisePortForSnapshot = (output: string, port: number) =>
-  output
-    .split('\n')
-    .filter(
-      (line) =>
-        !line.startsWith('(node:') &&
-        !line.startsWith('(Use `node --experimental-transform-types`') &&
-        !line.startsWith('(Use `node --trace-warnings')
-    )
-    .join('\n')
-    .replace(new RegExp(String(port), 'g'), '<PORT>');
-
 const expectSimulationRouteToRespond = async (port: number) => {
   const response = await fetch(`http://localhost:${port}/simulation`);
 
@@ -270,7 +260,7 @@ describe('startup output', () => {
 
     try {
       const rawOutput = await output;
-      const normalisedOutput = normalisePortForSnapshot(rawOutput, port);
+      const normalisedOutput = normaliseStartupOutput(rawOutput, port);
       expect(normalisedOutput).toMatchSnapshot();
       await expectSimulationRouteToRespond(port);
     } finally {
@@ -289,7 +279,7 @@ describe('startup output', () => {
 
     try {
       const rawOutput = await output;
-      const normalisedOutput = normalisePortForSnapshot(rawOutput, port);
+      const normalisedOutput = normaliseStartupOutput(rawOutput, port);
       expect(normalisedOutput).toMatchSnapshot();
       await expectSimulationRouteToRespond(port);
     } finally {
