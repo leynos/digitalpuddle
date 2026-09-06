@@ -121,8 +121,28 @@ proper nouns, quoted upstream titles, fixtures, stems or exclusions in
 uv run scripts/generate_typos_config.py
 ```
 
-Keep upstream API spellings in inline or fenced code where practical. The
-spelling gate deliberately ignores code spans and fenced code blocks.
+Keep upstream API spellings in inline or fenced code where practical. Fenced
+code blocks are ignored, but **inline code spans are not**: the shared
+dictionary stopped excluding them, so an identifier in backticks reaches the
+checker like any other word. Record it under `[patterns]` in
+`typos.local.toml` and include the backticks in the pattern, so the same
+letters in prose are still corrected. Never widen the exception back to all
+inline code, and never add the bare word to `[words] accepted`, which disables
+the correction everywhere.
+
+### Dependency advisories
+
+CI runs `bun audit` after the gates and fails on any advisory. Almost every
+advisory this repository sees is transitive, through `@graphql-codegen/cli`,
+`express` or the simulator packages, so there is no direct dependency to bump.
+The `overrides` block in `package.json` answers those: each entry names the
+lowest version that clears the advisory while staying inside the dependant's
+major, so no resolution crosses a breaking boundary.
+
+Run `bun audit` before pushing. When it reports something new, raise the
+matching `overrides` entry rather than the direct dependency, run `bun install`
+to refresh `bun.lock`, then run `make test`, because an override changes what
+every dependant resolves to.
 
 Build the package when changing the CommonJS CLI:
 

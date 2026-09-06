@@ -101,19 +101,22 @@
   "overrides": {
     "@babel/core": "7.29.7",
     "@opentelemetry/core": "2.8.0",
-    "brace-expansion": "5.0.6",
+    "body-parser": "2.3.0",
+    "brace-expansion": "5.0.9",
+    "browserslist": "4.28.9",
     "dompurify": "3.4.11",
-    "fast-uri": "3.1.2",
+    "fast-uri": "3.1.7",
     "http-proxy-middleware": "4.1.1",
-    "js-yaml": "4.2.0",
+    "immutable": "5.1.9",
+    "js-yaml": "4.3.2",
     "lodash": "4.18.1",
     "protobufjs": "7.6.4",
-    "qs": "6.15.2",
-    "shell-quote": "1.8.4",
+    "qs": "6.16.0",
+    "shell-quote": "1.10.0",
     "ws": "8.21.0"
   },
   "inlinedDependencies": {
-    "starfx": "0.15.0"
+    "starfx": "0.16.1"
   },
   "main": "./dist/index.cjs"
 }
