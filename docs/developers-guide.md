@@ -87,12 +87,7 @@ BRANCH=$(git branch --show-current | tr '/ ' '__')
 make all 2>&1 | tee /tmp/all-digitalpuddle-${BRANCH}.out
 ```
 
-`make all` includes `docs-check` (`bun run docs:check`): TypeDoc's
-`notDocumented` validation over the package entry point (`typedoc.json`),
-requiring a JSDoc block on every declaration in the public surface, treating
-warnings as errors, and emitting no documentation artefacts. Zod schema
-constants are tagged `@internal` so their field definitions stay out of the
-documented surface.
+`make all` includes the documentation gate described in section 3.2.
 
 Run documentation gates when Markdown changes:
 
@@ -136,6 +131,70 @@ checker like any other word. Record it under `[patterns]` in
 letters in prose are still corrected. Never widen the exception back to all
 inline code, and never add the bare word to `[words] accepted`, which disables
 the correction everywhere.
+
+
+### 3.2. Documentation gate
+
+`make all` runs `docs-check`, which runs `bun run docs:check`: TypeDoc reads
+`typedoc.json`, resolves the package entry point (`src/index.ts`) and reports
+every gap in the public surface. It is a zero-tolerance gate, so a single
+finding fails the build. Run it on its own while writing documentation:
+
+```bash
+make docs-check
+```
+
+`docs-check` depends on `typecheck` because the gate reads the generated
+GraphQL resolver types, so a clean checkout can run it directly.
+
+The gate checks that:
+
+- every exported enum, enum member, variable, function, class, interface,
+  property, method, accessor and type alias carries a documentation comment
+  (`validation.notDocumented` with `requiredToBeDocumented`);
+- every reference resolves, whether written as `{@link Symbol}` or as an
+  `@include`, `@document` or rewritten path (`invalidLink`, `invalidPath`,
+  `rewrittenLink`, `unusedMergeModuleWith`); and
+- warnings count as errors (`treatValidationWarningsAsErrors`), which is what
+  turns a report into a gate.
+
+Nothing is written to disk: `emit` is `none`, so the gate produces no
+documentation artefacts and no output when it passes.
+
+`validation.notExported` is deliberately off. Turning it on would require the
+store generics, the zod schema constants and the foundation router alias to
+join the published surface, and each export pulls in the next layer of
+internals. The named `GitHub*` output types remain the public vocabulary, and
+zod schema constants are tagged `@internal` so their inferred field types stay
+out of the documented surface.
+
+`tests/docs-gate-contract.test.ts` asserts the chain that runs the gate: the CI
+job builds the `all` goal unconditionally, `all` requires `docs-check`,
+`docs-check` runs `bun run docs:check`, and that script runs TypeDoc against
+`typedoc.json`. Each assertion matches the command rather than a step name, so
+removing any link fails a test.
+
+
+#### Documenting an export
+
+- Put a `/** … */` block immediately above the declaration, and above any
+  decorators. TypeDoc reads JSDoc comments only (`commentStyle: "jsdoc"`), so
+  a `//` comment does not satisfy the gate.
+- Document each property of an exported object type in its own block. The
+  block on the type itself does not cover its members.
+- Describe what the declaration is for, not what its name already says. The
+  first sentence becomes the summary.
+- Reference another exported symbol with `{@link Symbol}` rather than
+  backticks, so the gate keeps the reference honest when the symbol is
+  renamed.
+- Tag a declaration `@internal` when it is exported for another module rather
+  than for consumers. `excludeInternal` keeps it out of the documented surface
+  and out of the gate.
+- The package entry point, `src/index.ts`, heads its module block with
+  `@module`. TypeDoc does not recognize `@file`, and without `@module` it
+  attributes the header to the first declaration below it. Other modules keep
+  the repository's `@file` header; only the entry point is a module in the
+  documentation tree.
 
 ### Dependency advisories
 
