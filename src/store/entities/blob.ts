@@ -2,6 +2,12 @@
 import {faker} from '@faker-js/faker';
 import {z} from 'zod';
 
+/**
+ * Validates a seeded git blob fixture, requiring a path or a sha so the
+ * fixture can be keyed within the store.
+ *
+ * @internal
+ */
 export const githubBlobSchema = z
   .object({
     content: z.string().optional().default(faker.lorem.paragraphs),

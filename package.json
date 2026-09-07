@@ -60,6 +60,7 @@
     "bench": "bun test --bench",
     "build": "tsdown",
     "check:types": "bun run generate && bunx tsc --noEmit",
+    "docs:check": "typedoc --options typedoc.json",
     "fmt": "bunx @biomejs/biome format --write .",
     "generate": "graphql-codegen",
     "lint": "bunx @biomejs/biome lint .",
@@ -96,7 +97,9 @@
     "fast-check": "^4.8.0",
     "publint": "^0.3.21",
     "tsdown": "^0.22.3",
-    "typescript": "^6.0.3"
+    "typedoc": "^0.28.20",
+    "typescript": "^6.0.3",
+    "yaml": "^2.9.0"
   },
   "overrides": {
     "@babel/core": "7.29.7",

@@ -23,19 +23,32 @@ import {
 } from './store/index.ts';
 import type {SchemaFile} from './utils.ts';
 
+/** Seed data accepted for the GitHub fixtures a simulation server starts with. */
 export type InitialState = GitHubInitialStore;
 
 type FoundationRouter = Parameters<
   NonNullable<Parameters<typeof createFoundationSimulationServer>[0]['extendRouter']>
 >[0];
 
+/** Options accepted by {@link simulation} to seed and extend a GitHub simulation server. */
 export type GitHubSimulatorArgs = {
+  /** Seed data for the GitHub fixture store. */
   initialState?: GitHubInitialStore;
+  /** Base URL the simulated GitHub API is served from. */
   apiUrl?: string;
+  /** OpenAPI document, or path to one, describing the simulated GitHub API. */
   apiSchema?: SchemaFile | string;
+  /** Store, REST, and router extensions layered onto the base simulation. */
   extend?: {
+    /**
+     * Extensions merged into the GitHub fixture store: `schema` slices,
+     * `actions` and `selectors`, each layered over the package's built-in set,
+     * and `logs` to enable the foundation store's action logging.
+     */
     extendStore?: GitHubExtendStoreInput;
+    /** Builds extra REST handlers from the extended simulation store. */
     openapiHandlers?: (simulationStore: ExtendedSimulationStore) => SimulationHandlers;
+    /** Registers additional routes on the extended simulation store's router. */
     extendRouter?: (router: FoundationRouter, simulationStore: ExtendedSimulationStore) => void;
   };
 };

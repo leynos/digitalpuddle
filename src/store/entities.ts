@@ -39,6 +39,12 @@ const getNextInstallationId = (usedInstallationIds: Set<number>, nextInstallatio
   };
 };
 
+/**
+ * Validates and normalizes a seeded GitHub user fixture, deriving a display
+ * name and email address when they are omitted.
+ *
+ * @internal
+ */
 export const githubUserSchema = z
   .object({
     id: z

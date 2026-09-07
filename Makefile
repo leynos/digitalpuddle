@@ -1,4 +1,4 @@
-.PHONY: all fmt check-fmt typecheck lint test build clean generate markdownlint \
+.PHONY: all fmt check-fmt typecheck docs-check lint test build clean generate markdownlint \
 	nixie spelling spelling-helper-test
 
 MDLINT ?= markdownlint-cli2
@@ -8,7 +8,7 @@ TYPOS_VERSION ?= 1.48.0
 TYPOS = $(UV) tool run typos@$(TYPOS_VERSION)
 XARGS_R := $(shell if xargs --help 2>&1 | grep -q '\\-r'; then printf -- '-r'; fi)
 
-all: check-fmt typecheck lint test spelling
+all: check-fmt typecheck docs-check lint test spelling
 
 fmt:
 	bun run fmt
@@ -19,6 +19,12 @@ check-fmt:
 
 typecheck:
 	bun run check:types
+
+# Zero-tolerance documentation gate: TypeDoc's notDocumented validation over
+# the package entry point (typedoc.json). Runs after typecheck so the
+# generated GraphQL types already exist. Emits no documentation artefacts.
+docs-check: typecheck
+	bun run docs:check
 
 lint:
 	bun run lint
