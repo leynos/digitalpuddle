@@ -40,7 +40,11 @@ export type GitHubSimulatorArgs = {
   apiSchema?: SchemaFile | string;
   /** Store, REST, and router extensions layered onto the base simulation. */
   extend?: {
-    /** Additional store state and reducers merged into the GitHub fixture store. */
+    /**
+     * Extensions merged into the GitHub fixture store: `schema` slices,
+     * `actions` and `selectors`, each layered over the package's built-in set,
+     * and `logs` to enable the foundation store's action logging.
+     */
     extendStore?: GitHubExtendStoreInput;
     /** Builds extra REST handlers from the extended simulation store. */
     openapiHandlers?: (simulationStore: ExtendedSimulationStore) => SimulationHandlers;
