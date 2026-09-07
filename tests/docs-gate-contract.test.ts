@@ -176,6 +176,7 @@ type WorkflowJob = {
 };
 
 const workflow = parseYaml(readRepositoryFile('.github/workflows/ci.yml')) as {
+  on?: {push?: {branches?: string[]} | null};
   jobs?: {verify?: WorkflowJob};
 };
 const makefileRules = parseMakefile(readRepositoryFile('Makefile'));
@@ -215,6 +216,17 @@ describe('documentation gate wiring', () => {
     expect(gateSteps).toHaveLength(1);
     expect(gateSteps[0]?.if).toBeUndefined();
     expect(gateSteps[0]?.['continue-on-error']).toBeUndefined();
+  });
+
+  it('runs on pull requests and on pushes to `main`', () => {
+    // Presence, not truth: `pull_request:` parses to null, and a condition
+    // written as `if: false` parses to a boolean whose string form is `False`.
+    // Every check here is for a key that exists or a value that is absent.
+    const triggers = Object.keys(workflow.on ?? {});
+
+    expect(triggers).toContain('pull_request');
+    expect(triggers).toContain('push');
+    expect(workflow.on?.push?.branches).toContain('main');
   });
 
   it('requires the documentation gate from `make all`', () => {
