@@ -12,8 +12,22 @@ accepted = ["Flavored"]
 [words.corrections]
 
 [patterns]
-# Abbreviated hexadecimal commit IDs may begin with dictionary words.
-ignore = ["\\bba[0-9a-f]{5,39}\\b"]
+# The shared base no longer excludes inline code spans, so identifiers written
+# in backticks reach the checker. Each pattern below keeps its backticks so the
+# same letters in prose are still corrected.
+#
+# - an abbreviated commit hash, which can spell a word such as "ba" or "fed";
+#   the changelog quotes dozens of them, some in backticks and some as the
+#   label of a link to the commit
+# - FORCE_COLOR, an environment variable name
+# - `color`, the documentation style guide's own example of a US spelling kept
+#   inside an API name
+ignore = [
+  "`[0-9a-f]{7,40}`",
+  "\\[[0-9a-f]{7,40}\\]",
+  "\\bFORCE_COLOR\\b",
+  "`color`",
+]
 
 [files]
 exclude = []

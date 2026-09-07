@@ -31,9 +31,11 @@ extend-exclude = [
 locale = "en-gb"
 extend-ignore-re = [
     "(?s)```.*?```",
-    "\\bba[0-9a-f]{5,39}\\b",
+    "\\[[0-9a-f]{7,40}\\]",
+    "\\bFORCE_COLOR\\b",
     "\\brust-analyzer\\b",
-    "`[^`\\n]+`",
+    "`[0-9a-f]{7,40}`",
+    "`color`",
 ]
 
 [default.extend-words]
