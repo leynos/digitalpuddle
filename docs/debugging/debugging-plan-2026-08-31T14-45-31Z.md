@@ -1,4 +1,4 @@
-# Debugging Plan: TypeScript Startup Test Timeout
+# Debugging plan: TypeScript startup test timeout
 
 **Generated**: 2026-08-31T14:45:31Z
 **Issue ID**: Post-turn gateway failure
@@ -8,19 +8,19 @@
 Falsification must be executed by the named sub-agent, not by the planning
 agent.
 
-## Problem Statement
+## Problem statement
 
 `make test` ran 186 tests successfully but timed out the TypeScript startup
 example after five seconds. The preceding CommonJS startup test took 31.7
-seconds and reported one dangling process killed. The expected result is that
-both startup subprocess tests complete within their declared timeouts.
+seconds and reported that one dangling process was killed. The expected result
+is that both startup subprocess tests complete within their declared timeouts.
 
 **Outcome**: The TypeScript test passed in isolation in 1.62 seconds, which
 falsified an intrinsic startup regression. Its implicit five-second Bun
 deadline was shorter than the helper's explicit 15-second startup diagnostic
 window, so the test deadline now permits that diagnostic and bounded teardown.
 
-## Context Summary
+## Context summary
 
 | Aspect | Details |
 | --- | --- |
@@ -29,14 +29,16 @@ window, so the test deadline now permits that diagnostic and bounded teardown.
 | Affected components | `tests/startup-output.test.ts`, Node TypeScript example startup |
 | Recent changes | TypeDoc gate and spelling-policy source configuration |
 
-### Error Artefacts
+_Table 1: Context for the observed startup-test timeout._
+
+### Error artefacts
 
 ```plaintext
 The CommonJS startup test completed in 31746.91ms and killed 1 dangling
 process. The subsequent TypeScript example test timed out after 5000ms.
 ```
 
-### Information Gaps
+### Information gaps
 
 - Whether the TypeScript example fails when selected on its own.
 - Whether the preceding CommonJS test leaves a subprocess or port state that
@@ -57,11 +59,13 @@ the timeout.
 **Prediction**: Selecting only the TypeScript example will complete within five
 seconds when no preceding CLI test has run.
 
-#### H1 Falsification Plan
+#### H1 falsification plan
 
-| Step | Action | Expected Negative Result |
+| Step | Action | Expected negative result |
 | --- | --- | --- |
 | 1 | Run `bun test tests/startup-output.test.ts --filter 'TypeScript example'`. | The selected test times out or fails alone. |
+
+_Table 2: Falsification plan for H1, leaked process state._
 
 **Tooling**: Bun test runner.
 
@@ -81,11 +85,13 @@ invocation, but no source change touched it.
 **Prediction**: The selected TypeScript example will fail or time out in a
 fresh process without the CommonJS test.
 
-#### H2 Falsification Plan
+#### H2 falsification plan
 
-| Step | Action | Expected Negative Result |
+| Step | Action | Expected negative result |
 | --- | --- | --- |
 | 1 | Run the selected TypeScript test from H1 once. | It completes within five seconds with the expected output. |
+
+_Table 3: Falsification plan for H2, a regressed TypeScript example._
 
 **Tooling**: Bun test runner.
 
@@ -94,19 +100,19 @@ intrinsic startup regression under the observed environment.
 
 ______________________________________________________________________
 
-## Recommended Execution Order
+## Recommended execution order
 
 1. **H1 and H2** — one isolated, deterministic test distinguishes both causes.
 
-## Termination Criteria
+## Termination criteria
 
 - **Root cause identified**: The isolated test either passes, implicating
   test-order state, or fails, implicating the TypeScript startup path.
 - **Escalation trigger**: If the result varies across two identical isolated
   runs, revise the plan for nondeterministic host contention.
 
-## Notes for Executing Agent
+## Notes for the executing agent
 
 Run only the supplied focused command. Do not modify tracked files or run the
-full repository gateway. Report one of: falsified, not-falsified, or
-inconclusive, with the measured result.
+full repository gateway. Report one of the following: falsified,
+not-falsified, or inconclusive, with the measured result.
