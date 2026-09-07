@@ -20,6 +20,14 @@ falsified an intrinsic startup regression. Its implicit five-second Bun
 deadline was shorter than the helper's explicit 15-second startup diagnostic
 window, so the test deadline now permits that diagnostic and bounded teardown.
 
+The sequential reproduction was not run, so H1 was neither confirmed nor
+falsified and no root cause was identified. The deadline was raised because it
+was demonstrably too short for the work the test performs, which is true
+whatever caused this particular run to be slow. Later runs on a loaded host
+timed out three further tests against wall-clock deadlines, which points at
+contention rather than test order; that is tracked in
+[#57](https://github.com/leynos/digitalpuddle/issues/57).
+
 ## Context summary
 
 | Aspect | Details |
@@ -106,8 +114,12 @@ ______________________________________________________________________
 
 ## Termination criteria
 
-- **Root cause identified**: The isolated test either passes, implicating
-  test-order state, or fails, implicating the TypeScript startup path.
+- **H2 settled**: The isolated test either passes, falsifying an intrinsic
+  regression in the TypeScript startup path, or fails, confirming one. A pass
+  does not identify a root cause: it leaves test-order state and host
+  contention as rival explanations, and separating those needs a controlled
+  reproduction of the CommonJS-then-TypeScript sequence, run enough times to
+  distinguish an ordering effect from load.
 - **Escalation trigger**: If the result varies across two identical isolated
   runs, revise the plan for nondeterministic host contention.
 
