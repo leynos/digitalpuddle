@@ -39,6 +39,43 @@ const commandsIn = (script: string): string[][] =>
     )
     .filter((tokens) => tokens.length > 0 && !(tokens[0] ?? '').startsWith('#'));
 
+/**
+ * Shell keywords that make the commands around them conditional or repeated.
+ *
+ * A script containing any of these cannot be certified by finding the gate
+ * command inside it: `if false; then` followed by the command on its own line
+ * reads, line by line, exactly like an unconditional invocation while running
+ * nothing.
+ */
+const SHELL_CONTROL_KEYWORDS = new Set([
+  'if',
+  'then',
+  'else',
+  'elif',
+  'fi',
+  'for',
+  'while',
+  'until',
+  'do',
+  'done',
+  'case',
+  'esac',
+  'function'
+]);
+
+/**
+ * True when a script is exactly one command with no control flow around it, so
+ * that command runs whenever the script runs and its failure is the script's
+ * failure.
+ */
+const isSingleUnconditionalCommand = (script: string): boolean => {
+  const commands = commandsIn(script);
+  if (commands.length !== 1) {
+    return false;
+  }
+  return !(commands[0] ?? []).some((token) => SHELL_CONTROL_KEYWORDS.has(token));
+};
+
 /** Options that consume the following token, so it is never a goal. */
 const MAKE_OPTIONS_WITH_ARGUMENT = new Set(['-C', '-f', '-I', '-j', '-l', '-o', '-W']);
 
@@ -163,9 +200,17 @@ describe('documentation gate wiring', () => {
     expect(verify?.if).toBeUndefined();
     expect(verify?.['continue-on-error']).toBeUndefined();
 
-    const gateSteps = (verify?.steps ?? []).filter((step) =>
-      commandsIn(step.run ?? '').some((tokens) => makeGoals(tokens).includes('all'))
-    );
+    // The step's whole script must be the invocation, not merely contain it.
+    // A script of `if false; then` / `make all` / `fi` contains a line that
+    // reads as the gate and runs nothing.
+    const gateSteps = (verify?.steps ?? []).filter((step) => {
+      const script = step.run ?? '';
+      if (!isSingleUnconditionalCommand(script)) {
+        return false;
+      }
+      const [command] = commandsIn(script);
+      return makeGoals(command ?? []).includes('all');
+    });
 
     expect(gateSteps).toHaveLength(1);
     expect(gateSteps[0]?.if).toBeUndefined();
@@ -181,7 +226,10 @@ describe('documentation gate wiring', () => {
   });
 
   it('runs the documentation script from the `docs-check` target', () => {
-    expect(makefileRules.get('docs-check')?.recipe).toContainEqual(['bun', 'run', 'docs:check']);
+    // The whole recipe, not one of its lines: a recipe that wraps the command
+    // in `if false; then` … `fi`, or appends `|| true`, still contains a line
+    // that reads as the gate.
+    expect(makefileRules.get('docs-check')?.recipe).toEqual([['bun', 'run', 'docs:check']]);
   });
 
   it('lets a gate failure reach make', () => {
