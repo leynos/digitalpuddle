@@ -66,7 +66,7 @@ const makeGoals = (tokens: string[]): string[] => {
   return goals;
 };
 
-type MakeRule = {prerequisites: string[]; recipe: string[][]};
+type MakeRule = {prerequisites: string[]; recipe: string[][]; ignoredErrorPrefixes: string[]};
 
 /**
  * Parses a Makefile into its explicit rules, joining backslash continuations
@@ -86,9 +86,13 @@ const parseMakefile = (text: string): Map<string, MakeRule> => {
     }
 
     if (line.startsWith('\t')) {
-      const recipeLine = line.slice(1).replace(/^[@+-]+/, '');
+      const prefix = (/^[@+-]+/.exec(line.slice(1)) ?? [''])[0];
+      const recipeLine = line.slice(1).slice(prefix.length);
       for (const rule of active) {
         rule.recipe.push(...commandsIn(recipeLine));
+        if (prefix.includes('-')) {
+          rule.ignoredErrorPrefixes.push(recipeLine.trim());
+        }
       }
       continue;
     }
@@ -112,7 +116,7 @@ const parseMakefile = (text: string): Map<string, MakeRule> => {
       .filter((prerequisite) => prerequisite.length > 0);
 
     active = targets.map((target) => {
-      const rule: MakeRule = {prerequisites, recipe: []};
+      const rule: MakeRule = {prerequisites, recipe: [], ignoredErrorPrefixes: []};
       rules.set(target, rule);
       return rule;
     });
@@ -143,10 +147,12 @@ const packageManifest = JSON.parse(readRepositoryFile('package.json')) as {
   devDependencies?: {typedoc?: string};
 };
 const typedocOptions = JSON.parse(readRepositoryFile('typedoc.json')) as {
+  entryPoints?: string[];
+  entryPointStrategy?: string;
   emit?: string;
   treatWarningsAsErrors?: boolean;
   treatValidationWarningsAsErrors?: boolean;
-  validation?: {notDocumented?: boolean; invalidLink?: boolean};
+  validation?: Record<string, boolean>;
   requiredToBeDocumented?: string[];
 };
 
@@ -178,6 +184,10 @@ describe('documentation gate wiring', () => {
     expect(makefileRules.get('docs-check')?.recipe).toContainEqual(['bun', 'run', 'docs:check']);
   });
 
+  it('lets a gate failure reach make', () => {
+    expect(makefileRules.get('docs-check')?.ignoredErrorPrefixes).toEqual([]);
+  });
+
   it('runs TypeDoc against the repository options from the `docs:check` script', () => {
     const script = packageManifest.scripts?.['docs:check'] ?? '';
     const invocations = commandsIn(script).filter((tokens) => path.basename(tokens[0] ?? '') === 'typedoc');
@@ -189,9 +199,23 @@ describe('documentation gate wiring', () => {
 });
 
 describe('documentation gate options', () => {
-  it('fails the build on an undocumented or unresolvable declaration', () => {
-    expect(typedocOptions.validation?.notDocumented).toBe(true);
-    expect(typedocOptions.validation?.invalidLink).toBe(true);
+  it('reads the published entry point', () => {
+    expect(typedocOptions.entryPoints).toEqual(['src/index.ts']);
+    expect(typedocOptions.entryPointStrategy).toBe('resolve');
+  });
+
+  it('enables every validation the gate depends on', () => {
+    expect(typedocOptions.validation).toEqual({
+      notDocumented: true,
+      notExported: false,
+      invalidLink: true,
+      invalidPath: true,
+      rewrittenLink: true,
+      unusedMergeModuleWith: true
+    });
+  });
+
+  it('turns every warning into a failure', () => {
     expect(typedocOptions.treatValidationWarningsAsErrors).toBe(true);
     expect(typedocOptions.treatWarningsAsErrors).toBe(true);
   });
