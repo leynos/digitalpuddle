@@ -155,8 +155,10 @@ The gate checks that:
 - every reference resolves, whether written as `{@link Symbol}` or as an
   `@include`, `@document` or rewritten path (`invalidLink`, `invalidPath`,
   `rewrittenLink`, `unusedMergeModuleWith`); and
-- warnings count as errors (`treatValidationWarningsAsErrors`), which is what
-  turns a report into a gate.
+- warnings count as errors (`treatWarningsAsErrors` and
+  `treatValidationWarningsAsErrors`), which is what turns a report into a gate.
+  The first covers warnings that are not validation findings, such as an
+  unknown block tag.
 
 Nothing is written to disk: `emit` is `none`, so the gate produces no
 documentation artefacts and no output when it passes.
@@ -173,7 +175,6 @@ job builds the `all` goal unconditionally, `all` requires `docs-check`,
 `docs-check` runs `bun run docs:check`, and that script runs TypeDoc against
 `typedoc.json`. Each assertion matches the command rather than a step name, so
 removing any link fails a test.
-
 
 #### Documenting an export
 

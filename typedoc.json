@@ -34,5 +34,6 @@
     "TypeAlias"
   ],
 
+  "treatWarningsAsErrors": true,
   "treatValidationWarningsAsErrors": true
 }

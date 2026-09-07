@@ -135,23 +135,24 @@ type WorkflowJob = {
 };
 
 const workflow = parseYaml(readRepositoryFile('.github/workflows/ci.yml')) as {
-  jobs?: Record<string, WorkflowJob>;
+  jobs?: {verify?: WorkflowJob};
 };
 const makefileRules = parseMakefile(readRepositoryFile('Makefile'));
 const packageManifest = JSON.parse(readRepositoryFile('package.json')) as {
   scripts?: Record<string, string>;
-  devDependencies?: Record<string, string>;
+  devDependencies?: {typedoc?: string};
 };
 const typedocOptions = JSON.parse(readRepositoryFile('typedoc.json')) as {
   emit?: string;
+  treatWarningsAsErrors?: boolean;
   treatValidationWarningsAsErrors?: boolean;
-  validation?: Record<string, boolean>;
+  validation?: {notDocumented?: boolean; invalidLink?: boolean};
   requiredToBeDocumented?: string[];
 };
 
 describe('documentation gate wiring', () => {
   it('runs `make all` unconditionally in the CI verify job', () => {
-    const verify = workflow.jobs?.['verify'];
+    const verify = workflow.jobs?.verify;
     expect(verify).toBeDefined();
     expect(verify?.if).toBeUndefined();
     expect(verify?.['continue-on-error']).toBeUndefined();
@@ -179,15 +180,16 @@ describe('documentation gate wiring', () => {
 
     expect(invocations).toHaveLength(1);
     expect(invocations[0]).toContain('typedoc.json');
-    expect(packageManifest.devDependencies?.['typedoc']).toBeDefined();
+    expect(packageManifest.devDependencies?.typedoc).toBeDefined();
   });
 });
 
 describe('documentation gate options', () => {
   it('fails the build on an undocumented or unresolvable declaration', () => {
-    expect(typedocOptions.validation?.['notDocumented']).toBe(true);
-    expect(typedocOptions.validation?.['invalidLink']).toBe(true);
+    expect(typedocOptions.validation?.notDocumented).toBe(true);
+    expect(typedocOptions.validation?.invalidLink).toBe(true);
     expect(typedocOptions.treatValidationWarningsAsErrors).toBe(true);
+    expect(typedocOptions.treatWarningsAsErrors).toBe(true);
   });
 
   it('writes no documentation artefacts', () => {
