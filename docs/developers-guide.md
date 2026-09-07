@@ -132,7 +132,6 @@ letters in prose are still corrected. Never widen the exception back to all
 inline code, and never add the bare word to `[words] accepted`, which disables
 the correction everywhere.
 
-
 ### 3.2. Documentation gate
 
 `make all` runs `docs-check`, which runs `bun run docs:check`: TypeDoc reads
