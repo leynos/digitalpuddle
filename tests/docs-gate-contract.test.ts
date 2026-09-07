@@ -170,6 +170,10 @@ describe('documentation gate wiring', () => {
     expect(makefileRules.get('all')?.prerequisites).toContain('docs-check');
   });
 
+  it('generates the resolver types before the gate reads them', () => {
+    expect(makefileRules.get('docs-check')?.prerequisites).toContain('typecheck');
+  });
+
   it('runs the documentation script from the `docs-check` target', () => {
     expect(makefileRules.get('docs-check')?.recipe).toContainEqual(['bun', 'run', 'docs:check']);
   });
