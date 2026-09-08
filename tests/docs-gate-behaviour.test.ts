@@ -16,6 +16,8 @@ import {mkdtemp, readdir, rm, writeFile} from 'node:fs/promises';
 import {readFileSync} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import fc from 'fast-check';
+import {propertyTestSeed} from './support/property-test-seed.ts';
 
 const repositoryRoot = path.join(import.meta.dir, '..');
 const typedocBinary = path.join(repositoryRoot, 'node_modules', '.bin', 'typedoc');
@@ -166,6 +168,112 @@ describe('documentation gate behaviour', () => {
 
       expect(exitCode).not.toBe(0);
       expect(output).toContain('unknown block tag @file');
+    },
+    GATE_TIMEOUT_MS
+  );
+});
+
+/**
+ * The exported declaration kinds `requiredToBeDocumented` names at the top
+ * level of a module. Members that must also be documented, a class property,
+ * an interface property and an enum member, are carried inside their owner and
+ * are always documented here: the property under test is about the top-level
+ * declaration.
+ */
+const DECLARATION_KINDS = ['variable', 'function', 'class', 'interface', 'typeAlias', 'enum'] as const;
+
+type DeclarationKind = (typeof DECLARATION_KINDS)[number];
+
+const comment = (documented: boolean, text: string): string => (documented ? `/** ${text} */\n` : '');
+
+const DECLARATION_SOURCE: Record<DeclarationKind, (name: string, documented: boolean) => string> = {
+  variable: (name, documented) => `${comment(documented, `The ${name} constant.`)}export const ${name} = 'value';`,
+  function: (name, documented) =>
+    `${comment(documented, `Returns the ${name} marker.`)}export function ${name}(): string {\n  return '${name}';\n}`,
+  class: (name, documented) =>
+    `${comment(documented, `A ${name} value.`)}export class ${name} {\n  /** The value this instance carries. */\n  readonly value: string = '${name}';\n}`,
+  interface: (name, documented) =>
+    `${comment(documented, `The shape a ${name} value has.`)}export interface ${name} {\n  /** The value the shape carries. */\n  value: string;\n}`,
+  typeAlias: (name, documented) => `${comment(documented, `A ${name} alias.`)}export type ${name} = string;`,
+  enum: (name, documented) =>
+    `${comment(documented, `The ${name} choices.`)}export enum ${name} {\n  /** The only choice. */\n  Only = 'only'\n}`
+};
+
+const declarationName = (kind: DeclarationKind, index: number): string =>
+  `Fixture${kind.charAt(0).toUpperCase()}${kind.slice(1)}${index}`;
+
+/**
+ * Builds an entry module from the given kinds, documenting every declaration
+ * except the one at `undocumentedIndex`, and returns it with the name of that
+ * declaration.
+ */
+const buildEntry = (
+  kinds: readonly DeclarationKind[],
+  undocumentedIndex: number | null
+): {source: string; undocumented: string | null} => {
+  const declarations = kinds.map((kind, index) => {
+    const name = declarationName(kind, index);
+    const documented = index !== undocumentedIndex;
+    return {name, documented, source: DECLARATION_SOURCE[kind](name, documented)};
+  });
+
+  const header = `/**\n * Generated fixture entry point.\n *\n * @module\n */\n`;
+  const undocumented = declarations.find((declaration) => !declaration.documented)?.name ?? null;
+
+  return {source: `${header}\n${declarations.map((declaration) => declaration.source).join('\n\n')}\n`, undocumented};
+};
+
+/** A non-empty selection of distinct declaration kinds, in a generated order. */
+const kindSelection = fc
+  .subarray([...DECLARATION_KINDS], {minLength: 1})
+  .chain((kinds) => fc.shuffledSubarray(kinds, {minLength: kinds.length, maxLength: kinds.length}));
+
+/**
+ * Each TypeDoc run costs a second or two, so the run counts here are small by
+ * design. The generated cases vary which kinds appear, in what order, and which
+ * one loses its comment; the invariant does not need volume to be exercised.
+ */
+const PROPERTY_RUNS = 4;
+
+describe('documentation gate invariant', () => {
+  it(
+    'passes any combination of documented declaration kinds',
+    async () => {
+      await fc.assert(
+        fc.asyncProperty(kindSelection, async (kinds) => {
+          const {source} = buildEntry(kinds, null);
+          const {exitCode} = await runGate(source);
+
+          expect(exitCode).toBe(0);
+        }),
+        {numRuns: PROPERTY_RUNS, seed: propertyTestSeed}
+      );
+    },
+    GATE_TIMEOUT_MS
+  );
+
+  it(
+    'fails whichever declaration loses its documentation',
+    async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          kindSelection.chain((kinds) =>
+            fc.record({
+              kinds: fc.constant(kinds),
+              undocumentedIndex: fc.integer({min: 0, max: kinds.length - 1})
+            })
+          ),
+          async ({kinds, undocumentedIndex}) => {
+            const {source, undocumented} = buildEntry(kinds, undocumentedIndex);
+            const {exitCode, output} = await runGate(source);
+
+            expect(exitCode).not.toBe(0);
+            expect(output).toContain(undocumented ?? '');
+            expect(output).toContain('does not have any documentation');
+          }
+        ),
+        {numRuns: PROPERTY_RUNS, seed: propertyTestSeed}
+      );
     },
     GATE_TIMEOUT_MS
   );
