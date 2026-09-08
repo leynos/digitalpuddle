@@ -307,11 +307,13 @@ describe('documentation gate wiring', () => {
   });
 
   it('runs TypeDoc against the repository options from the `docs:check` script', () => {
+    // The script is the third link and gets the same treatment as the step and
+    // the recipe: the whole script is the invocation, unconditional and in the
+    // foreground, so no `|| true`, guard or `&` can hide behind it.
     const script = packageManifest.scripts?.['docs:check'] ?? '';
-    const invocations = commandsIn(script).filter((tokens) => path.basename(tokens[0] ?? '') === 'typedoc');
 
-    expect(invocations).toHaveLength(1);
-    expect(invocations[0]).toContain('typedoc.json');
+    expect(isSingleUnconditionalCommand(script)).toBe(true);
+    expect(commandsIn(script)[0]).toEqual(['typedoc', '--options', 'typedoc.json']);
     expect(packageManifest.devDependencies?.typedoc).toBeDefined();
   });
 });
