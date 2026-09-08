@@ -64,11 +64,22 @@ const SHELL_CONTROL_KEYWORDS = new Set([
 ]);
 
 /**
- * True when a script is exactly one command with no control flow around it, so
- * that command runs whenever the script runs and its failure is the script's
- * failure.
+ * A `&` that is not part of `&&` backgrounds the command before it, so the
+ * step can succeed before the gate it launched has returned. `commandsIn`
+ * does not split on it, which would otherwise leave `make all &` looking like
+ * a plain invocation.
+ */
+const BACKGROUND_OPERATOR = /(?<!&)&(?!&)/;
+
+/**
+ * True when a script is exactly one command that runs in the foreground with
+ * no control flow around it, so the command runs whenever the script runs and
+ * its failure is the script's failure.
  */
 const isSingleUnconditionalCommand = (script: string): boolean => {
+  if (BACKGROUND_OPERATOR.test(script)) {
+    return false;
+  }
   const commands = commandsIn(script);
   if (commands.length !== 1) {
     return false;
@@ -193,6 +204,36 @@ const typedocOptions = JSON.parse(readRepositoryFile('typedoc.json')) as {
   validation?: Record<string, boolean>;
   requiredToBeDocumented?: string[];
 };
+
+describe('gate command recognition', () => {
+  const accepted: Record<string, string> = {
+    'a bare invocation': 'make all',
+    'an invocation with an option': 'make -s all',
+    'an invocation with a variable override': 'make MDLINT=markdownlint-cli2 all'
+  };
+
+  const rejected: Record<string, string> = {
+    'a backgrounded invocation': 'make all &',
+    'a backgrounded invocation inside a chain': 'make all & wait',
+    'an invocation whose failure is swallowed': 'make all || true',
+    'an invocation guarded by a condition': 'if false; then\n  make all\nfi',
+    'an invocation among others': 'make all\nmake build',
+    'an invocation in a loop': 'for goal in all; do\n  make $goal\ndone'
+  };
+
+  for (const [description, script] of Object.entries(accepted)) {
+    it(`accepts ${description}`, () => {
+      expect(isSingleUnconditionalCommand(script)).toBe(true);
+      expect(makeGoals(commandsIn(script)[0] ?? [])).toContain('all');
+    });
+  }
+
+  for (const [description, script] of Object.entries(rejected)) {
+    it(`rejects ${description}`, () => {
+      expect(isSingleUnconditionalCommand(script)).toBe(false);
+    });
+  }
+});
 
 describe('documentation gate wiring', () => {
   it('runs `make all` unconditionally in the CI verify job', () => {
