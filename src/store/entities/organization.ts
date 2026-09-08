@@ -25,6 +25,12 @@ const deriveOrganizationBaseUrl = (url?: string) => {
   }
 };
 
+/**
+ * Validates and normalizes a seeded GitHub organization fixture, filling in
+ * the profile URLs that GitHub derives from the login.
+ *
+ * @internal
+ */
 export const githubOrganizationSchema = z
   .object({
     id: z.number().default(() => faker.number.int({min: 4000, max: 9_999_999})),

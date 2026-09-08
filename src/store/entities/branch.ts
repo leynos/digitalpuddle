@@ -4,6 +4,12 @@ import {z} from 'zod';
 
 const GITHUB_API_HOST = 'https://api.github.com';
 
+/**
+ * Validates and normalizes a seeded GitHub branch fixture, deriving a commit
+ * SHA and protection URL when they are omitted.
+ *
+ * @internal
+ */
 export const githubBranchSchema = z
   .object({
     owner: z.string(),

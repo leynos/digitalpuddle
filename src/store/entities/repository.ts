@@ -16,6 +16,12 @@ export const resetNextRepositoryId = (newValue = 3000) => {
   nextGeneratedRepositoryId = newValue;
 };
 
+/**
+ * Validates and normalizes a seeded GitHub repository fixture, deriving the
+ * full name and the GitHub-style API URLs for the repository.
+ *
+ * @internal
+ */
 export const githubRepositorySchema = z
   .object({
     id: z.number().optional(),
