@@ -116,6 +116,54 @@ const makeGoals = (tokens: string[]): string[] => {
 
 type MakeRule = {prerequisites: string[]; recipe: string[][]; ignoredErrorPrefixes: string[]};
 
+const RULE_LINE = /^([^\t#=][^:=]*):(?!=)(.*)$/;
+const RECIPE_PREFIX = /^[@+-]+/;
+
+const words = (text: string): string[] =>
+  text
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0);
+
+/**
+ * Reads the logical line starting at `start`, following backslash
+ * continuations, and returns it with the index of the line after it.
+ */
+const readLogicalLine = (lines: string[], start: number): {line: string; nextIndex: number} => {
+  let line = lines[start] ?? '';
+  let index = start;
+  while (line.endsWith('\\') && index + 1 < lines.length) {
+    index += 1;
+    line = `${line.slice(0, -1)} ${lines[index] ?? ''}`;
+  }
+  return {line, nextIndex: index};
+};
+
+/**
+ * Records one recipe line against every rule sharing the current recipe,
+ * noting a `-` prefix, which tells make to ignore the command's exit status.
+ */
+const recordRecipeLine = (rules: MakeRule[], line: string): void => {
+  const prefix = (RECIPE_PREFIX.exec(line) ?? [''])[0] ?? '';
+  const command = line.slice(prefix.length);
+  for (const rule of rules) {
+    rule.recipe.push(...commandsIn(command));
+    if (prefix.includes('-')) {
+      rule.ignoredErrorPrefixes.push(command.trim());
+    }
+  }
+};
+
+/** Registers the rule line's targets, which then share one recipe. */
+const registerRule = (rules: Map<string, MakeRule>, match: RegExpExecArray): MakeRule[] => {
+  const prerequisites = words((match[2] ?? '').replace(/#.*$/, ''));
+  return words(match[1] ?? '').map((target) => {
+    const rule: MakeRule = {prerequisites, recipe: [], ignoredErrorPrefixes: []};
+    rules.set(target, rule);
+    return rule;
+  });
+};
+
 /**
  * Parses a Makefile into its explicit rules, joining backslash continuations
  * and stripping the `@`, `-` and `+` recipe prefixes. Variable assignments and
@@ -127,47 +175,16 @@ const parseMakefile = (text: string): Map<string, MakeRule> => {
   let active: MakeRule[] = [];
 
   for (let index = 0; index < lines.length; index += 1) {
-    let line = lines[index] ?? '';
-    while (line.endsWith('\\') && index + 1 < lines.length) {
-      index += 1;
-      line = `${line.slice(0, -1)} ${lines[index] ?? ''}`;
-    }
+    const {line, nextIndex} = readLogicalLine(lines, index);
+    index = nextIndex;
 
     if (line.startsWith('\t')) {
-      const prefix = (/^[@+-]+/.exec(line.slice(1)) ?? [''])[0];
-      const recipeLine = line.slice(1).slice(prefix.length);
-      for (const rule of active) {
-        rule.recipe.push(...commandsIn(recipeLine));
-        if (prefix.includes('-')) {
-          rule.ignoredErrorPrefixes.push(recipeLine.trim());
-        }
-      }
+      recordRecipeLine(active, line.slice(1));
       continue;
     }
 
-    const ruleMatch = /^([^\t#=][^:=]*):(?!=)(.*)$/.exec(line);
-    if (ruleMatch === null) {
-      if (line.trim().length > 0) {
-        active = [];
-      }
-      continue;
-    }
-
-    const targets = (ruleMatch[1] ?? '')
-      .trim()
-      .split(/\s+/)
-      .filter((target) => target.length > 0);
-    const prerequisites = (ruleMatch[2] ?? '')
-      .replace(/#.*$/, '')
-      .trim()
-      .split(/\s+/)
-      .filter((prerequisite) => prerequisite.length > 0);
-
-    active = targets.map((target) => {
-      const rule: MakeRule = {prerequisites, recipe: [], ignoredErrorPrefixes: []};
-      rules.set(target, rule);
-      return rule;
-    });
+    const ruleMatch = RULE_LINE.exec(line);
+    active = ruleMatch === null ? (line.trim().length > 0 ? [] : active) : registerRule(rules, ruleMatch);
   }
 
   return rules;
