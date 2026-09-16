@@ -126,11 +126,11 @@ uv run scripts/generate_typos_config.py
 Keep upstream API spellings in inline or fenced code where practical. Fenced
 code blocks are ignored, but **inline code spans are not**: the shared
 dictionary stopped excluding them, so an identifier in backticks reaches the
-checker like any other word. Record it under `[patterns]` in
-`typos.local.toml` and include the backticks in the pattern, so the same
-letters in prose are still corrected. Never widen the exception back to all
-inline code, and never add the bare word to `[words] accepted`, which disables
-the correction everywhere.
+checker like any other word. Record it under `[patterns]` in `typos.local.toml`
+and include the backticks in the pattern, so the same letters in prose are
+still corrected. Never widen the exception back to all inline code, and never
+add the bare word to `[words] accepted`, which disables the correction
+everywhere.
 
 ### 3.2. Documentation gate
 
@@ -178,15 +178,14 @@ removing any link fails a test.
 #### Documenting an export
 
 - Put a `/** … */` block immediately above the declaration, and above any
-  decorators. TypeDoc reads JSDoc comments only (`commentStyle: "jsdoc"`), so
-  a `//` comment does not satisfy the gate.
+  decorators. TypeDoc reads JSDoc comments only (`commentStyle: "jsdoc"`), so a
+  `//` comment does not satisfy the gate.
 - Document each property of an exported object type in its own block. The
   block on the type itself does not cover its members.
 - Describe what the declaration is for, not what its name already says. The
   first sentence becomes the summary.
 - Reference another exported symbol with `{@link Symbol}` rather than
-  backticks, so the gate keeps the reference honest when the symbol is
-  renamed.
+  backticks, so the gate keeps the reference honest when the symbol is renamed.
 - Tag a declaration `@internal` when it is exported for another module rather
   than for consumers. `excludeInternal` keeps it out of the documented surface
   and out of the gate.
