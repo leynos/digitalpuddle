@@ -3,10 +3,9 @@
 Status: Proposed  
 Scope: Define the v1 architecture, contracts, and execution model for a
 DigitalOcean-shaped simulator built on a Simulacrum-based backplane. Audience:
-Implementing engineers
-Precedence: Source of truth for design decisions that affect the public v2
-simulation contract and runtime architecture.
-Primary customer: Nile Valley test suites driven through Terratest
+Implementing engineers Precedence: Source of truth for design decisions that
+affect the public v2 simulation contract and runtime architecture. Primary
+customer: Nile Valley test suites driven through Terratest
 
 ## 1. Purpose
 

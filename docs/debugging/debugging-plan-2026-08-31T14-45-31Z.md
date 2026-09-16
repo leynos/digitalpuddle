@@ -1,12 +1,9 @@
 # Debugging plan: TypeScript startup test timeout
 
-**Generated**: 2026-08-31T14:45:31Z
-**Issue ID**: Post-turn gateway failure
-**Severity**: Medium
-**Falsification sub-agent**: alchemist
-**Planning agent boundary**: This document was prepared by the planning agent.
-Falsification must be executed by the named sub-agent, not by the planning
-agent.
+**Generated**: 2026-08-31T14:45:31Z **Issue ID**: Post-turn gateway failure
+**Severity**: Medium **Falsification sub-agent**: alchemist **Planning agent
+boundary**: This document was prepared by the planning agent. Falsification
+must be executed by the named sub-agent, not by the planning agent.
 
 ## Problem statement
 
@@ -30,12 +27,12 @@ contention rather than test order; that is tracked in
 
 ## Context summary
 
-| Aspect | Details |
-| --- | --- |
-| First observed | 2026-08-31, commit `5759270` with an uncommitted spelling-policy repair |
-| Reproduction rate | One failure in one full sequential gateway run |
-| Affected components | `tests/startup-output.test.ts`, Node TypeScript example startup |
-| Recent changes | TypeDoc gate and spelling-policy source configuration |
+| Aspect              | Details                                                                 |
+| ------------------- | ----------------------------------------------------------------------- |
+| First observed      | 2026-08-31, commit `5759270` with an uncommitted spelling-policy repair |
+| Reproduction rate   | One failure in one full sequential gateway run                          |
+| Affected components | `tests/startup-output.test.ts`, Node TypeScript example startup         |
+| Recent changes      | TypeDoc gate and spelling-policy source configuration                   |
 
 _Table 1: Context for the observed startup-test timeout._
 
@@ -69,9 +66,9 @@ seconds when no preceding CLI test has run.
 
 #### H1 falsification plan
 
-| Step | Action | Expected negative result |
-| --- | --- | --- |
-| 1 | Run `bun test tests/startup-output.test.ts --filter 'TypeScript example'`. | The selected test times out or fails alone. |
+| Step | Action                                                                     | Expected negative result                    |
+| ---- | -------------------------------------------------------------------------- | ------------------------------------------- |
+| 1    | Run `bun test tests/startup-output.test.ts --filter 'TypeScript example'`. | The selected test times out or fails alone. |
 
 _Table 2: Falsification plan for H1, leaked process state._
 
@@ -95,9 +92,9 @@ fresh process without the CommonJS test.
 
 #### H2 falsification plan
 
-| Step | Action | Expected negative result |
-| --- | --- | --- |
-| 1 | Run the selected TypeScript test from H1 once. | It completes within five seconds with the expected output. |
+| Step | Action                                         | Expected negative result                                   |
+| ---- | ---------------------------------------------- | ---------------------------------------------------------- |
+| 1    | Run the selected TypeScript test from H1 once. | It completes within five seconds with the expected output. |
 
 _Table 3: Falsification plan for H2, a regressed TypeScript example._
 
@@ -115,12 +112,12 @@ ______________________________________________________________________
 ## Termination criteria
 
 - **H2 addressed**: The isolated test either passes, falsifying an intrinsic
-  regression in the TypeScript startup path, or fails, which is consistent
-  with such a regression without establishing one, since host contention and
-  other startup conditions produce the same result. Neither outcome identifies
-  a root cause. A pass leaves test-order state and contention as rival
-  explanations, and a failure leaves an intrinsic regression and contention as
-  rivals. Separating any of them needs a controlled reproduction of the
+  regression in the TypeScript startup path, or fails, which is consistent with
+  such a regression without establishing one, since host contention and other
+  startup conditions produce the same result. Neither outcome identifies a root
+  cause. A pass leaves test-order state and contention as rival explanations,
+  and a failure leaves an intrinsic regression and contention as rivals.
+  Separating any of them needs a controlled reproduction of the
   CommonJS-then-TypeScript sequence, repeated enough times to distinguish an
   ordering effect from load.
 - **Escalation trigger**: If the result varies across two identical isolated
@@ -129,5 +126,5 @@ ______________________________________________________________________
 ## Notes for the executing agent
 
 Run only the supplied focused command. Do not modify tracked files or run the
-full repository gateway. Report one of the following: falsified,
-not-falsified, or inconclusive, with the measured result.
+full repository gateway. Report one of the following: falsified, not-falsified,
+or inconclusive, with the measured result.
