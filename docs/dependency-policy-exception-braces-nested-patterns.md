@@ -32,23 +32,36 @@ an audit fix.
 
 ## Exposure
 
-- The chains run during code generation and in the test simulator, in
-  development and continuous integration (CI). The affected code is not part of
-  the published package's own runtime path.
-- The brace patterns come from repository configuration, not from untrusted
-  runtime input. A pull request can change that configuration and make its own
-  CI run exhaust the stack and fail, but no secret is read by the affected
-  process.
+The two paths differ, so each is stated on its own terms.
 
-The exposure is therefore a self-inflicted CI failure in a change under review,
-which the reviewer would see, rather than a production risk.
+- **`@graphql-codegen/cli > micromatch > braces`.** `@graphql-codegen/cli` is a
+  `devDependency`. It runs only for `bun run generate` (and so for typechecking
+  and the build), expanding the glob patterns in this repository's own
+  `codegen.ts`. Those patterns come from the repository, not from runtime input.
+- **`@simulacrum/foundation-simulator > http-proxy-middleware > micromatch > braces`.**
+  The simulator is a production dependency, and `src/simulation.ts` and
+  `src/store/entities.ts` use it. `http-proxy-middleware` reaches `micromatch`
+  only inside its path filter (`dist/path-filter.js`), which runs only when a
+  glob `pathFilter` option is configured, and then the configured glob is the
+  pattern while the request path is only the string matched. The simulator's
+  proxy middleware (`dist/middleware/proxy.mjs`) calls `createProxyMiddleware`
+  with a `target` and no `pathFilter`, and DigitalPuddle's source imports
+  neither package directly. No brace pattern is therefore ever matched on the
+  runtime path, attacker-controlled or not.
+
+A pull request can change `codegen.ts` and make its own CI run exhaust the
+stack, but that is a self-inflicted failure in a change under review, which the
+reviewer would see, rather than a production risk. If a future simulator
+release configures a `pathFilter`, this exception no longer holds and must be
+reviewed.
 
 ## Review trigger
 
 The ledger entry `BRACES_NESTED_PATTERN_DOS_2026_10` in
 `security/audit-exceptions.json` expires on 2026-12-09, and
-`scripts/run-audit.mjs` fails the gate from that date. Remove the entry and
-this document when either becomes true:
+`scripts/run-audit.mjs` fails the gate from 10 December 2026 (an entry covers
+the whole of its stated day), whether or not the advisory is still reported.
+Remove the entry and this document when either becomes true:
 
 - a patched `braces` release exists and the lockfile resolves it, or
 - `micromatch` no longer depends on `braces` 3.
