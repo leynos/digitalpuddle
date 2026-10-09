@@ -26,9 +26,9 @@ Table 1: advisory covered by this exception.
 `braces` 3.0.3 is the newest release on the registry, and the advisory covers
 it, so no upgrade or override reaches a patched version. The paths to it are
 `@graphql-codegen/cli > micromatch > braces` and
-`@simulacrum/foundation-simulator > http-proxy-middleware > micromatch > braces`.
-Replacing the code generator or the simulator's glob stack is out of scope for
-an audit fix.
+`@simulacrum/foundation-simulator`, then `http-proxy-middleware`, then
+`micromatch`, then `braces`. Replacing the code generator or the simulator's
+glob stack is out of scope for an audit fix.
 
 ## Exposure
 
@@ -38,16 +38,17 @@ The two paths differ, so each is stated on its own terms.
   `devDependency`. It runs only for `bun run generate` (and so for typechecking
   and the build), expanding the glob patterns in this repository's own
   `codegen.ts`. Those patterns come from the repository, not from runtime input.
-- **`@simulacrum/foundation-simulator > http-proxy-middleware > micromatch > braces`.**
-  The simulator is a production dependency, and `src/simulation.ts` and
-  `src/store/entities.ts` use it. `http-proxy-middleware` reaches `micromatch`
-  only inside its path filter (`dist/path-filter.js`), which runs only when a
-  glob `pathFilter` option is configured, and then the configured glob is the
-  pattern while the request path is only the string matched. The simulator's
-  proxy middleware (`dist/middleware/proxy.mjs`) calls `createProxyMiddleware`
-  with a `target` and no `pathFilter`, and DigitalPuddle's source imports
-  neither package directly. No brace pattern is therefore ever matched on the
-  runtime path, attacker-controlled or not.
+- **The simulator path.** `@simulacrum/foundation-simulator` depends on
+  `http-proxy-middleware`, which depends on `micromatch`, which depends on
+  `braces`. The simulator is a production dependency, and `src/simulation.ts`
+  and `src/store/entities.ts` use it. `http-proxy-middleware` reaches
+  `micromatch` only inside its path filter (`dist/path-filter.js`), which runs
+  only when a glob `pathFilter` option is configured, and then the configured
+  glob is the pattern while the request path is only the string matched. The
+  simulator's proxy middleware (`dist/middleware/proxy.mjs`) calls
+  `createProxyMiddleware` with a `target` and no `pathFilter`, and
+  DigitalPuddle's source imports neither package directly. No brace pattern is
+  therefore ever matched on the runtime path, attacker-controlled or not.
 
 A pull request can change `codegen.ts` and make its own CI run exhaust the
 stack, but that is a self-inflicted failure in a change under review, which the
