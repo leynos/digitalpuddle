@@ -197,10 +197,12 @@ removing any link fails a test.
 
 ### Dependency advisories
 
-CI runs `bun audit` after the gates and fails on any advisory. Almost every
-advisory this repository sees is transitive, through `@graphql-codegen/cli`,
-`express` or the simulator packages, so there is no direct dependency to bump.
-The `overrides` block in `package.json` answers those.
+CI runs `bun run audit` after the gates, which wraps `bun audit` in
+`scripts/run-audit.mjs` and fails on any advisory that
+`security/audit-exceptions.json` does not cover. Almost every advisory this
+repository sees is transitive, through `@graphql-codegen/cli`, `express` or the
+simulator packages, so there is no direct dependency to bump. The `overrides`
+block in `package.json` answers those.
 
 An override applies to every dependent package at once, so before adding or
 raising one, check the range each dependent declares rather than merely its
@@ -210,7 +212,12 @@ the lowest version that clears the advisory and satisfies every declared range.
 If no single version does, prefer upgrading the dependent that pins the
 vulnerable version over forcing a version past its declared range.
 
-Run `bun audit` before pushing. When it reports something new, raise the
+One advisory has no patched release: `braces` (GHSA-vfj7-8cjw-p6xm). It is
+covered by a dated ledger entry that expires on 2026-12-09, with its rationale
+in `docs/dependency-policy-exception-braces-nested-patterns.md`. An expired or
+undated entry fails the gate, so the exception cannot outlive its review.
+
+Run `bun run audit` before pushing. When it reports something new, raise the
 matching `overrides` entry rather than the direct dependency, run `bun install`
 to refresh `bun.lock`, then run `make test` because an override changes what
 every dependent resolves to.
