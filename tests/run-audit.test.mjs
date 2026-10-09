@@ -87,6 +87,18 @@ describe('checkLedger', () => {
   });
 });
 
+describe('invalid reference date', () => {
+  it('is rejected by the ledger check instead of disabling expiry', () => {
+    expect(() => checkLedger(LEDGER, new Date('not-a-date'))).toThrow('Invalid audit reference date');
+  });
+
+  it('is rejected by the decision', () => {
+    expect(() =>
+      evaluateAudit({advisories: [advisory(BRACES)], ledger: LEDGER, now: new Date(Number.NaN), status: 1})
+    ).toThrow(TypeError);
+  });
+});
+
 describe('evaluateAudit', () => {
   const evaluate = (advisories, now = BEFORE_EXPIRY, status = 1, ledger = LEDGER) =>
     evaluateAudit({advisories, ledger, now, status});
@@ -241,6 +253,12 @@ describe('scripts/run-audit.mjs (fake bun)', () => {
 
   it('passes an empty report before expiry', () => {
     expect(runCli({stdout: '', status: 0, referenceDate: '2026-10-09'}).code).toBe(0);
+  });
+
+  it('fails an invalid AUDIT_REFERENCE_DATE and says why', () => {
+    const result = runCli({stdout: braces, status: 1, referenceDate: 'not-a-date'});
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain('Invalid audit reference date');
   });
 
   it('fails output that is not JSON', () => {

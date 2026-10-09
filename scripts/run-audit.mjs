@@ -108,12 +108,17 @@ function expiryBoundary(expiresAt) {
  * @param {Array<Record<string, unknown>>} entries The ledger.
  * @param {Date} now The reference time.
  * @returns {string[]} One message per problem; empty when the ledger is sound.
+ * @throws {TypeError} When `now` is not a valid date, which would otherwise make
+ * every expiry comparison false.
  *
  * @example
  * checkLedger([{id: 'X', advisory: 'GHSA-a', expiresAt: '2026-01-01'}], new Date('2026-06-01'));
  * // => ['Audit exception X for GHSA-a expired on 2026-01-01.']
  */
 export function checkLedger(entries, now) {
+  if (!Number.isFinite(now.getTime())) {
+    throw new TypeError('Invalid audit reference date');
+  }
   const seen = new Set();
   return entries.flatMap((entry) => {
     const label = `Audit exception ${entry.id ?? entry.advisory}`;
