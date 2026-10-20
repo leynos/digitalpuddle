@@ -45,15 +45,22 @@ Unicorn rule remains enabled.
 
 Oxlint `1.82.0` does not register `unicorn/no-null`, so the rule cannot be
 applied through this release. The repository's REST and GraphQL contracts also
-preserve explicit JSON `null` values. Two policy exceptions are configured:
-`deslop/no-reflect-apply` is disabled because it conflicts with
-`unicorn/prefer-reflect-apply`, which remains enabled; and
-`unicorn/prefer-top-level-await` plus `typescript/no-require-imports` are
-disabled only for `bin/start.cjs`, because the documented CommonJS CLI
-exception requires CommonJS syntax. No other rule is disabled unless it
-conflicts with an existing Biome or df12-lints requirement, TypeDoc output, or
-another enabled rule in these plug-ins. Any such exception must be recorded
-here and beside the rule configuration.
+preserve explicit JSON `null` values. The explicit policy exceptions are:
+
+- `deslop/no-reflect-apply` is disabled because it conflicts with
+  `unicorn/prefer-reflect-apply`, which remains enabled.
+- `unicorn/prefer-top-level-await` and `typescript/no-require-imports` are
+  disabled only for `bin/start.cjs`, because the documented CommonJS CLI
+  exception requires CommonJS syntax.
+- `deslop/no-pass-through-type-alias` is disabled on the exported
+  `InitialState` declaration in `src/simulation.ts`. Keeping this public type
+  as an alias prevents TypeDoc from expanding the Zod schema into undocumented
+  member warnings.
+
+No other rule is disabled unless it conflicts with an existing Biome or
+df12-lints requirement, TypeDoc output, or another enabled rule in these
+plug-ins. Any such exception must be recorded here and beside the rule
+configuration.
 
 The vendored `bin/rimraf-standalone.js` file remains outside Oxlint's scope,
 matching Biome's existing exclusion for that third-party bundle. Generated

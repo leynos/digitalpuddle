@@ -24,7 +24,8 @@ import {
 import type {SchemaFile} from './utils.ts';
 
 /** Seed data accepted for the GitHub fixtures a simulation server starts with. */
-export interface InitialState extends GitHubInitialStore {}
+// oxlint-disable-next-line deslop/no-pass-through-type-alias -- Required to keep TypeDoc from expanding the schema.
+export type InitialState = GitHubInitialStore;
 
 type FoundationRouter = Parameters<
   NonNullable<Parameters<typeof createFoundationSimulationServer>[0]['extendRouter']>
