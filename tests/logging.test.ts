@@ -2,21 +2,93 @@
 import {afterEach, beforeEach, describe, expect, it} from 'bun:test';
 import type {NextFunction} from 'express';
 import type {SimulationHandlers} from '@simulacrum/foundation-simulator';
+import {z} from 'zod';
 import {registerStructuredRequestLogger} from '../src/extend-api.ts';
 import {errorDetails, logRestHandlerError, withErrorLogging, withErrorLoggingForHandlers} from '../src/rest/index.ts';
 
 type FoundationRouter = Parameters<typeof registerStructuredRequestLogger>[0];
 type SimulationHandler = SimulationHandlers[string];
+type MockRequest = {
+  method: string;
+  path: string;
+  originalUrl?: string;
+  url?: string;
+};
+type MockResponse = {
+  statusCode: number;
+  on: (event: string, listener: () => void) => void;
+  emitFinish: () => void;
+};
+type CapturedMiddleware = (request: MockRequest, response: MockResponse, next: NextFunction) => void;
+type CapturingRouter = {use: (fn: CapturedMiddleware) => void};
 
+// SAFETY: The request logger setup calls only `use`, which this fixture captures.
+const asFoundationRouter = (router: CapturingRouter): FoundationRouter => router as FoundationRouter;
+
+const noopNext: NextFunction = () => {};
+
+// SAFETY: These test handlers do not inspect the framework callback argument.
 const stubSimulationRoute = {} as Parameters<SimulationHandler>[4];
 
 const stubArgs = (): Parameters<SimulationHandler> => [
+  // SAFETY: The wrapped handlers in these tests do not inspect the request context.
   {} as Parameters<SimulationHandler>[0],
+  // SAFETY: The wrapped handlers in these tests do not inspect the request.
   {} as Parameters<SimulationHandler>[1],
+  // SAFETY: The wrapped handlers in these tests do not inspect the response.
   {} as Parameters<SimulationHandler>[2],
-  (() => {}) as NextFunction,
+  noopNext,
   stubSimulationRoute
 ];
+
+const createMockResponse = (): MockResponse => {
+  const finishListeners: Array<() => void> = [];
+  return {
+    statusCode: 200,
+    on(event: string, listener: () => void) {
+      if (event === 'finish') {
+        finishListeners.push(listener);
+      }
+    },
+    emitFinish() {
+      for (const listener of finishListeners) {
+        listener();
+      }
+    }
+  };
+};
+
+const requireMiddleware = (middleware: CapturedMiddleware | undefined): CapturedMiddleware => {
+  if (middleware === undefined) {
+    throw new Error('request logger middleware was not registered');
+  }
+  return middleware;
+};
+
+const requireHandler = (handler: SimulationHandler | undefined): SimulationHandler => {
+  if (handler === undefined) {
+    throw new Error('expected handler was not registered');
+  }
+  return handler;
+};
+
+const responseLogSchema = z.object({
+  event: z.literal('digitalpuddle.http.response'),
+  method: z.string(),
+  path: z.string(),
+  status: z.number(),
+  durationMs: z.number()
+});
+const errorLogSchema = z.object({
+  event: z.literal('digitalpuddle.rest.handler.error'),
+  operationId: z.string(),
+  error: z.object({name: z.string(), message: z.string(), stack: z.string().optional()})
+});
+const successfulHandler: SimulationHandler = async () => ({
+  status: 200,
+  json: {ok: true}
+});
+const successfulHandlerResultSchema = z.object({status: z.number(), json: z.object({ok: z.boolean()})});
 
 describe('registerStructuredRequestLogger', () => {
   let previousRequestLog: string | undefined;
@@ -38,40 +110,15 @@ describe('registerStructuredRequestLogger', () => {
   });
 
   const createCaptureRouter = () => {
-    let middleware:
-      | ((request: Record<string, unknown>, response: MockResponse, next: NextFunction) => void)
-      | undefined;
+    let middleware: CapturedMiddleware | undefined;
     const router = {
-      use: (fn: (request: Record<string, unknown>, response: MockResponse, next: NextFunction) => void) => {
+      use: (fn: CapturedMiddleware) => {
         middleware = fn;
       }
     };
     return {
-      router: router as unknown as FoundationRouter,
+      router: asFoundationRouter(router),
       getMiddleware: () => middleware
-    };
-  };
-
-  type MockResponse = {
-    statusCode: number;
-    on: (event: string, listener: () => void) => void;
-    emitFinish: () => void;
-  };
-
-  const createMockResponse = (): MockResponse => {
-    const finishListeners: Array<() => void> = [];
-    return {
-      statusCode: 200,
-      on(event: string, listener: () => void) {
-        if (event === 'finish') {
-          finishListeners.push(listener);
-        }
-      },
-      emitFinish() {
-        for (const listener of finishListeners) {
-          listener();
-        }
-      }
     };
   };
 
@@ -83,7 +130,7 @@ describe('registerStructuredRequestLogger', () => {
         useCalls++;
       }
     };
-    registerStructuredRequestLogger(router as unknown as FoundationRouter);
+    registerStructuredRequestLogger(asFoundationRouter(router));
     expect(useCalls).toBe(0);
   });
 
@@ -95,7 +142,7 @@ describe('registerStructuredRequestLogger', () => {
         useCalls++;
       }
     };
-    registerStructuredRequestLogger(router as unknown as FoundationRouter);
+    registerStructuredRequestLogger(asFoundationRouter(router));
     expect(useCalls).toBe(0);
   });
 
@@ -117,14 +164,14 @@ describe('registerStructuredRequestLogger', () => {
     process.env.DIGITALPUDDLE_REQUEST_LOG = '1';
     const {router, getMiddleware} = createCaptureRouter();
     registerStructuredRequestLogger(router);
-    const middleware = getMiddleware();
+    const middleware = requireMiddleware(getMiddleware());
 
     let nextCalls = 0;
-    const next = () => {
+    const next: NextFunction = () => {
       nextCalls++;
     };
 
-    middleware!({method: 'GET', path: '/x', url: '/x'}, createMockResponse(), next as NextFunction);
+    middleware({method: 'GET', path: '/x', url: '/x'}, createMockResponse(), next);
 
     expect(nextCalls).toBe(1);
   });
@@ -133,22 +180,22 @@ describe('registerStructuredRequestLogger', () => {
     process.env.DIGITALPUDDLE_REQUEST_LOG = '1';
     const {router, getMiddleware} = createCaptureRouter();
     registerStructuredRequestLogger(router);
-    const middleware = getMiddleware()!;
+    const middleware = requireMiddleware(getMiddleware());
 
     const logged: string[] = [];
-    console.info = (message?: unknown) => {
-      logged.push(String(message));
+    console.info = (message?: string) => {
+      logged.push(message ?? '');
     };
 
     const response = createMockResponse();
     response.statusCode = 201;
 
-    middleware!({method: 'POST', path: '/items', url: '/items'}, response, (() => {}) as NextFunction);
+    middleware({method: 'POST', path: '/items', url: '/items'}, response, noopNext);
 
     response.emitFinish();
 
     expect(logged).toHaveLength(1);
-    const payload = JSON.parse(logged[0]!) as Record<string, unknown>;
+    const payload = responseLogSchema.parse(JSON.parse(logged[0]!));
     expect(payload).toHaveProperty('event');
     expect(payload).toHaveProperty('method');
     expect(payload).toHaveProperty('path');
@@ -160,18 +207,18 @@ describe('registerStructuredRequestLogger', () => {
     process.env.DIGITALPUDDLE_REQUEST_LOG = '1';
     const {router, getMiddleware} = createCaptureRouter();
     registerStructuredRequestLogger(router);
-    const middleware = getMiddleware()!;
+    const middleware = requireMiddleware(getMiddleware());
 
     const logged: string[] = [];
-    console.info = (message?: unknown) => {
-      logged.push(String(message));
+    console.info = (message?: string) => {
+      logged.push(message ?? '');
     };
 
     const response = createMockResponse();
-    middleware!({method: 'GET', path: '/z', url: '/z'}, response, (() => {}) as NextFunction);
+    middleware({method: 'GET', path: '/z', url: '/z'}, response, noopNext);
     response.emitFinish();
 
-    const payload = JSON.parse(logged[0]!) as {event: string};
+    const payload = responseLogSchema.parse(JSON.parse(logged[0]!));
     expect(payload.event).toBe('digitalpuddle.http.response');
   });
 
@@ -179,18 +226,18 @@ describe('registerStructuredRequestLogger', () => {
     process.env.DIGITALPUDDLE_REQUEST_LOG = '1';
     const {router, getMiddleware} = createCaptureRouter();
     registerStructuredRequestLogger(router);
-    const middleware = getMiddleware()!;
+    const middleware = requireMiddleware(getMiddleware());
 
     const logged: string[] = [];
-    console.info = (message?: unknown) => {
-      logged.push(String(message));
+    console.info = (message?: string) => {
+      logged.push(message ?? '');
     };
 
     const response = createMockResponse();
-    middleware!({method: 'GET', path: '/z', url: '/z'}, response, (() => {}) as NextFunction);
+    middleware({method: 'GET', path: '/z', url: '/z'}, response, noopNext);
     response.emitFinish();
 
-    const payload = JSON.parse(logged[0]!) as {durationMs: number};
+    const payload = responseLogSchema.parse(JSON.parse(logged[0]!));
     expect(payload.durationMs).toBeGreaterThanOrEqual(0);
     expect(Number.isFinite(payload.durationMs)).toBe(true);
   });
@@ -199,44 +246,36 @@ describe('registerStructuredRequestLogger', () => {
     process.env.DIGITALPUDDLE_REQUEST_LOG = '1';
     const {router, getMiddleware} = createCaptureRouter();
     registerStructuredRequestLogger(router);
-    const middleware = getMiddleware()!;
+    const middleware = requireMiddleware(getMiddleware());
 
     const logged: string[] = [];
-    console.info = (message?: unknown) => {
-      logged.push(String(message));
+    console.info = (message?: string) => {
+      logged.push(message ?? '');
     };
 
     const response = createMockResponse();
-    middleware!(
-      {method: 'GET', path: '/explicit', originalUrl: '/ignored', url: '/ignored'},
-      response,
-      (() => {}) as NextFunction
-    );
+    middleware({method: 'GET', path: '/explicit', originalUrl: '/ignored', url: '/ignored'}, response, noopNext);
     response.emitFinish();
 
-    expect((JSON.parse(logged[0]!) as {path: string}).path).toBe('/explicit');
+    expect(responseLogSchema.parse(JSON.parse(logged[0]!)).path).toBe('/explicit');
   });
 
   it('uses pathname from originalUrl when path is empty', () => {
     process.env.DIGITALPUDDLE_REQUEST_LOG = '1';
     const {router, getMiddleware} = createCaptureRouter();
     registerStructuredRequestLogger(router);
-    const middleware = getMiddleware()!;
+    const middleware = requireMiddleware(getMiddleware());
 
     const logged: string[] = [];
-    console.info = (message?: unknown) => {
-      logged.push(String(message));
+    console.info = (message?: string) => {
+      logged.push(message ?? '');
     };
 
     const response = createMockResponse();
-    middleware!(
-      {method: 'GET', path: '', originalUrl: '/from-original?x=1', url: '/fallback'},
-      response,
-      (() => {}) as NextFunction
-    );
+    middleware!({method: 'GET', path: '', originalUrl: '/from-original?x=1', url: '/fallback'}, response, noopNext);
     response.emitFinish();
 
-    expect((JSON.parse(logged[0]!) as {path: string}).path).toBe('/from-original');
+    expect(responseLogSchema.parse(JSON.parse(logged[0]!)).path).toBe('/from-original');
   });
 
   it('falls back to "/" when path and originalUrl are absent', () => {
@@ -246,37 +285,33 @@ describe('registerStructuredRequestLogger', () => {
     const middleware = getMiddleware()!;
 
     const logged: string[] = [];
-    console.info = (message?: unknown) => {
-      logged.push(String(message));
+    console.info = (message?: string) => {
+      logged.push(message ?? '');
     };
 
     const response = createMockResponse();
-    middleware!({method: 'GET', path: ''}, response, (() => {}) as NextFunction);
+    middleware({method: 'GET', path: ''}, response, noopNext);
     response.emitFinish();
 
-    expect((JSON.parse(logged[0]!) as {path: string}).path).toBe('/');
+    expect(responseLogSchema.parse(JSON.parse(logged[0]!)).path).toBe('/');
   });
 
   it('falls back to "/" when originalUrl cannot be parsed', () => {
     process.env.DIGITALPUDDLE_REQUEST_LOG = '1';
     const {router, getMiddleware} = createCaptureRouter();
     registerStructuredRequestLogger(router);
-    const middleware = getMiddleware()!;
+    const middleware = requireMiddleware(getMiddleware());
 
     const logged: string[] = [];
-    console.info = (message?: unknown) => {
-      logged.push(String(message));
+    console.info = (message?: string) => {
+      logged.push(message ?? '');
     };
 
     const response = createMockResponse();
-    middleware!(
-      {method: 'GET', path: '', originalUrl: 'http://%%bad%%', url: '/'},
-      response,
-      (() => {}) as NextFunction
-    );
+    middleware({method: 'GET', path: '', originalUrl: 'http://%%bad%%', url: '/'}, response, noopNext);
     response.emitFinish();
 
-    expect((JSON.parse(logged[0]!) as {path: string}).path).toBe('/');
+    expect(responseLogSchema.parse(JSON.parse(logged[0]!)).path).toBe('/');
   });
 });
 
@@ -308,18 +343,14 @@ describe('REST error logging helpers', () => {
 
   it('logRestHandlerError writes structured JSON to console.error', () => {
     const lines: string[] = [];
-    console.error = (message?: unknown) => {
-      lines.push(String(message));
+    console.error = (message?: string) => {
+      lines.push(message ?? '');
     };
 
     logRestHandlerError('my.operation', new Error('failed'));
 
     expect(lines).toHaveLength(1);
-    const payload = JSON.parse(lines[0]!) as {
-      event: string;
-      operationId: string;
-      error: {name: string; message: string; stack?: string};
-    };
+    const payload = errorLogSchema.parse(JSON.parse(lines[0]!));
     expect(payload.event).toBe('digitalpuddle.rest.handler.error');
     expect(payload.operationId).toBe('my.operation');
     expect(payload.error.name).toBe('Error');
@@ -328,19 +359,19 @@ describe('REST error logging helpers', () => {
   });
 
   it('withErrorLogging returns the handler result when the handler succeeds', async () => {
-    const wrapped = withErrorLogging('ok.op', (async () => ({
+    const wrapped = withErrorLogging('ok.op', successfulHandler);
+
+    const result = await wrapped(...stubArgs());
+    expect(successfulHandlerResultSchema.parse(result)).toEqual({
       status: 200,
       json: {ok: true}
-    })) as unknown as SimulationHandler);
-
-    const result = (await wrapped(...stubArgs())) as unknown as {status: number; json: {ok: boolean}};
-    expect(result).toEqual({status: 200, json: {ok: true}});
+    });
   });
 
   it('withErrorLogging logs and rethrows when the handler throws', async () => {
     const lines: string[] = [];
-    console.error = (message?: unknown) => {
-      lines.push(String(message));
+    console.error = (message?: string) => {
+      lines.push(message ?? '');
     };
 
     const wrapped = withErrorLogging('bad.op', async () => {
@@ -350,36 +381,36 @@ describe('REST error logging helpers', () => {
     await expect(wrapped(...stubArgs())).rejects.toThrow('nope');
 
     expect(lines).toHaveLength(1);
-    const payload = JSON.parse(lines[0]!) as {event: string; operationId: string};
+    const payload = errorLogSchema.parse(JSON.parse(lines[0]!));
     expect(payload.event).toBe('digitalpuddle.rest.handler.error');
     expect(payload.operationId).toBe('bad.op');
   });
 
   it('withErrorLoggingForHandlers wraps every handler in the map', async () => {
     const lines: string[] = [];
-    console.error = (message?: unknown) => {
-      lines.push(String(message));
+    console.error = (message?: string) => {
+      lines.push(message ?? '');
     };
 
-    const handlers: {alpha: SimulationHandler; beta: SimulationHandler} = {
-      alpha: async () => Promise.resolve(),
-      beta: async () => Promise.reject(new Error('beta failed'))
+    const handlers: SimulationHandlers = {
+      alpha: async () => {},
+      beta: async () => {
+        throw new Error('beta failed');
+      }
     };
-    const wrapped = withErrorLoggingForHandlers(handlers as SimulationHandlers) as typeof handlers;
+    const wrapped = withErrorLoggingForHandlers(handlers);
 
-    const wrappedAlpha = wrapped.alpha;
-    const wrappedBeta = wrapped.beta;
-    expect(wrappedAlpha).toBeDefined();
-    expect(wrappedBeta).toBeDefined();
+    const wrappedAlpha = requireHandler(wrapped['alpha']);
+    const wrappedBeta = requireHandler(wrapped['beta']);
 
-    expect(wrappedAlpha).not.toBe(handlers.alpha);
-    expect(wrappedBeta).not.toBe(handlers.beta);
+    expect(wrappedAlpha).not.toBe(handlers['alpha']);
+    expect(wrappedBeta).not.toBe(handlers['beta']);
 
-    await wrappedAlpha!(...stubArgs());
+    await wrappedAlpha(...stubArgs());
     expect(lines).toHaveLength(0);
 
-    await expect(wrappedBeta!(...stubArgs())).rejects.toThrow('beta failed');
+    await expect(wrappedBeta(...stubArgs())).rejects.toThrow('beta failed');
     expect(lines).toHaveLength(1);
-    expect((JSON.parse(lines[0]!) as {operationId: string}).operationId).toBe('beta');
+    expect(errorLogSchema.parse(JSON.parse(lines[0]!)).operationId).toBe('beta');
   });
 });

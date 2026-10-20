@@ -1,33 +1,29 @@
 /** @file Unit tests for GraphQL repository conversion helpers. */
 import {describe, expect, it} from 'bun:test';
 import {convertRepositoryToGraphql} from '../src/graphql/converters/repository.ts';
-import type {DataSchemas, ToGraphqlDispatcher} from '../src/graphql/to-graphql-shapes.ts';
+import type {ToGraphqlDispatcher} from '../src/graphql/to-graphql-shapes.ts';
 import type {ExtendedSimulationStore} from '../src/store/index.ts';
+import {githubRepositorySchema} from '../src/store/entities.ts';
+
+const ownerResolutionUnavailable: ToGraphqlDispatcher = () => {
+  throw new Error('owner resolution is not exercised in this test');
+};
 
 describe('convertRepositoryToGraphql', () => {
-  it('falls back to full_name when a repository id is unavailable', () => {
-    const repository = {
-      id: undefined,
+  it('uses the normalized repository id for its default branch reference', () => {
+    const repository = githubRepositorySchema.parse({
+      id: 123,
       name: 'test-repo',
       full_name: 'test-org/test-repo',
       url: 'https://example.test/repos/test-org/test-repo',
-      created_at: '2024-01-02T03:04:05.000Z',
-      default_branch: 'main',
-      description: 'Fixture repository',
-      topics: [],
-      visibility: 'public',
-      archived: false,
-      fork: false,
       owner: 'test-org'
-    } as unknown as DataSchemas['Repository'];
+    });
 
-    const graphqlRepository = convertRepositoryToGraphql({} as ExtendedSimulationStore, repository, (() => {
-      throw new Error('owner resolution is not exercised in this test');
-    }) as ToGraphqlDispatcher);
+    // SAFETY: Conversion reads no store members unless the lazy owner field is accessed.
+    const simulationStore = {} as ExtendedSimulationStore;
+    const graphqlRepository = convertRepositoryToGraphql(simulationStore, repository, ownerResolutionUnavailable);
 
-    expect(graphqlRepository.id).toBe('test-org/test-repo');
-    expect(graphqlRepository.defaultBranchRef.id).toBe(
-      Buffer.from('Branch:test-org/test-repo:main').toString('base64')
-    );
+    expect(graphqlRepository.id).toBe('123');
+    expect(graphqlRepository.defaultBranchRef.id).toBe(Buffer.from('Branch:123:main').toString('base64'));
   });
 });

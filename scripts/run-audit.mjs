@@ -15,11 +15,18 @@
 import {spawnSync} from 'node:child_process';
 import {readFileSync, realpathSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
+import {z} from 'zod';
 
 const GHSA_PATTERN = /GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}/i;
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LEDGER_URL = new URL('../security/audit-exceptions.json', import.meta.url);
+const objectSchema = z.record(z.string(), z.unknown());
+const reportAdvisorySchema = z.looseObject({
+  github_advisory_id: z.string().optional(),
+  url: z.string().optional(),
+  title: z.string().optional()
+});
 
 /** A `bun audit --json` report that does not have the expected shape. */
 export class AuditReportError extends Error {}
@@ -35,10 +42,10 @@ export class AuditReportError extends Error {}
  * // => 'GHSA-aaaa-bbbb-cccc'
  */
 function advisoryId(advisory) {
-  if (typeof advisory.github_advisory_id === 'string') {
+  if (advisory.github_advisory_id !== undefined) {
     return advisory.github_advisory_id;
   }
-  const match = typeof advisory.url === 'string' ? advisory.url.match(GHSA_PATTERN) : null;
+  const match = advisory.url?.match(GHSA_PATTERN) ?? null;
   return match ? match[0] : null;
 }
 
@@ -59,23 +66,26 @@ function advisoryId(advisory) {
  * // => [{package: 'braces', id: 'GHSA-aaaa-bbbb-cccc', title: ''}]
  */
 export function parseAdvisories(report) {
-  if (report === null || typeof report !== 'object' || Array.isArray(report)) {
+  const reportObject = objectSchema.safeParse(report);
+  if (!reportObject.success) {
     throw new AuditReportError('bun audit did not report a JSON object');
   }
-  const byPackage = report.advisories ?? report;
-  if (byPackage === null || typeof byPackage !== 'object' || Array.isArray(byPackage)) {
+  const byPackage = reportObject.data.advisories ?? reportObject.data;
+  const packageEntries = z.record(z.string(), z.array(z.unknown())).safeParse(byPackage);
+  if (!packageEntries.success) {
     throw new AuditReportError('bun audit reported a malformed advisories value');
   }
-  return Object.entries(byPackage).flatMap(([name, entries]) => {
-    if (!Array.isArray(entries)) {
-      throw new AuditReportError(`bun audit reported a non-array entry for ${name}`);
-    }
-    return entries.map((advisory) => ({
-      package: name,
-      id: advisoryId(advisory ?? {}),
-      title: typeof advisory?.title === 'string' ? advisory.title : ''
-    }));
-  });
+  return Object.entries(packageEntries.data).flatMap(([name, entries]) =>
+    entries.map((candidate) => {
+      const parsedAdvisory = reportAdvisorySchema.safeParse(candidate);
+      const advisory = parsedAdvisory.success ? parsedAdvisory.data : {};
+      return {
+        package: name,
+        id: advisoryId(advisory),
+        title: advisory.title ?? ''
+      };
+    })
+  );
 }
 
 /**
@@ -127,7 +137,8 @@ export function checkLedger(entries, now) {
       problems.push(`${label} is listed more than once.`);
     }
     seen.add(entry.id);
-    const boundary = typeof entry.expiresAt === 'string' ? expiryBoundary(entry.expiresAt) : null;
+    const expiryValue = z.string().safeParse(entry.expiresAt);
+    const boundary = expiryValue.success ? expiryBoundary(expiryValue.data) : null;
     if (boundary === null) {
       problems.push(`${label} for ${entry.advisory} needs an expiresAt calendar date in YYYY-MM-DD form.`);
     } else if (boundary <= now.getTime()) {
@@ -158,7 +169,12 @@ export function evaluateAudit({advisories, ledger, now, status}) {
   const problems = checkLedger(ledger, now);
   const failed = unexpected.length > 0 || problems.length > 0;
   // With nothing to excuse, Bun's own status stands (for example a failed run).
-  const code = failed ? 1 : covered.length === 0 ? status : 0;
+  let code = 0;
+  if (failed) {
+    code = 1;
+  } else if (covered.length === 0) {
+    code = status;
+  }
   return {code, covered, unexpected, problems};
 }
 
@@ -174,8 +190,10 @@ export function evaluateAudit({advisories, ledger, now, status}) {
 export function formatOutcome({covered, unexpected, problems}) {
   const err = [...problems];
   if (unexpected.length > 0) {
-    err.push('Unexpected vulnerabilities detected by bun audit:');
-    err.push(...unexpected.map((advisory) => `- ${advisory.id ?? 'unknown'} (${advisory.package}): ${advisory.title}`));
+    err.push(
+      'Unexpected vulnerabilities detected by bun audit:',
+      ...unexpected.map((advisory) => `- ${advisory.id ?? 'unknown'} (${advisory.package}): ${advisory.title}`)
+    );
   }
   const noun = covered.length === 1 ? 'advisory' : 'advisories';
   const out =
@@ -203,7 +221,7 @@ export function runBunAudit(spawn = spawnSync) {
   if (result.status === null) {
     throw new Error(`bun audit did not exit normally${result.signal ? ` (signal: ${result.signal})` : ''}`);
   }
-  const raw = (result.stdout ?? '').trim();
+  const raw = result.stdout.trim();
   try {
     return {report: raw === '' ? {} : JSON.parse(raw), status: result.status};
   } catch (error) {
@@ -240,5 +258,5 @@ export function main({spawn = spawnSync, env = process.env, log = console} = {})
 }
 
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
-  process.exit(main());
+  process.exitCode = main();
 }

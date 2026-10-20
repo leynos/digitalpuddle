@@ -8,40 +8,56 @@
  * generated file validation stays aligned with sync-time validation.
  */
 import {readFile} from 'node:fs/promises';
-import {join} from 'node:path';
+import path from 'node:path';
 import {describe, expect, test} from 'bun:test';
 import fc from 'fast-check';
+import {z} from 'zod';
 import {
   assertDigitalOceanOpenApiProvenanceMatchesArtifact,
   digitalOceanOpenApiArtifactPath,
   digitalOceanOpenApiProvenancePath,
   getDigitalOceanOpenApiRawSourceUrl,
   getDigitalOceanOpenApiSourceArchiveUrl,
+  jsonObjectSchema,
+  jsonValueSchema,
   sha256Hex,
   stringifyCanonicalJson,
   validateDigitalOceanOpenApiProvenance,
   type DigitalOceanOpenApiProvenance,
   type JsonValue
 } from '../src/openapi/artifact.ts';
-import {assertNoCredentialLikeExamples, secretShapeReplacements} from '../sync-digitalocean-openapi.ts';
+import {assertNoCredentialLikeExamples, credentialExampleReplacements} from '../sync-digitalocean-openapi.ts';
 import {propertyTestSeed} from './support/property-test-seed.ts';
 
-const repoRoot = join(import.meta.dirname, '..');
+const repoRoot = path.join(import.meta.dirname, '..');
 
-const readJsonFile = async (relativePath: string): Promise<unknown> =>
-  JSON.parse(await readFile(join(repoRoot, relativePath), 'utf8')) as unknown;
+const readJsonFile = async (relativePath: string): Promise<JsonValue> => {
+  const contents = await readFile(path.join(repoRoot, relativePath), 'utf8');
+  const parsedJson = JSON.parse(contents);
+  return jsonValueSchema.parse(parsedJson);
+};
 
-const readTextFile = async (relativePath: string): Promise<string> => readFile(join(repoRoot, relativePath), 'utf8');
+const readTextFile = async (relativePath: string): Promise<string> =>
+  readFile(path.join(repoRoot, relativePath), 'utf8');
 
-const jsonPrimitive = fc.oneof(fc.constant(null), fc.boolean(), fc.double({noNaN: true}), fc.string());
+const jsonNumber = fc.double({noNaN: true, noDefaultInfinity: true}).map((value) => (value === 0 ? 0 : value));
+const jsonPrimitive = fc.oneof(fc.constant(null), fc.boolean(), jsonNumber, fc.string());
 
-const jsonValue: fc.Arbitrary<JsonValue> = fc.letrec((tie) => ({
-  value: fc.oneof(
-    jsonPrimitive,
-    fc.array(tie('value'), {maxLength: 4}),
-    fc.dictionary(fc.string({maxLength: 8}), tie('value'), {maxKeys: 4})
-  )
-})).value as fc.Arbitrary<JsonValue>;
+const jsonValue: fc.Arbitrary<JsonValue> = fc
+  .letrec((tie) => ({
+    value: fc.oneof(
+      jsonPrimitive,
+      fc.array(tie('value'), {maxLength: 4}),
+      fc.dictionary(fc.string({maxLength: 8}), tie('value'), {maxKeys: 4})
+    )
+  }))
+  .value.map((value) => jsonValueSchema.parse(value));
+
+const artifactSchema = z.object({
+  components: z.object({schemas: jsonObjectSchema.optional()}).optional(),
+  openapi: z.string(),
+  paths: jsonObjectSchema
+});
 
 const snapshotStableProvenance = (provenance: DigitalOceanOpenApiProvenance): JsonValue => ({
   ...provenance,
@@ -55,10 +71,11 @@ const reverseObjectKeysRecursive = (value: JsonValue): JsonValue => {
     return value.map((item) => reverseObjectKeysRecursive(item));
   }
 
-  if (value !== null && typeof value === 'object') {
+  const object = jsonObjectSchema.safeParse(value);
+  if (object.success) {
     return Object.fromEntries(
-      Object.entries(value)
-        .reverse()
+      Object.entries(object.data)
+        .toReversed()
         .map(([key, item]) => [key, reverseObjectKeysRecursive(item)])
     );
   }
@@ -68,15 +85,12 @@ const reverseObjectKeysRecursive = (value: JsonValue): JsonValue => {
 
 describe('DigitalOcean OpenAPI artefact', () => {
   test('is an OpenAPI 3 document with representative v2 paths', async () => {
-    const artifact = (await readJsonFile(digitalOceanOpenApiArtifactPath)) as {
-      openapi?: unknown;
-      paths?: Record<string, unknown>;
-    };
+    const artifact = artifactSchema.parse(await readJsonFile(digitalOceanOpenApiArtifactPath));
 
     expect(artifact.openapi).toBeString();
     expect(String(artifact.openapi)).toStartWith('3.');
-    expect(artifact.paths?.['/v2/account']).toBeDefined();
-    expect(artifact.paths?.['/v2/kubernetes/clusters']).toBeDefined();
+    expect(artifact.paths['/v2/account']).toBeDefined();
+    expect(artifact.paths['/v2/kubernetes/clusters']).toBeDefined();
   });
 
   test('does not contain credential-like examples', async () => {
@@ -85,7 +99,7 @@ describe('DigitalOcean OpenAPI artefact', () => {
     expect(artifactContent).not.toContain('hooks.slack.com/services/');
     expect(artifactContent).not.toContain('-----BEGIN PRIVATE KEY-----');
     expect(artifactContent).not.toContain('-----BEGIN CERTIFICATE-----');
-    for (const rule of secretShapeReplacements) {
+    for (const rule of credentialExampleReplacements) {
       expect(new RegExp(rule.pattern.source, rule.pattern.flags).test(artifactContent), rule.description).toBe(false);
     }
     expect(() => assertNoCredentialLikeExamples(artifactContent)).not.toThrow();
@@ -110,12 +124,8 @@ describe('DigitalOcean OpenAPI artefact', () => {
   });
 
   test('matches the pinned artefact critical properties snapshot', async () => {
-    const artifact = (await readJsonFile(digitalOceanOpenApiArtifactPath)) as {
-      components?: {schemas?: Record<string, unknown>};
-      openapi?: unknown;
-      paths?: Record<string, unknown>;
-    };
-    const paths = Object.keys(artifact.paths ?? {});
+    const artifact = artifactSchema.parse(await readJsonFile(digitalOceanOpenApiArtifactPath));
+    const paths = Object.keys(artifact.paths);
     const schemas = Object.keys(artifact.components?.schemas ?? {});
 
     expect({
@@ -124,10 +134,8 @@ describe('DigitalOcean OpenAPI artefact', () => {
       openapi: artifact.openapi,
       pathCount: paths.length,
       representativePaths: {
-        account: Object.keys((artifact.paths?.['/v2/account'] as Record<string, unknown> | undefined) ?? {}),
-        kubernetesClusters: Object.keys(
-          (artifact.paths?.['/v2/kubernetes/clusters'] as Record<string, unknown> | undefined) ?? {}
-        )
+        account: Object.keys(jsonObjectSchema.parse(artifact.paths['/v2/account'])),
+        kubernetesClusters: Object.keys(jsonObjectSchema.parse(artifact.paths['/v2/kubernetes/clusters']))
       },
       schemaCount: schemas.length
     }).toMatchSnapshot();
@@ -181,10 +189,10 @@ describe('DigitalOcean OpenAPI artefact', () => {
     fc.assert(
       fc.property(jsonValue, (value) => {
         const canonicalJson = stringifyCanonicalJson(value);
-        const parsedCanonicalJson = JSON.parse(canonicalJson) as JsonValue;
+        const parsedCanonicalJson = jsonValueSchema.parse(JSON.parse(canonicalJson));
         const reversedJson = stringifyCanonicalJson(reverseObjectKeysRecursive(value));
 
-        expect(parsedCanonicalJson).toEqual(JSON.parse(JSON.stringify(value)) as JsonValue);
+        expect(parsedCanonicalJson).toEqual(structuredClone(value));
         expect(reversedJson).toBe(canonicalJson);
       }),
       {numRuns: 100, seed: propertyTestSeed}
@@ -195,7 +203,9 @@ describe('DigitalOcean OpenAPI artefact', () => {
       fc.property(jsonValue, (value) => {
         const canonicalJson = stringifyCanonicalJson(value);
 
-        expect(stringifyCanonicalJson(JSON.parse(canonicalJson) as JsonValue)).toBe(canonicalJson);
+        const parsedCanonicalJson = JSON.parse(canonicalJson);
+        const parsedValue = jsonValueSchema.parse(parsedCanonicalJson);
+        expect(stringifyCanonicalJson(parsedValue)).toBe(canonicalJson);
       }),
       {numRuns: 100, seed: propertyTestSeed}
     );

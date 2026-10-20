@@ -40,12 +40,15 @@ export const toUnsupportedOperationResponse = (
     );
   }
 
-  return {
+  const response: UnsupportedOperationResponse = {
     status: 501,
     json: {
       id: 'not_implemented',
-      message: `${createOperationKey(operation.method, operation.path)} is not implemented by DigitalPuddle ${operation.releaseStage}.`,
-      ...(requestId ? {request_id: requestId} : {})
+      message: `${createOperationKey(operation.method, operation.path)} is not implemented by DigitalPuddle ${operation.releaseStage}.`
     }
   };
+  if (requestId) {
+    response.json.request_id = requestId;
+  }
+  return response;
 };

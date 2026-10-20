@@ -13,7 +13,7 @@ const app = simulation({initialState});
 const {PORT} = process.env;
 const port = Number(PORT) || 3300;
 
-app.listen(port, () =>
+void app.listen(port, () =>
   console.log(
     `DigitalPuddle baseline server started at http://localhost:${port}\nVisit http://localhost:${port}/simulation to view all available routes.`
   )

@@ -1,6 +1,7 @@
 /** @file Unit tests for fixture schemas and state-table conversion helpers. */
 import {beforeEach, describe, expect, it} from 'bun:test';
 import fc from 'fast-check';
+import type {JsonObject} from '../src/openapi/artifact.ts';
 import {
   blobStoreKey,
   githubAppInstallationSchema,
@@ -14,26 +15,26 @@ import {
 import {resetNextRepositoryId} from '../src/store/entities/repository.ts';
 
 type GitHubInitialStoreFixture = {
-  users: Array<Record<string, unknown>>;
-  installations?: Array<Record<string, unknown>>;
-  organizations: Array<Record<string, unknown>>;
-  repositories: Array<Record<string, unknown>>;
-  branches: Array<Record<string, unknown>>;
-  blobs: Array<Record<string, unknown>>;
+  users: JsonObject[];
+  installations?: JsonObject[];
+  organizations: JsonObject[];
+  repositories: JsonObject[];
+  branches: JsonObject[];
+  blobs: JsonObject[];
 };
 
 type BuildGithubInitialStoreOptions = {
   storeOverrides?: Partial<GitHubInitialStoreFixture>;
-  userOverrides?: Record<string, unknown>;
+  userOverrides?: JsonObject;
 };
 
 const buildGithubInitialStore = (options: BuildGithubInitialStoreOptions = {}) => ({
-  users: [{login: 'dev', organizations: [], ...(options.userOverrides ?? {})}],
+  users: [{login: 'dev', organizations: [], ...options.userOverrides}],
   organizations: [{login: 'test-org'}],
   repositories: [{owner: 'test-org', name: 'test-repo'}],
   branches: [{owner: 'test-org', repo: 'test-repo', name: 'main'}],
   blobs: [],
-  ...(options.storeOverrides ?? {})
+  ...options.storeOverrides
 });
 
 const parseGithubInitialStore = (options: BuildGithubInitialStoreOptions = {}) =>
@@ -42,6 +43,12 @@ const parseGithubInitialStore = (options: BuildGithubInitialStoreOptions = {}) =
 type StoreState = ReturnType<typeof convertInitialStateToStoreState>;
 
 const keySegmentArbitrary = fc.string({minLength: 1, maxLength: 12}).filter((value) => /^[a-z][a-z0-9-]*$/.test(value));
+const providedInstallationIdArbitrary = fc.integer({min: 1, max: 10_000});
+const blobFixtureArbitrary = fc.record({
+  owner: keySegmentArbitrary,
+  repo: keySegmentArbitrary,
+  path: keySegmentArbitrary
+});
 
 const requireStoreState = (store: StoreState) => {
   if (!store) {
@@ -55,7 +62,7 @@ describe('initialState user fields', () => {
   it('preserves all provided fields through to store state', () => {
     const parsed = parseGithubInitialStore({
       userOverrides: {
-        id: 99887766,
+        id: 99_887_766,
         name: 'dev User',
         email: 'dev@example.io'
       }
@@ -67,7 +74,7 @@ describe('initialState user fields', () => {
     if (!user) {
       throw new Error('expected seeded user to be present');
     }
-    expect(user.id).toBe(99887766);
+    expect(user.id).toBe(99_887_766);
     expect(user.login).toBe('dev');
     expect(user.name).toBe('dev User');
     expect(user.email).toBe('dev@example.io');
@@ -426,7 +433,7 @@ describe('initialState schema transforms', () => {
     fc.assert(
       fc.property(
         fc.uniqueArray(keySegmentArbitrary, {minLength: 1, maxLength: 20}),
-        fc.uniqueArray(fc.integer({min: 1, max: 10_000}), {maxLength: 10}),
+        fc.uniqueArray(providedInstallationIdArbitrary, {maxLength: 10}),
         (organizationNames, providedIds) => {
           const parsed = parseGithubInitialStore({
             storeOverrides: {
@@ -479,22 +486,15 @@ describe('convertObjByKey', () => {
   it('preserves generated blob keys across arbitrary unique collections', () => {
     fc.assert(
       fc.property(
-        fc.uniqueArray(
-          fc.record({
-            owner: keySegmentArbitrary,
-            repo: keySegmentArbitrary,
-            path: keySegmentArbitrary
-          }),
-          {
-            maxLength: 30,
-            selector: (blob) => `${blob.owner}/${blob.repo}:${blob.path}`
-          }
-        ),
+        fc.uniqueArray(blobFixtureArbitrary, {
+          maxLength: 30,
+          selector: (blob) => `${blob.owner}/${blob.repo}:${blob.path}`
+        }),
         (inputBlobs) => {
           const parsedBlobs = inputBlobs.map((blob) => githubBlobSchema.parse(blob));
           const keyedBlobs = convertObjByKey(parsedBlobs, blobStoreKey);
 
-          expect(Object.keys(keyedBlobs).sort()).toEqual(parsedBlobs.map(blobStoreKey).sort());
+          expect(Object.keys(keyedBlobs).toSorted()).toEqual(parsedBlobs.map((blob) => blobStoreKey(blob)).toSorted());
           expect(Object.values(keyedBlobs)).toHaveLength(parsedBlobs.length);
         }
       )

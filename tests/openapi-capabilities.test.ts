@@ -68,7 +68,7 @@ describe('capability policy vocabulary', () => {
     fc.assert(
       fc.property(fc.string(), (candidate) => {
         const parsed = capabilitySchema.safeParse(candidate);
-        expect(parsed.success).toBe(capabilityValues.includes(candidate as (typeof capabilityValues)[number]));
+        expect(parsed.success).toBe(capabilityValues.some((capability) => capability === candidate));
       })
     );
   });

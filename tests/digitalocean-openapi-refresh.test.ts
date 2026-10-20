@@ -8,17 +8,18 @@
  */
 import {mkdtemp, readFile, rm} from 'node:fs/promises';
 import os from 'node:os';
-import {join} from 'node:path';
+import path from 'node:path';
 import {afterEach, describe, expect, test} from 'bun:test';
 import fc from 'fast-check';
+import {z} from 'zod';
 import {
   digitalOceanOpenApiArtifactPath,
   digitalOceanOpenApiProvenancePath,
   getDigitalOceanOpenApiSourceArchiveUrl,
+  jsonValueSchema,
   sha256Hex,
   stringifyCanonicalJson,
-  validateDigitalOceanOpenApiProvenance,
-  type JsonValue
+  validateDigitalOceanOpenApiProvenance
 } from '../src/openapi/artifact.ts';
 import {
   assertNoCredentialLikeExamples,
@@ -31,11 +32,14 @@ import {
 import {createFakeSyncDependencies, fakePin, fixedNow} from './support/digitalocean-openapi-refresh-helpers.ts';
 import {propertyTestSeed} from './support/property-test-seed.ts';
 
-const repoRoot = join(import.meta.dirname, '..');
+const repoRoot = path.join(import.meta.dirname, '..');
 const testTempRoots: string[] = [];
 
+const createFetchStub = (response: Response): typeof fetch =>
+  Object.assign(async () => response, {preconnect: globalThis.fetch.preconnect});
+
 const mkTestTempRoot = async (prefix: string): Promise<string> => {
-  const tempRoot = await mkdtemp(join(os.tmpdir(), prefix));
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), prefix));
   testTempRoots.push(tempRoot);
   return tempRoot;
 };
@@ -52,16 +56,18 @@ const certificateExample = fc
   .string({minLength: 1, maxLength: 48})
   .map((body) => `-----BEGIN CERTIFICATE-----\n${body}\n-----END CERTIFICATE-----`);
 
-const sensitiveJsonValue = fc.letrec((tie) => ({
-  value: fc.oneof(
-    slackWebhookExample,
-    privateKeyExample,
-    certificateExample,
-    fc.string(),
-    fc.array(tie('value'), {maxLength: 4}),
-    fc.dictionary(fc.string({maxLength: 8}), tie('value'), {maxKeys: 4})
-  )
-})).value as fc.Arbitrary<JsonValue>;
+const sensitiveJsonValue = fc
+  .letrec((tie) => ({
+    value: fc.oneof(
+      slackWebhookExample,
+      privateKeyExample,
+      certificateExample,
+      fc.string(),
+      fc.array(tie('value'), {maxLength: 4}),
+      fc.dictionary(fc.string({maxLength: 8}), tie('value'), {maxKeys: 4})
+    )
+  }))
+  .value.map((value) => jsonValueSchema.parse(value));
 
 describe('DigitalOcean OpenAPI refresh sanitization', () => {
   afterEach(async () => {
@@ -143,25 +149,33 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
   test('rejects oversized source archive downloads before buffering', async () => {
     const originalFetch = globalThis.fetch;
     let readAttempted = false;
-    const response = {
-      get body() {
-        readAttempted = true;
-        throw new Error('response body should not be read');
+    const response = new Response(null, {
+      headers: new Headers({'content-length': String(50 * 1024 * 1024 + 1)})
+    });
+    Object.defineProperties(response, {
+      body: {
+        configurable: true,
+        get() {
+          readAttempted = true;
+          throw new Error('response body should not be read');
+        }
       },
-      arrayBuffer: async () => {
-        readAttempted = true;
-        throw new Error('response body should not be buffered');
+      arrayBuffer: {
+        configurable: true,
+        value: async () => {
+          readAttempted = true;
+          throw new Error('response body should not be buffered');
+        }
       },
-      headers: new Headers({'content-length': String(50 * 1024 * 1024 + 1)}),
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      text: async () => {
-        readAttempted = true;
-        throw new Error('response body should not be decoded');
+      text: {
+        configurable: true,
+        value: async () => {
+          readAttempted = true;
+          throw new Error('response body should not be decoded');
+        }
       }
-    };
-    globalThis.fetch = (async () => response as unknown as Response) as unknown as typeof fetch;
+    });
+    globalThis.fetch = createFetchStub(response);
 
     try {
       await expect(
@@ -175,34 +189,23 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
 
   test('cancels streaming source archive downloads that exceed the byte cap', async () => {
     const originalFetch = globalThis.fetch;
-    let readCount = 0;
     let cancelCount = 0;
     const chunkSize = 100 * 1024 * 1024;
-    const reader = {
-      cancel: async () => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(chunkSize));
+      },
+      cancel() {
         cancelCount += 1;
-      },
-      read: async () => {
-        readCount += 1;
-        return readCount === 1 ? {done: false, value: new Uint8Array(chunkSize)} : {done: true, value: undefined};
       }
-    };
-    const response = {
-      body: {
-        getReader: () => reader
-      },
-      headers: new Headers(),
-      ok: true,
-      status: 200,
-      statusText: 'OK'
-    };
-    globalThis.fetch = (async () => response as unknown as Response) as unknown as typeof fetch;
+    });
+    const response = new Response(body);
+    globalThis.fetch = createFetchStub(response);
 
     try {
       await expect(
         createDefaultSyncDependencies().fetchBytes('https://example.invalid/openapi.tar.gz', 1000)
       ).rejects.toThrow(/exceeded/);
-      expect(readCount).toBe(1);
       expect(cancelCount).toBe(1);
     } finally {
       globalThis.fetch = originalFetch;
@@ -222,10 +225,10 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
       dependencies
     );
 
-    const artifactContent = await readFile(join(tempRoot, digitalOceanOpenApiArtifactPath), 'utf8');
-    const provenance = validateDigitalOceanOpenApiProvenance(
-      JSON.parse(await readFile(join(tempRoot, digitalOceanOpenApiProvenancePath), 'utf8')) as unknown
-    );
+    const artifactContent = await readFile(path.join(tempRoot, digitalOceanOpenApiArtifactPath), 'utf8');
+    const provenanceContent = await readFile(path.join(tempRoot, digitalOceanOpenApiProvenancePath), 'utf8');
+    const provenanceData = JSON.parse(provenanceContent);
+    const provenance = validateDigitalOceanOpenApiProvenance(provenanceData);
 
     expect(artifactContent).toContain('SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY');
     expect(artifactContent).not.toContain('hooks.slack.com/services/');
@@ -239,19 +242,21 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
     expect(dependencies.logEntries.map((entry) => entry.message)).toMatchSnapshot();
     const stableEntries = dependencies.logEntries.map((entry) => ({
       ...entry,
-      fields:
-        entry.fields === undefined
-          ? undefined
-          : Object.fromEntries(
-              Object.entries(entry.fields).map(([key, value]) => [
-                key,
-                key === 'elapsedMs'
-                  ? 0
-                  : typeof value === 'string'
-                    ? value.replaceAll(tempRoot, '<tempRoot>').replace(/digitalpuddle-openapi-[^/]+/g, '<syncTempRoot>')
-                    : value
-              ])
-            )
+      fields: Object.fromEntries(
+        Object.entries(entry.fields).map(([key, value]) => {
+          if (key === 'elapsedMs') {
+            return [key, 0];
+          }
+          const stringValue = z.string().safeParse(value);
+          if (!stringValue.success) {
+            return [key, value];
+          }
+          const normalizedValue = stringValue.data
+            .replaceAll(tempRoot, '<tempRoot>')
+            .replaceAll(/digitalpuddle-openapi-[^/]+/g, '<syncTempRoot>');
+          return [key, normalizedValue];
+        })
+      )
     }));
     expect(stableEntries).toMatchSnapshot();
   });
@@ -285,7 +290,7 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
     expect(dependencies.logEntries.at(-1)).toMatchObject({
       fields: {
         archiveUrl,
-        artifactPath: join(tempRoot, digitalOceanOpenApiArtifactPath),
+        artifactPath: path.join(tempRoot, digitalOceanOpenApiArtifactPath),
         elapsedMs: 0,
         errorMessage: 'fixture fetch failed',
         pin: fakePin
@@ -296,19 +301,19 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
   });
 
   test('keeps temporary output paths unique with a frozen clock', async () => {
-    const outputPath = join(repoRoot, digitalOceanOpenApiArtifactPath);
+    const outputPath = path.join(repoRoot, digitalOceanOpenApiArtifactPath);
 
     expect(
       createTempOutputPath(
         outputPath,
         () => fixedNow,
-        () => 12345
+        () => 12_345
       )
     ).not.toBe(
       createTempOutputPath(
         outputPath,
         () => fixedNow,
-        () => 12345
+        () => 12_345
       )
     );
   });
@@ -340,10 +345,10 @@ describe('DigitalOcean OpenAPI refresh sanitization', () => {
 
     expect(leftDependencies.calls).toEqual(['fetch', 'tar', 'bundle']);
     expect(rightDependencies.calls).toEqual(['fetch', 'tar', 'bundle']);
-    await expect(readFile(join(leftRoot, digitalOceanOpenApiArtifactPath), 'utf8')).resolves.toContain(
+    await expect(readFile(path.join(leftRoot, digitalOceanOpenApiArtifactPath), 'utf8')).resolves.toContain(
       'SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY'
     );
-    await expect(readFile(join(rightRoot, digitalOceanOpenApiArtifactPath), 'utf8')).resolves.toContain(
+    await expect(readFile(path.join(rightRoot, digitalOceanOpenApiArtifactPath), 'utf8')).resolves.toContain(
       'SANITIZED DIGITALPUDDLE EXAMPLE PRIVATE KEY'
     );
   });

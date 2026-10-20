@@ -3,10 +3,12 @@ import {spawn, type ChildProcessWithoutNullStreams} from 'node:child_process';
 import net from 'node:net';
 import path from 'node:path';
 import {describe, expect, it} from 'bun:test';
+import {z} from 'zod';
 
 import {normaliseStartupOutput} from './support/startup-output';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
+const listenAddressSchema = z.object({port: z.number().int().min(0).max(65_535)});
 
 type StartedProcess = {
   child: ChildProcessWithoutNullStreams;
@@ -27,13 +29,13 @@ const getOpenPort = () =>
 
     server.once('error', reject);
     server.listen(0, () => {
-      const address = server.address();
-      if (!address || typeof address === 'string') {
+      const address = listenAddressSchema.safeParse(server.address());
+      if (!address.success) {
         server.close(() => reject(new Error('expected an IPv4 or IPv6 listen address')));
         return;
       }
 
-      const {port} = address;
+      const {port} = address.data;
       server.close((error) => {
         if (error) {
           reject(error);

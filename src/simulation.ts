@@ -24,7 +24,7 @@ import {
 import type {SchemaFile} from './utils.ts';
 
 /** Seed data accepted for the GitHub fixtures a simulation server starts with. */
-export type InitialState = GitHubInitialStore;
+export interface InitialState extends GitHubInitialStore {}
 
 type FoundationRouter = Parameters<
   NonNullable<Parameters<typeof createFoundationSimulationServer>[0]['extendRouter']>
@@ -74,7 +74,7 @@ const logSimulationAssemblyFailure = (reason: SimulationAssemblyFailureReason) =
 
 const parseInitialState = (initialState: GitHubInitialStore | undefined) => {
   if (!initialState) {
-    return undefined;
+    return;
   }
 
   try {
@@ -122,12 +122,12 @@ export const simulation = (args: GitHubSimulatorArgs = {}): FoundationSimulator<
     port: 3300, // default port
     simulationContextPage: '/simulation',
     extendStore: extendStoreConfig,
-    extendRouter: extendRouter(args?.extend?.extendRouter),
+    extendRouter: extendRouter(args.extend?.extendRouter),
     openapi: openapi(
       parsedInitialState,
-      args?.apiUrl ?? '/',
-      args?.apiSchema ?? 'api.github.com.json',
-      args?.extend?.openapiHandlers
+      args.apiUrl ?? '/',
+      args.apiSchema ?? 'api.github.com.json',
+      args.extend?.openapiHandlers
     )
   })();
 };

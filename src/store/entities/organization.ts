@@ -48,7 +48,7 @@ export const githubOrganizationSchema = z
     avatar_url: z.string().optional().default('https://github.com/images/error/octocat_happy.gif'),
     gravatar_id: z.string().optional().default(''),
     site_admin: z.boolean().optional().default(true),
-    url: z.string().url().optional(),
+    url: z.url().optional(),
     html_url: z.string().optional(),
     followers_url: z.string().optional(),
     following_url: z.string().optional(),

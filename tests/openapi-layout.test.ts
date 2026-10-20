@@ -6,13 +6,13 @@ import {buildCapabilityMatrix, createOperationKey, v1CapabilityManifest} from '.
 type AssertEqual<T, U> = T extends U ? (U extends T ? true : never) : never;
 
 const engineCapabilityIsExact: AssertEqual<EngineCapability, 'kubernetes'> = true;
-const engineDescriptorShapeIsExact: AssertEqual<
+const engineDescriptorContractIsExact: AssertEqual<
   EngineDescriptor,
   {readonly name: string; readonly capability: EngineCapability}
 > = true;
 
 void engineCapabilityIsExact;
-void engineDescriptorShapeIsExact;
+void engineDescriptorContractIsExact;
 
 describe('OpenAPI layout compatibility', () => {
   it('exports operation-key helpers from the OpenAPI module boundary', () => {

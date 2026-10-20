@@ -1,9 +1,10 @@
 /** @file Filesystem helpers for loading bundled or caller-provided schemas. */
-import path from 'path';
-import fs from 'fs';
+import path from 'node:path';
+import fs from 'node:fs';
 import {z} from 'zod';
 
 const schemaDefaults = ['schema.docs-enterprise.graphql', 'schema.docs.graphql', 'api.github.com.json'] as const;
+const schemaDefaultNames: ReadonlySet<string> = new Set(schemaDefaults);
 export type SchemaFile = (typeof schemaDefaults)[number];
 const openApiSchema = z
   .object({
@@ -11,11 +12,11 @@ const openApiSchema = z
     swagger: z.string().optional(),
     paths: z.record(z.string(), z.unknown())
   })
-  .passthrough()
+  .loose()
   .superRefine((value, ctx) => {
     if (!value.openapi && !value.swagger) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: 'OpenAPI documents must declare either an openapi or swagger version'
       });
     }
@@ -32,18 +33,16 @@ type OpenApiSchema = z.infer<typeof openApiSchema>;
  * ```
  */
 export function getSchema(schemaFile: 'api.github.com.json'): OpenApiSchema;
-export function getSchema(schemaFile: 'schema.docs.graphql' | 'schema.docs-enterprise.graphql'): string;
 export function getSchema(schemaFile: `${string}.json`): OpenApiSchema;
-export function getSchema(schemaFile: string): string;
+export function getSchema(schemaFile: 'schema.docs.graphql' | 'schema.docs-enterprise.graphql'): string;
+export function getSchema(schemaFile: string): string | OpenApiSchema;
 export function getSchema(schemaFile: SchemaFile | string): string | OpenApiSchema {
   const root = path.join(import.meta.dirname, '..');
-  const schemaPath = (schemaDefaults as readonly string[]).includes(schemaFile)
-    ? path.join(root, 'schema', schemaFile)
-    : schemaFile;
+  const schemaPath = schemaDefaultNames.has(schemaFile) ? path.join(root, 'schema', schemaFile) : schemaFile;
 
   let fileString: string;
   try {
-    fileString = fs.readFileSync(schemaPath, 'utf-8');
+    fileString = fs.readFileSync(schemaPath, 'utf8');
   } catch (error) {
     throw new Error(
       `Failed to load schema ${schemaFile} from ${schemaPath}: ${error instanceof Error ? error.message : String(error)}`,

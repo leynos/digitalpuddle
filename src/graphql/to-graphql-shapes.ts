@@ -10,35 +10,33 @@ import type {ExtendedSimulationStore} from '../store/index.ts';
 import type {GitHubOrganization, GitHubRepository, GitHubUser} from '../store/entities.ts';
 import type {
   OrganizationMemberRole,
-  PageInfo as GraphqlPageInfo,
+  PageInfo,
   RepositoryPermission,
   RepositoryVisibility,
   Team,
   User
 } from '../__generated__/resolvers-types.ts';
 
-export type ConnectionPageInfo = GraphqlPageInfo;
-
 export type Connection<Node, Edge extends {cursor: string; node: Node}> = {
   edges: Edge[];
   nodes: Node[];
-  pageInfo: ConnectionPageInfo;
+  pageInfo: PageInfo;
   totalCount: number;
 };
 
-export type RepositoryTopicShape = {
+export type RepositoryTopic = {
   id: string;
   resourcePath: string;
   topic: {
     id: string;
     name: string;
     relatedTopics: [];
-    repositories: RepositoryConnectionShape;
+    repositories: RepositoryConnectionData;
     stargazerCount: number;
     stargazers: {
       edges: never[];
       nodes: never[];
-      pageInfo: ConnectionPageInfo;
+      pageInfo: PageInfo;
       totalCount: number;
     };
     viewerHasStarred: boolean;
@@ -57,8 +55,8 @@ export interface GraphQLData {
     createdAt: string;
     resourcePath: string;
     url?: string;
-    repositories: (pageArgs: PageArgs) => RepositoryConnectionShape;
-    organizations: (pageArgs: PageArgs) => OrganizationConnectionShape;
+    repositories: (pageArgs: PageArgs) => RepositoryConnectionData;
+    organizations: (pageArgs: PageArgs) => OrganizationConnectionData;
   };
   Repository: {
     __typename: 'Repository';
@@ -68,14 +66,14 @@ export interface GraphQLData {
     nameWithOwner: string;
     url: string;
     createdAt: string;
-    collaborators: (pageArgs: PageArgs) => RepositoryCollaboratorConnectionShape;
+    collaborators: (pageArgs: PageArgs) => RepositoryCollaboratorConnectionData;
     owner: GraphQLData['User'] | GraphQLData['Organization'];
     defaultBranchRef: {
       id: string;
       name: string;
     };
-    languages: (pageArgs: PageArgs) => LanguageConnectionShape;
-    repositoryTopics: (pageArgs: PageArgs) => RepositoryTopicConnectionShape;
+    languages: (pageArgs: PageArgs) => LanguageConnectionData;
+    repositoryTopics: (pageArgs: PageArgs) => RepositoryTopicConnectionData;
     visibility: RepositoryVisibility;
     isArchived: boolean;
     isFork: boolean;
@@ -91,11 +89,15 @@ export interface GraphQLData {
     createdAt: string;
     resourcePath: string;
     url?: string;
-    repositories: (pageArgs: PageArgs) => RepositoryConnectionShape;
-    teams: (pageArgs: PageArgs) => TeamConnectionShape;
-    membersWithRole: (pageArgs: PageArgs) => OrganizationMemberConnectionShape;
+    repositories: (pageArgs: PageArgs) => RepositoryConnectionData;
+    teams: (pageArgs: PageArgs) => TeamConnectionData;
+    membersWithRole: (pageArgs: PageArgs) => OrganizationMemberConnectionData;
   };
 }
+
+export type GraphQLUser = GraphQLData['User'];
+export type GraphQLRepository = GraphQLData['Repository'];
+export type GraphQLOrganization = GraphQLData['Organization'];
 
 export interface DataSchemas {
   User: GitHubUser;
@@ -103,19 +105,19 @@ export interface DataSchemas {
   Organization: GitHubOrganization;
 }
 
-export type OrganizationConnectionShape = Connection<
+export type OrganizationConnectionData = Connection<
   GraphQLData['Organization'],
   {cursor: string; node: GraphQLData['Organization']}
 >;
 
-export type TeamConnectionShape = Connection<Team, {cursor: string; node: Team}>;
+export type TeamConnectionData = Connection<Team, {cursor: string; node: Team}>;
 
-export type OrganizationMemberConnectionShape = Connection<
+export type OrganizationMemberConnectionData = Connection<
   User,
   {cursor: string; node: User; role: OrganizationMemberRole}
 >;
 
-export type RepositoryCollaboratorConnectionShape = Connection<
+export type RepositoryCollaboratorConnectionData = Connection<
   User,
   {
     cursor: string;
@@ -125,17 +127,14 @@ export type RepositoryCollaboratorConnectionShape = Connection<
   }
 >;
 
-export type LanguageConnectionShape = Connection<
+export type LanguageConnectionData = Connection<
   {id: string; name: string},
   {cursor: string; node: {id: string; name: string}; size: number}
 > & {totalSize: number};
 
-export type RepositoryTopicConnectionShape = Connection<
-  RepositoryTopicShape,
-  {cursor: string; node: RepositoryTopicShape}
->;
+export type RepositoryTopicConnectionData = Connection<RepositoryTopic, {cursor: string; node: RepositoryTopic}>;
 
-export type RepositoryConnectionShape = Connection<
+export type RepositoryConnectionData = Connection<
   GraphQLData['Repository'],
   {cursor: string; node: GraphQLData['Repository']}
 > & {totalDiskUsage: number};

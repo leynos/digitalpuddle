@@ -16,16 +16,16 @@ export function deriveOwner(
   login: string,
   toGraphql: ToGraphqlDispatcher
 ): GraphQLData['Organization'] | GraphQLData['User'] {
-  const [org] = simulationStore.schema.organizations
+  const org = simulationStore.schema.organizations
     .selectTableAsList(simulationStore.store.getState())
-    .filter((candidate) => candidate.login === login);
+    .find((candidate) => candidate.login === login);
   if (org) {
     return toGraphql(simulationStore, 'Organization', org);
   }
 
-  const [userAccount] = simulationStore.schema.users
+  const userAccount = simulationStore.schema.users
     .selectTableAsList(simulationStore.store.getState())
-    .filter((candidate) => candidate.login === login);
+    .find((candidate) => candidate.login === login);
   assert(!!userAccount, `no github organization or account found for ${login}`);
   return toGraphql(simulationStore, 'User', userAccount);
 }
@@ -43,21 +43,24 @@ export function toGithubRepositoryOwner(
   entity: DataSchemas['User'] | DataSchemas['Organization'],
   toGraphql: ToGraphqlDispatcher
 ): Pick<GraphQLData['User'], 'avatarUrl' | 'login' | 'repositories' | 'resourcePath' | 'url'> {
-  return {
+  const repositoryOwner: Pick<GraphQLData['User'], 'avatarUrl' | 'login' | 'repositories' | 'resourcePath' | 'url'> = {
     login: entity.login,
-    ...(entity.avatar_url ? {avatarUrl: entity.avatar_url} : {}),
     repositories(pageArgs: PageArgs) {
-      return convertRepositoryConnection(
-        applyRelayPagination(
-          simulationStore.schema.repositories
-            .selectTableAsList(simulationStore.store.getState())
-            .filter((repo) => repo.owner === entity.login),
-          pageArgs,
-          (repository: DataSchemas['Repository']) => toGraphql(simulationStore, 'Repository', repository)
-        )
+      const repositories = simulationStore.schema.repositories
+        .selectTableAsList(simulationStore.store.getState())
+        .filter((repo) => repo.owner === entity.login);
+      const page = applyRelayPagination(repositories, pageArgs, (repository: DataSchemas['Repository']) =>
+        toGraphql(simulationStore, 'Repository', repository)
       );
+      return convertRepositoryConnection(page);
     },
-    resourcePath: `/${entity.login}`,
-    ...(entity.url ? {url: entity.url} : {})
+    resourcePath: `/${entity.login}`
   };
+  if (entity.avatar_url) {
+    repositoryOwner.avatarUrl = entity.avatar_url;
+  }
+  if (entity.url) {
+    repositoryOwner.url = entity.url;
+  }
+  return repositoryOwner;
 }

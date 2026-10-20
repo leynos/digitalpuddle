@@ -13,6 +13,7 @@ import {describe, expect, it} from 'bun:test';
 import {readFileSync} from 'node:fs';
 import path from 'node:path';
 import {parse as parseYaml} from 'yaml';
+import {z} from 'zod';
 
 const repositoryRoot = path.join(import.meta.dir, '..');
 
@@ -115,6 +116,7 @@ const makeGoals = (tokens: string[]): string[] => {
 };
 
 type MakeRule = {prerequisites: string[]; recipe: string[][]; ignoredErrorPrefixes: string[]};
+type LogicalLine = {line: string; nextIndex: number};
 
 const RULE_LINE = /^([^\t#=][^:=]*):(?!=)(.*)$/;
 const RECIPE_PREFIX = /^[@+-]+/;
@@ -129,7 +131,7 @@ const words = (text: string): string[] =>
  * Reads the logical line starting at `start`, following backslash
  * continuations, and returns it with the index of the line after it.
  */
-const readLogicalLine = (lines: string[], start: number): {line: string; nextIndex: number} => {
+const readLogicalLine = (lines: string[], start: number): LogicalLine => {
   let line = lines[start] ?? '';
   let index = start;
   while (line.endsWith('\\') && index + 1 < lines.length) {
@@ -144,7 +146,7 @@ const readLogicalLine = (lines: string[], start: number): {line: string; nextInd
  * noting a `-` prefix, which tells make to ignore the command's exit status.
  */
 const recordRecipeLine = (rules: MakeRule[], line: string): void => {
-  const prefix = (RECIPE_PREFIX.exec(line) ?? [''])[0] ?? '';
+  const prefix = (RECIPE_PREFIX.exec(line) ?? [''])[0];
   const command = line.slice(prefix.length);
   for (const rule of rules) {
     rule.recipe.push(...commandsIn(command));
@@ -190,62 +192,79 @@ const parseMakefile = (text: string): Map<string, MakeRule> => {
   return rules;
 };
 
-type WorkflowStep = {
-  name?: string;
-  run?: string;
-  if?: unknown;
-  'continue-on-error'?: unknown;
-};
-
-type WorkflowJob = {
-  steps?: WorkflowStep[];
-  if?: unknown;
-  'continue-on-error'?: unknown;
-};
-
-const workflow = parseYaml(readRepositoryFile('.github/workflows/ci.yml')) as {
-  on?: {push?: {branches?: string[]} | null};
-  jobs?: {verify?: WorkflowJob};
-};
+const workflowStepSchema = z
+  .object({
+    name: z.string().optional(),
+    run: z.string().optional(),
+    if: z.unknown().optional(),
+    'continue-on-error': z.unknown().optional()
+  })
+  .loose();
+const workflowJobSchema = z
+  .object({
+    steps: z.array(workflowStepSchema).optional(),
+    if: z.unknown().optional(),
+    'continue-on-error': z.unknown().optional()
+  })
+  .loose();
+const pushTriggerSchema = z
+  .object({branches: z.array(z.string()).nullable().optional()})
+  .nullable()
+  .optional();
+const workflowTriggersSchema = z.object({pull_request: z.null().optional(), push: pushTriggerSchema}).optional();
+const workflowSchema = z
+  .object({
+    on: workflowTriggersSchema,
+    jobs: z.object({verify: workflowJobSchema.optional()}).optional()
+  })
+  .loose();
+const workflow = workflowSchema.parse(parseYaml(readRepositoryFile('.github/workflows/ci.yml')));
 const makefileRules = parseMakefile(readRepositoryFile('Makefile'));
-const packageManifest = JSON.parse(readRepositoryFile('package.json')) as {
-  scripts?: Record<string, string>;
-  devDependencies?: {typedoc?: string};
-};
-const typedocOptions = JSON.parse(readRepositoryFile('typedoc.json')) as {
-  entryPoints?: string[];
-  entryPointStrategy?: string;
-  emit?: string;
-  treatWarningsAsErrors?: boolean;
-  treatValidationWarningsAsErrors?: boolean;
-  validation?: Record<string, boolean>;
-  requiredToBeDocumented?: string[];
-};
+const packageManifest = z
+  .object({
+    scripts: z.record(z.string(), z.string()).optional(),
+    devDependencies: z.object({typedoc: z.string().optional()}).loose().optional()
+  })
+  .loose()
+  .parse(JSON.parse(readRepositoryFile('package.json')));
+const typedocOptions = z
+  .object({
+    entryPoints: z.array(z.string()).optional(),
+    entryPointStrategy: z.string().optional(),
+    emit: z.string().optional(),
+    treatWarningsAsErrors: z.boolean().optional(),
+    treatValidationWarningsAsErrors: z.boolean().optional(),
+    validation: z.record(z.string(), z.boolean()).optional(),
+    requiredToBeDocumented: z.array(z.string()).optional()
+  })
+  .loose()
+  .parse(JSON.parse(readRepositoryFile('typedoc.json')));
 
 describe('gate command recognition', () => {
-  const accepted: Record<string, string> = {
-    'a bare invocation': 'make all',
-    'an invocation with an option': 'make -s all',
-    'an invocation with a variable override': 'make MDLINT=markdownlint-cli2 all'
-  };
+  type GateInvocationCase = {description: string; script: string};
+  const accepted: GateInvocationCase[] = [
+    {description: 'a bare invocation', script: 'make all'},
+    {description: 'an invocation with an option', script: 'make -s all'},
+    {description: 'an invocation with a variable override', script: 'make MDLINT=markdownlint-cli2 all'}
+  ];
 
-  const rejected: Record<string, string> = {
-    'a backgrounded invocation': 'make all &',
-    'a backgrounded invocation inside a chain': 'make all & wait',
-    'an invocation whose failure is swallowed': 'make all || true',
-    'an invocation guarded by a condition': 'if false; then\n  make all\nfi',
-    'an invocation among others': 'make all\nmake build',
-    'an invocation in a loop': 'for goal in all; do\n  make $goal\ndone'
-  };
+  const rejected: GateInvocationCase[] = [
+    {description: 'a backgrounded invocation', script: 'make all &'},
+    {description: 'a backgrounded invocation inside a chain', script: 'make all & wait'},
+    {description: 'an invocation whose failure is swallowed', script: 'make all || true'},
+    {description: 'an invocation guarded by a condition', script: 'if false; then\n  make all\nfi'},
+    {description: 'an invocation among others', script: 'make all\nmake build'},
+    {description: 'an invocation in a loop', script: 'for goal in all; do\n  make $goal\ndone'}
+  ];
 
-  for (const [description, script] of Object.entries(accepted)) {
+  for (const {description, script} of accepted) {
     it(`accepts ${description}`, () => {
       expect(isSingleUnconditionalCommand(script)).toBe(true);
       expect(makeGoals(commandsIn(script)[0] ?? [])).toContain('all');
     });
   }
 
-  for (const [description, script] of Object.entries(rejected)) {
+  for (const {description, script} of rejected) {
     it(`rejects ${description}`, () => {
       expect(isSingleUnconditionalCommand(script)).toBe(false);
     });

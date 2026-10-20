@@ -20,5 +20,5 @@ export interface RequestJournal {
 }
 
 export const createNoopRequestJournal = (): RequestJournal => ({
-  append: (_entry) => undefined
+  append: (_entry) => {}
 });

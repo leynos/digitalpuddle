@@ -7,11 +7,16 @@
 import {convertObjToProp} from '@simulacrum/foundation-simulator';
 import {faker} from '@faker-js/faker';
 import {z} from 'zod';
-import {blobStoreKey, githubBlobSchema, type GitHubBlob} from './entities/blob.ts';
-import {branchStoreKey, githubBranchSchema, type GitHubBranch} from './entities/branch.ts';
-import {githubAppInstallationSchema, type GitHubAppInstallation} from './entities/installation.ts';
-import {githubOrganizationSchema, type GitHubOrganization} from './entities/organization.ts';
-import {githubRepositorySchema, repositoryStoreKey, type GitHubRepository} from './entities/repository.ts';
+import {blobStoreKey, githubBlobSchema} from './entities/blob.ts';
+export {blobStoreKey, githubBlobSchema, type GitHubBlob} from './entities/blob.ts';
+import {branchStoreKey, githubBranchSchema} from './entities/branch.ts';
+export {branchStoreKey, githubBranchSchema, type GitHubBranch} from './entities/branch.ts';
+import {githubAppInstallationSchema} from './entities/installation.ts';
+export {githubAppInstallationSchema, type GitHubAppInstallation} from './entities/installation.ts';
+import {githubOrganizationSchema} from './entities/organization.ts';
+export {githubOrganizationSchema, type GitHubOrganization} from './entities/organization.ts';
+import {githubRepositorySchema, repositoryStoreKey} from './entities/repository.ts';
+export {githubRepositorySchema, repositoryStoreKey, type GitHubRepository} from './entities/repository.ts';
 
 export interface GitHubUser {
   id: number;
@@ -55,7 +60,7 @@ export const githubUserSchema = z
     name: z.string().optional(),
     bio: z.string().default(''),
     email: z.string().optional(),
-    url: z.string().url().optional(),
+    url: z.url().optional(),
     avatar_url: z.string().optional().default('https://github.com/images/error/octocat_happy.gif'),
     organizations: z.array(z.string()),
     created_at: z
@@ -131,7 +136,7 @@ export type GitHubStore = z.output<typeof githubInitialStoreSchema>;
 export type GitHubInitialStore = z.input<typeof githubInitialStoreSchema>;
 
 export const convertObjByKey = <T>(objects: T[], key: (object: T) => string) => {
-  const keyedObjects = Object.create(null) as Record<string, T>;
+  const entries: Array<[string, T]> = [];
   const keyIndexes = new Map<string, number>();
 
   for (const [index, object] of objects.entries()) {
@@ -142,10 +147,12 @@ export const convertObjByKey = <T>(objects: T[], key: (object: T) => string) => 
       throw new Error(`Duplicate key "${currentKey}" for objects at indices ${existingIndex} and ${index}`);
     }
 
-    keyedObjects[currentKey] = object;
+    entries.push([currentKey, object]);
     keyIndexes.set(currentKey, index);
   }
 
+  const keyedObjects = Object.fromEntries(entries);
+  Object.setPrototypeOf(keyedObjects, null);
   return keyedObjects;
 };
 
@@ -160,7 +167,7 @@ export const convertObjByKey = <T>(objects: T[], key: (object: T) => string) => 
  */
 export const convertInitialStateToStoreState = (initialState: GitHubStore | undefined) => {
   if (!initialState) {
-    return undefined;
+    return;
   }
 
   return {
@@ -172,15 +179,3 @@ export const convertInitialStateToStoreState = (initialState: GitHubStore | unde
     blobs: convertObjByKey(initialState.blobs, (blob) => blobStoreKey(blob))
   };
 };
-
-export {
-  blobStoreKey,
-  branchStoreKey,
-  githubAppInstallationSchema,
-  githubBlobSchema,
-  githubBranchSchema,
-  githubOrganizationSchema,
-  githubRepositorySchema,
-  repositoryStoreKey
-};
-export type {GitHubAppInstallation, GitHubBlob, GitHubBranch, GitHubOrganization, GitHubRepository};

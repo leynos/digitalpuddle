@@ -64,7 +64,8 @@ Current Architectural Decision Records cover:
 - the temporary treatment of inherited Simulacat transport coupling;
 - the v1 product boundaries for node pools, Spaces, Droplets, and doctl;
 - the release capability policy for `scriptable`, `engine-backed`, `stubbed`,
-  and `unsupported` operations.
+  and `unsupported` operations; and
+- lint ownership and the pinned Oxlint plug-ins.
 
 ## 3. Development workflow
 
@@ -87,7 +88,10 @@ BRANCH=$(git branch --show-current | tr '/ ' '__')
 make all 2>&1 | tee /tmp/all-digitalpuddle-${BRANCH}.out
 ```
 
-`make all` includes the documentation gate described in section 3.2.
+`make all` includes the documentation gate described in section 3.2. The lint
+target runs Biome and Oxlint. See
+[ADR 0008](adr/0008-oxlint-plugin-strategy.md) for rule ownership, pins, and
+the plug-in conflict policy.
 
 Run documentation gates when Markdown changes:
 

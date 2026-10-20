@@ -35,6 +35,9 @@ const repositoryRoot = path.join(import.meta.dir, '..');
 
 const advisory = (id, name = 'braces') => ({package: name, id, title: `${name} advisory`});
 const report = (id, name = 'braces') => ({[name]: [{url: `${URL_PREFIX}${id}`, title: `${name} advisory`}]});
+const evaluate = (advisories, now = BEFORE_EXPIRY, status = 1, ledger = LEDGER) =>
+  evaluateAudit({advisories, ledger, now, status});
+const spawnResult = (result) => () => result;
 
 describe('parseAdvisories', () => {
   it('reads a top-level report and extracts the identifier from the url', () => {
@@ -100,9 +103,6 @@ describe('invalid reference date', () => {
 });
 
 describe('evaluateAudit', () => {
-  const evaluate = (advisories, now = BEFORE_EXPIRY, status = 1, ledger = LEDGER) =>
-    evaluateAudit({advisories, ledger, now, status});
-
   it('passes a covered advisory before its entry expires', () => {
     expect(evaluate([advisory(BRACES)]).code).toBe(0);
   });
@@ -146,7 +146,7 @@ describe('evaluateAudit partition (property)', () => {
         }));
         const run = (list) => evaluateAudit({advisories: list, ledger, now: BEFORE_EXPIRY, status: 1});
         const forward = run(items);
-        const reversed = run([...items].reverse());
+        const reversed = run([...items].toReversed());
         expect(forward.covered.length + forward.unexpected.length).toBe(items.length);
         expect(forward.covered.every((item) => ids.includes(item.id))).toBe(true);
         expect(forward.unexpected.every((item) => item.id === null || !ids.includes(item.id))).toBe(true);
@@ -160,47 +160,45 @@ describe('evaluateAudit partition (property)', () => {
 
 describe('formatOutcome', () => {
   it('prints the covered summary', () => {
-    expect(
-      formatOutcome(evaluateAudit({advisories: [advisory(BRACES)], ledger: LEDGER, now: BEFORE_EXPIRY, status: 1}))
-    ).toMatchSnapshot();
+    const outcome = evaluateAudit({advisories: [advisory(BRACES)], ledger: LEDGER, now: BEFORE_EXPIRY, status: 1});
+    expect(formatOutcome(outcome)).toMatchSnapshot();
   });
 
   it('prints the unexpected advisories under their heading', () => {
-    expect(
-      formatOutcome(
-        evaluateAudit({advisories: [advisory(OTHER, 'other')], ledger: LEDGER, now: BEFORE_EXPIRY, status: 1})
-      )
-    ).toMatchSnapshot();
+    const outcome = evaluateAudit({
+      advisories: [advisory(OTHER, 'other')],
+      ledger: LEDGER,
+      now: BEFORE_EXPIRY,
+      status: 1
+    });
+    expect(formatOutcome(outcome)).toMatchSnapshot();
   });
 
   it('prints the expiry problem', () => {
-    expect(
-      formatOutcome(evaluateAudit({advisories: [advisory(BRACES)], ledger: LEDGER, now: AFTER_EXPIRY, status: 1}))
-    ).toMatchSnapshot();
+    const outcome = evaluateAudit({advisories: [advisory(BRACES)], ledger: LEDGER, now: AFTER_EXPIRY, status: 1});
+    expect(formatOutcome(outcome)).toMatchSnapshot();
   });
 });
 
 describe('runBunAudit', () => {
-  const spawn = (result) => () => result;
-
   it('parses the report and keeps the status', () => {
-    expect(runBunAudit(spawn({status: 1, stdout: ' {"a": []} '}))).toEqual({report: {a: []}, status: 1});
+    expect(runBunAudit(spawnResult({status: 1, stdout: ' {"a": []} '}))).toEqual({report: {a: []}, status: 1});
   });
 
   it('treats empty output as an empty report', () => {
-    expect(runBunAudit(spawn({status: 0, stdout: '  '}))).toEqual({report: {}, status: 0});
+    expect(runBunAudit(spawnResult({status: 0, stdout: '  '}))).toEqual({report: {}, status: 0});
   });
 
   it('rethrows a spawn error', () => {
-    expect(() => runBunAudit(spawn({error: new Error('ENOENT')}))).toThrow('ENOENT');
+    expect(() => runBunAudit(spawnResult({error: new Error('ENOENT')}))).toThrow('ENOENT');
   });
 
   it('rejects a run ended by a signal', () => {
-    expect(() => runBunAudit(spawn({status: null, signal: 'SIGKILL'}))).toThrow('signal: SIGKILL');
+    expect(() => runBunAudit(spawnResult({status: null, signal: 'SIGKILL'}))).toThrow('signal: SIGKILL');
   });
 
   it('rejects output that is not JSON', () => {
-    expect(() => runBunAudit(spawn({status: 1, stdout: 'oops'}))).toThrow(AuditReportError);
+    expect(() => runBunAudit(spawnResult({status: 1, stdout: 'oops'}))).toThrow(AuditReportError);
   });
 });
 
