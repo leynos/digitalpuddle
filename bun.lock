@@ -6,13 +6,13 @@
       "name": "@simulacrum/github-api-simulator",
       "dependencies": {
         "@faker-js/faker": "^10.6.0",
-        "@graphql-tools/utils": "^12.0.1",
+        "@graphql-tools/utils": "^12.0.4",
         "@simulacrum/foundation-simulator": "^0.8.0",
         "assert-ts": "^0.3.4",
         "express": "^5.3.0",
         "graphql": "^16.9.0",
         "graphql-yoga": "^5.24.4",
-        "zod": "^4.6.6",
+        "zod": "^4.6.7",
       },
       "devDependencies": {
         "@arethetypeswrong/core": "^0.18.5",
@@ -21,7 +21,7 @@
         "@graphql-codegen/typescript": "^6.1.2",
         "@graphql-codegen/typescript-resolvers": "^6.1.1",
         "@octokit/graphql": "^9.0.5",
-        "@redocly/cli": "2.62.1",
+        "@redocly/cli": "2.62.2",
         "@types/express": "^5.0.6",
         "@types/node": "^26.6.5",
         "bun-types": "^1.4.3",
@@ -285,7 +285,7 @@
 
     "@quansync/fs": ["@quansync/fs@1.0.0", "", { "dependencies": { "quansync": "^1.0.0" } }, "sha512-4TJ3DFtlf1L5LDMaM6CanJ/0lckGNtJcMjQ1NAV6zDmA0tEHKZtxNKin8EgPaVX1YzljbxckyT2tJrpQKAtngQ=="],
 
-    "@redocly/cli": ["@redocly/cli@2.62.1", "", { "bin": { "openapi": "bin/cli.js", "redocly": "bin/cli.js" } }, "sha512-KdhRvUGkaom19U83mlRJE10T4svPf8EHCn9AGLgIHxqHgVTyjQMLyrOoIU46pV6Gtvbe3t035ckIDVYeqXC4VQ=="],
+    "@redocly/cli": ["@redocly/cli@2.62.2", "", { "bin": { "openapi": "bin/cli.js", "redocly": "bin/cli.js" } }, "sha512-2SLGVErwM2yzEGvcqcB6MeCIy4JFSXzAXKleoeYHvgtf8qauomBYmAb4/qNQOt0y9LhORSmS6LZb/gn0w9l4Hw=="],
 
     "@repeaterjs/repeater": ["@repeaterjs/repeater@3.1.0", "", {}, "sha512-TaoVksZRSx2KWYYpyLQtMQXXeS98VsgZImzW65xmiVgbYhXLk+aEsmzPLirqVuE4/XuUapH2iMtxUzaBNDzdSQ=="],
 
@@ -963,7 +963,7 @@
 
     "yuku-parser": ["yuku-parser@0.19.0", "", { "dependencies": { "@yuku-toolchain/types": "^0.19.0", "yuku-core": "0.19.0" } }, "sha512-XrBh9ZiQK5mJVRxZBAvD6LwRyAYrK3MFtH3+onyuxFL5hFD44EC3QOmIC1FjTj6H2MMwq46/NAI+NZxLZPZgxg=="],
 
-    "zod": ["zod@4.6.6", "", {}, "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA=="],
+    "zod": ["zod@4.6.7", "", {}, "sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg=="],
 
     "@arethetypeswrong/core/typescript": ["typescript@5.6.1-rc", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-E3b2+1zEFu84jB0YQi9BORDjz9+jGbwwy1Zi3G0LUNw7a7cePUrHMRNy8aPh53nXpkFGVHSxIZo5vKTfYaFiBQ=="],
 
