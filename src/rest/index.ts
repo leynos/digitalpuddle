@@ -96,11 +96,10 @@ const handlers =
             request: Parameters<SimulationHandler>[1],
             _response: Parameters<SimulationHandler>[2]
           ) => {
-            const contextParams = installationParamsSchema.parse(context.request.params);
-            const requestParams = installationParamsSchema.parse(request.params);
-            const requestBody = installationParamsSchema.parse(request.body ?? {});
             const installationIdParam =
-              contextParams.installation_id ?? requestParams.installation_id ?? requestBody.installation_id;
+              installationParamsSchema.parse(context.request.params).installation_id ??
+              installationParamsSchema.parse(request.params).installation_id ??
+              installationParamsSchema.parse(request.body ?? {}).installation_id;
             const installationId = Number(
               Array.isArray(installationIdParam) ? installationIdParam[0] : installationIdParam
             );

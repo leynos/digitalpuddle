@@ -5,10 +5,32 @@
  * store, using `applyRelayPagination`, `toGraphql`, and `deriveOwner` to serve
  * GraphQL queries.
  */
-import type {Resolvers} from '../__generated__/resolvers-types.ts';
+import type {QueryOrganizationsArgs, Resolvers} from '../__generated__/resolvers-types.ts';
+import {convertOrganizationConnection} from './connections.ts';
+import {applyRelayPagination} from './relay.ts';
+import type {PageArgs} from './relay.ts';
 import {toGraphql, deriveOwner} from './to-graphql.ts';
 import {assert} from 'assert-ts';
 import type {ExtendedSimulationStore} from '../store/index.ts';
+
+const toPageArgs = (args: Partial<QueryOrganizationsArgs>): PageArgs => {
+  const pageArgs: PageArgs = {};
+
+  if (args.first !== undefined && args.first !== null) {
+    pageArgs.first = args.first;
+  }
+  if (args.last !== undefined && args.last !== null) {
+    pageArgs.last = args.last;
+  }
+  if (args.after !== undefined && args.after !== null) {
+    pageArgs.after = args.after;
+  }
+  if (args.before !== undefined && args.before !== null) {
+    pageArgs.before = args.before;
+  }
+
+  return pageArgs;
+};
 
 /**
  * Creates the root resolver map for the simulated GitHub GraphQL API.
@@ -32,6 +54,13 @@ export function createResolvers(simulationStore: ExtendedSimulationStore): Resol
           .find((u) => u.login === login);
         assert(!!user, `no user found for ${login}`);
         return toGraphql(simulationStore, 'User', user);
+      },
+      organizations<T>(_parent: T, args: Partial<QueryOrganizationsArgs>) {
+        const organizations = simulationStore.schema.organizations.selectTableAsList(simulationStore.store.getState());
+        const page = applyRelayPagination(organizations, toPageArgs(args), (organization) =>
+          toGraphql(simulationStore, 'Organization', organization)
+        );
+        return convertOrganizationConnection(page);
       },
       organization<T>(_parent: T, {login}: {login: string}) {
         const orgs = simulationStore.schema.organizations.selectTableAsList(simulationStore.store.getState());

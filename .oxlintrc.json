@@ -171,6 +171,12 @@
   },
   "overrides": [
     {
+      "files": ["src/openapi/artifact.ts"],
+      "rules": {
+        "deslop/no-runtime-typeof": ["error", { "allowInTypeGuards": true }]
+      }
+    },
+    {
       "files": ["bin/start.cjs"],
       "rules": {
         "typescript/no-require-imports": "off",

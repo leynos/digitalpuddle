@@ -41,4 +41,4 @@ export const normaliseStartupOutput = (output: string, port: number): string =>
     .split(/\r?\n/)
     .filter((line) => !TRANSFORM_TYPES_WARNING.test(line) && !TRANSFORM_TYPES_HINT.test(line))
     .join('\n')
-    .replaceAll(new RegExp(String(port), 'g'), '<PORT>');
+    .replaceAll(new RegExp(`(?<!\\d)${port}(?!\\d)`, 'g'), '<PORT>');

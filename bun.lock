@@ -37,6 +37,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "@simulacrum/foundation-simulator@0.8.0": "patches/@simulacrum%2Ffoundation-simulator@0.8.0.patch",
+  },
   "overrides": {
     "@babel/core": "7.29.7",
     "@fastify/busboy": "3.2.2",

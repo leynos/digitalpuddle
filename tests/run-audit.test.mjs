@@ -49,6 +49,12 @@ describe('parseAdvisories', () => {
     expect(parseAdvisories(nested).map(({id}) => id)).toEqual([OTHER]);
   });
 
+  it('preserves an advisory URL when another optional field has the wrong type', () => {
+    const malformedTitle = {url: `${URL_PREFIX}${BRACES}`, title: 42};
+
+    expect(parseAdvisories({braces: [malformedTitle]})).toEqual([{package: 'braces', id: BRACES, title: ''}]);
+  });
+
   it('returns no identifier when the advisory carries none', () => {
     expect(parseAdvisories({pkg: [{title: 'x'}]})[0].id).toBeNull();
   });

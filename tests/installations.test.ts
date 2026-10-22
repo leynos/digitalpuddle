@@ -51,6 +51,18 @@ describe('GET installation endpoints', () => {
       expect(response.token).toBe('FAKE_GITHUB_TOKEN');
     });
 
+    it('ignores malformed lower-priority body values after resolving the path ID', async () => {
+      const request = await fetch(`${url}/app/installations/2000/access_tokens`, {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({installation_id: {unexpected: 'object'}})
+      });
+      const response = await request.json();
+
+      expect(request.status).toBe(201);
+      expect(response.token).toBe('FAKE_GITHUB_TOKEN');
+    });
+
     it('returns 404 for an unknown installation', async () => {
       const request = await fetch(`${url}/app/installations/9999999/access_tokens`, {
         method: 'POST',

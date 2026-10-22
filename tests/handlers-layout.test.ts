@@ -12,6 +12,7 @@ type UserRow = {
   readonly login: string;
   readonly email?: string;
   readonly name?: string;
+  readonly url?: string | undefined;
   readonly organizations?: unknown;
 };
 type SimulationState = ReturnType<ExtendedSimulationStore['store']['getState']>;
@@ -168,6 +169,27 @@ describe('handler layout compatibility', () => {
       })
     ]);
     expect(response.body).toMatchSnapshot();
+  });
+
+  it('omits undefined optional user fields from membership responses', async () => {
+    const handlers = createUserHandlers(
+      createStore(
+        [{id: 123, login: 'dev', url: undefined, organizations: ['lovely-org']}],
+        [{login: 'lovely-org', url: 'https://api.example.test/orgs/lovely-org'}]
+      )
+    );
+
+    const response = await invokeHandler(
+      requireHandler(handlers, 'orgs/list-memberships-for-authenticated-user'),
+      createRequest(new Map([['x-simulacat-user', 'dev']]))
+    );
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual([
+      expect.objectContaining({
+        user: expect.not.objectContaining({url: undefined})
+      })
+    ]);
   });
 
   it('normalizes malformed legacy user rows before field access', async () => {

@@ -74,6 +74,11 @@ export const digitalOceanOpenApiProvenanceSchema = z
 
 export type DigitalOceanOpenApiProvenance = z.infer<typeof digitalOceanOpenApiProvenanceSchema>;
 
+export const isJsonObject = (value: JsonValue): value is JsonObject =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+export const isJsonString = (value: JsonValue): value is string => typeof value === 'string';
+
 export const getDigitalOceanOpenApiRawSourceUrl = (pin = digitalOceanOpenApiPin): string =>
   `https://raw.githubusercontent.com/digitalocean/openapi/${pin}/${digitalOceanOpenApiSourcePath}`;
 
@@ -85,10 +90,9 @@ export const canonicalizeJson = (value: JsonValue): JsonValue => {
     return value.map((item) => canonicalizeJson(item));
   }
 
-  const object = jsonObjectSchema.safeParse(value);
-  if (object.success) {
+  if (isJsonObject(value)) {
     return Object.fromEntries(
-      Object.entries(object.data)
+      Object.entries(value)
         .toSorted(([left], [right]) => {
           if (left < right) {
             return -1;

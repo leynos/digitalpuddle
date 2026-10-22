@@ -65,6 +65,14 @@ const requireMiddleware = (middleware: CapturedMiddleware | undefined): Captured
   return middleware;
 };
 
+const requireFirstLine = (lines: readonly string[]): string => {
+  const [firstLine] = lines;
+  if (firstLine === undefined) {
+    throw new Error('expected a captured log line');
+  }
+  return firstLine;
+};
+
 const requireHandler = (handler: SimulationHandler | undefined): SimulationHandler => {
   if (handler === undefined) {
     throw new Error('expected handler was not registered');
@@ -195,7 +203,7 @@ describe('registerStructuredRequestLogger', () => {
     response.emitFinish();
 
     expect(logged).toHaveLength(1);
-    const payload = responseLogSchema.parse(JSON.parse(logged[0]!));
+    const payload = responseLogSchema.parse(JSON.parse(requireFirstLine(logged)));
     expect(payload).toHaveProperty('event');
     expect(payload).toHaveProperty('method');
     expect(payload).toHaveProperty('path');
@@ -218,7 +226,7 @@ describe('registerStructuredRequestLogger', () => {
     middleware({method: 'GET', path: '/z', url: '/z'}, response, noopNext);
     response.emitFinish();
 
-    const payload = responseLogSchema.parse(JSON.parse(logged[0]!));
+    const payload = responseLogSchema.parse(JSON.parse(requireFirstLine(logged)));
     expect(payload.event).toBe('digitalpuddle.http.response');
   });
 
@@ -237,7 +245,7 @@ describe('registerStructuredRequestLogger', () => {
     middleware({method: 'GET', path: '/z', url: '/z'}, response, noopNext);
     response.emitFinish();
 
-    const payload = responseLogSchema.parse(JSON.parse(logged[0]!));
+    const payload = responseLogSchema.parse(JSON.parse(requireFirstLine(logged)));
     expect(payload.durationMs).toBeGreaterThanOrEqual(0);
     expect(Number.isFinite(payload.durationMs)).toBe(true);
   });
@@ -257,7 +265,10 @@ describe('registerStructuredRequestLogger', () => {
     middleware({method: 'GET', path: '/explicit', originalUrl: '/ignored', url: '/ignored'}, response, noopNext);
     response.emitFinish();
 
-    expect(responseLogSchema.parse(JSON.parse(logged[0]!)).path).toBe('/explicit');
+    const firstLine = requireFirstLine(logged);
+    const rawPayload = JSON.parse(firstLine);
+    const payload = responseLogSchema.parse(rawPayload);
+    expect(payload.path).toBe('/explicit');
   });
 
   it('uses pathname from originalUrl when path is empty', () => {
@@ -272,17 +283,24 @@ describe('registerStructuredRequestLogger', () => {
     };
 
     const response = createMockResponse();
-    middleware!({method: 'GET', path: '', originalUrl: '/from-original?x=1', url: '/fallback'}, response, noopNext);
+    requireMiddleware(middleware)(
+      {method: 'GET', path: '', originalUrl: '/from-original?x=1', url: '/fallback'},
+      response,
+      noopNext
+    );
     response.emitFinish();
 
-    expect(responseLogSchema.parse(JSON.parse(logged[0]!)).path).toBe('/from-original');
+    const firstLine = requireFirstLine(logged);
+    const rawPayload = JSON.parse(firstLine);
+    const payload = responseLogSchema.parse(rawPayload);
+    expect(payload.path).toBe('/from-original');
   });
 
   it('falls back to "/" when path and originalUrl are absent', () => {
     process.env.DIGITALPUDDLE_REQUEST_LOG = '1';
     const {router, getMiddleware} = createCaptureRouter();
     registerStructuredRequestLogger(router);
-    const middleware = getMiddleware()!;
+    const middleware = requireMiddleware(getMiddleware());
 
     const logged: string[] = [];
     console.info = (message?: string) => {
@@ -293,7 +311,10 @@ describe('registerStructuredRequestLogger', () => {
     middleware({method: 'GET', path: ''}, response, noopNext);
     response.emitFinish();
 
-    expect(responseLogSchema.parse(JSON.parse(logged[0]!)).path).toBe('/');
+    const firstLine = requireFirstLine(logged);
+    const rawPayload = JSON.parse(firstLine);
+    const payload = responseLogSchema.parse(rawPayload);
+    expect(payload.path).toBe('/');
   });
 
   it('falls back to "/" when originalUrl cannot be parsed', () => {
@@ -311,7 +332,10 @@ describe('registerStructuredRequestLogger', () => {
     middleware({method: 'GET', path: '', originalUrl: 'http://%%bad%%', url: '/'}, response, noopNext);
     response.emitFinish();
 
-    expect(responseLogSchema.parse(JSON.parse(logged[0]!)).path).toBe('/');
+    const firstLine = requireFirstLine(logged);
+    const rawPayload = JSON.parse(firstLine);
+    const payload = responseLogSchema.parse(rawPayload);
+    expect(payload.path).toBe('/');
   });
 });
 
@@ -350,7 +374,7 @@ describe('REST error logging helpers', () => {
     logRestHandlerError('my.operation', new Error('failed'));
 
     expect(lines).toHaveLength(1);
-    const payload = errorLogSchema.parse(JSON.parse(lines[0]!));
+    const payload = errorLogSchema.parse(JSON.parse(requireFirstLine(lines)));
     expect(payload.event).toBe('digitalpuddle.rest.handler.error');
     expect(payload.operationId).toBe('my.operation');
     expect(payload.error.name).toBe('Error');
@@ -381,7 +405,7 @@ describe('REST error logging helpers', () => {
     await expect(wrapped(...stubArgs())).rejects.toThrow('nope');
 
     expect(lines).toHaveLength(1);
-    const payload = errorLogSchema.parse(JSON.parse(lines[0]!));
+    const payload = errorLogSchema.parse(JSON.parse(requireFirstLine(lines)));
     expect(payload.event).toBe('digitalpuddle.rest.handler.error');
     expect(payload.operationId).toBe('bad.op');
   });
@@ -411,6 +435,9 @@ describe('REST error logging helpers', () => {
 
     await expect(wrappedBeta(...stubArgs())).rejects.toThrow('beta failed');
     expect(lines).toHaveLength(1);
-    expect(errorLogSchema.parse(JSON.parse(lines[0]!)).operationId).toBe('beta');
+    const firstLine = requireFirstLine(lines);
+    const rawPayload = JSON.parse(firstLine);
+    const payload = errorLogSchema.parse(rawPayload);
+    expect(payload.operationId).toBe('beta');
   });
 });

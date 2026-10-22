@@ -69,6 +69,18 @@ The built CommonJS CLI is available after `bun run build`:
 PORT=3300 bun run start:bin
 ```
 
+If the selected port is already in use, the CLI logs
+`Failed to start the DigitalPuddle simulation server` and exits with a nonzero
+status.
+
+## OAuth authorization
+
+The `/login/oauth/authorize` endpoint requires a non-empty `redirect_uri`. The
+`state` and `env` query values are optional. A valid request returns HTTP 302
+and redirects to `redirect_uri` with the development code and any supplied
+`state` and `env` values. An invalid request returns HTTP 400 with
+`{message: 'Invalid authorization query'}`.
+
 ## Planned DigitalOcean usage
 
 The first meaningful DigitalPuddle release targets Nile Valley's DOKS path. The

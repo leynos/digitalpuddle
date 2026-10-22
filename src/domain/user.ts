@@ -66,5 +66,5 @@ export const serializeMembershipResponse = (
   state: membership.state,
   role: membership.role,
   organization,
-  user
+  user: Object.fromEntries(Object.entries(user).filter(([, value]) => value !== undefined))
 });

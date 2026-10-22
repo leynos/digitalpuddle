@@ -66,6 +66,11 @@ The vendored `bin/rimraf-standalone.js` file remains outside Oxlint's scope,
 matching Biome's existing exclusion for that third-party bundle. Generated
 files under `src/__generated__/` are also excluded.
 
+`deslop/no-runtime-typeof` remains an error. In `src/openapi/artifact.ts` only,
+its `allowInTypeGuards` option permits type predicates to discriminate
+`JsonValue`, which has already been parsed at each JSON input boundary. Direct
+`typeof` narrowing remains prohibited elsewhere.
+
 ## Consequences
 
 - `make lint` checks the existing Biome rules and the explicit Oxlint rule set.

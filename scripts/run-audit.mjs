@@ -22,11 +22,10 @@ const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LEDGER_URL = new URL('../security/audit-exceptions.json', import.meta.url);
 const objectSchema = z.record(z.string(), z.unknown());
-const reportAdvisorySchema = z.looseObject({
-  github_advisory_id: z.string().optional(),
-  url: z.string().optional(),
-  title: z.string().optional()
-});
+const parseOptionalString = (value) => {
+  const parsed = z.string().safeParse(value);
+  return parsed.success ? parsed.data : undefined;
+};
 
 /** A `bun audit --json` report that does not have the expected shape. */
 export class AuditReportError extends Error {}
@@ -77,12 +76,14 @@ export function parseAdvisories(report) {
   }
   return Object.entries(packageEntries.data).flatMap(([name, entries]) =>
     entries.map((candidate) => {
-      const parsedAdvisory = reportAdvisorySchema.safeParse(candidate);
+      const parsedAdvisory = objectSchema.safeParse(candidate);
       const advisory = parsedAdvisory.success ? parsedAdvisory.data : {};
+      const githubAdvisoryId = parseOptionalString(advisory.github_advisory_id);
+      const url = parseOptionalString(advisory.url);
       return {
         package: name,
-        id: advisoryId(advisory),
-        title: advisory.title ?? ''
+        id: advisoryId({github_advisory_id: githubAdvisoryId, url}),
+        title: parseOptionalString(advisory.title) ?? ''
       };
     })
   );

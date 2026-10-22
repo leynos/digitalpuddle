@@ -51,6 +51,13 @@ type UserOrganizationsQuery = {
   };
 };
 
+type TopLevelOrganizationsQuery = {
+  organizations: {
+    nodes: Array<{login: string}>;
+    pageInfo: {hasNextPage: boolean; endCursor?: string};
+  };
+};
+
 describe('graphql queries', () => {
   let server: SimulationServer;
   beforeAll(async () => {
@@ -298,6 +305,30 @@ describe('graphql queries', () => {
       expect(request).toBeDefined();
       expect(request.user.organizations.nodes.length).toBeGreaterThan(0);
       expect(request.user.organizations.nodes).toEqual([expect.objectContaining({login: 'lovely-org'})]);
+    });
+  });
+
+  describe('getOrganizationsFromQuery', () => {
+    const query = gql`
+      query orgs($first: Int!) {
+        organizations(first: $first) {
+          nodes {
+            login
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    `;
+
+    it('returns the paginated root organization list', async () => {
+      const request = await client<TopLevelOrganizationsQuery>(query, {first: 1});
+
+      expect(request.organizations.nodes).toEqual([{login: 'lovely-org'}]);
+      expect(request.organizations.pageInfo.hasNextPage).toBe(false);
+      expect(request.organizations.pageInfo.endCursor).toBe('0');
     });
   });
 

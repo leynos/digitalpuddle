@@ -6,8 +6,8 @@ import {
   shouldNormalizeUser,
   userAnomalyDetails
 } from '../src/domain/user.ts';
-import type {AuthenticatedUser, MembershipOrganization, RawAuthenticatedUser} from '../src/domain/user.ts';
-import {githubOrganizationSchema, githubUserSchema} from '../src/store/entities.ts';
+import type {MembershipOrganization, RawAuthenticatedUser} from '../src/domain/user.ts';
+import {githubOrganizationSchema} from '../src/store/entities.ts';
 
 type MalformedUserFixture = {
   readonly id?: number | string;
@@ -62,7 +62,7 @@ describe('user domain helpers', () => {
   });
 
   it('preserves valid user identifiers and organization lists', () => {
-    const user = githubUserSchema.parse({id: 123, login: 'dev', organizations: ['team']}) satisfies AuthenticatedUser;
+    const user = normalizeUser(malformedUser({id: 123, login: 'dev', organizations: ['team']}));
 
     expect(normalizeUser(user)).toEqual(user);
   });
@@ -72,7 +72,7 @@ describe('user domain helpers', () => {
       ...githubOrganizationSchema.parse({login: 'team', url: 'https://api.example.test/orgs/team'}),
       repositories: []
     } satisfies MembershipOrganization;
-    const user = githubUserSchema.parse({id: 123, login: 'dev', organizations: ['team']}) satisfies AuthenticatedUser;
+    const user = normalizeUser(malformedUser({id: 123, login: 'dev', organizations: ['team']}));
 
     expect(serializeMembershipResponse({state: 'active', role: 'member'}, organization, user)).toEqual({
       url: 'https://api.example.test/orgs/team/memberships/dev',

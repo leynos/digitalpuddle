@@ -21,8 +21,8 @@ import {
   digitalOceanOpenApiSourcePath,
   getDigitalOceanOpenApiRawSourceUrl,
   getDigitalOceanOpenApiSourceArchiveUrl,
-  jsonObjectSchema,
-  jsonStringSchema,
+  isJsonObject,
+  isJsonString,
   jsonValueSchema,
   sha256Hex,
   stringifyCanonicalJson,
@@ -242,9 +242,8 @@ const parseBundledJson = async (bundledPath: string, dependencies: SyncDependenc
 };
 
 const scrubSecretLikeExamples = (value: JsonValue): JsonValue => {
-  const string = jsonStringSchema.safeParse(value);
-  if (string.success) {
-    let scrubbed = string.data;
+  if (isJsonString(value)) {
+    let scrubbed = value;
     for (const rule of credentialExampleReplacements) {
       scrubbed = scrubbed.replaceAll(rule.pattern, rule.replacement);
     }
@@ -255,9 +254,8 @@ const scrubSecretLikeExamples = (value: JsonValue): JsonValue => {
     return value.map((item) => scrubSecretLikeExamples(item));
   }
 
-  const object = jsonObjectSchema.safeParse(value);
-  if (object.success) {
-    return Object.fromEntries(Object.entries(object.data).map(([key, item]) => [key, scrubSecretLikeExamples(item)]));
+  if (isJsonObject(value)) {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, scrubSecretLikeExamples(item)]));
   }
 
   return value;

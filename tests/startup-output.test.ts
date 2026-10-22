@@ -270,6 +270,58 @@ describe('startup output', () => {
     }
   }, 45_000);
 
+  it('reports a nonzero exit when the CommonJS CLI port is occupied', async () => {
+    await runCommand('bun', ['run', 'build']);
+    const occupiedServer = net.createServer();
+    await new Promise<void>((resolve, reject) => {
+      occupiedServer.once('error', reject);
+      occupiedServer.listen(0, resolve);
+    });
+    const address = listenAddressSchema.safeParse(occupiedServer.address());
+    if (!address.success) {
+      await new Promise<void>((resolve) => occupiedServer.close(() => resolve()));
+      throw new Error('expected an IPv4 or IPv6 listen address');
+    }
+
+    const child = spawn('node', ['./bin/start.cjs'], {
+      cwd: projectRoot,
+      env: childProcessEnv({PORT: String(address.data.port)})
+    });
+    let combinedOutput = '';
+
+    try {
+      const exit = await new Promise<{code: number | null; output: string}>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          child.kill('SIGTERM');
+          reject(new Error(`CLI did not exit after its port bind failed\n${combinedOutput}`));
+        }, 15_000);
+
+        child.stdout.on('data', (data: Buffer) => {
+          combinedOutput += data.toString();
+        });
+        child.stderr.on('data', (data: Buffer) => {
+          combinedOutput += data.toString();
+        });
+        child.once('error', (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        });
+        child.once('exit', (code) => {
+          clearTimeout(timeout);
+          resolve({code, output: combinedOutput});
+        });
+      });
+
+      expect(exit.code).toBe(1);
+      expect(exit.output).toContain('Failed to start the DigitalPuddle simulation server');
+    } finally {
+      await stopProcess(child);
+      await new Promise<void>((resolve, reject) => {
+        occupiedServer.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
+  }, 45_000);
+
   it('prints DigitalPuddle route guidance for the TypeScript example', async () => {
     const port = await getOpenPort();
     const {child, output} = startProcess(

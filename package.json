@@ -130,5 +130,8 @@
   "inlinedDependencies": {
     "starfx": "0.16.1"
   },
-  "main": "./dist/index.cjs"
+  "main": "./dist/index.cjs",
+  "patchedDependencies": {
+    "@simulacrum/foundation-simulator@0.8.0": "patches/@simulacrum%2Ffoundation-simulator@0.8.0.patch"
+  }
 }
