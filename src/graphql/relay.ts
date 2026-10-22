@@ -75,7 +75,8 @@ export function applyRelayPagination<T, R = never>(nodes: T[], args: PageArgs, m
         return range.length > first;
       }
       if (before != null) {
-        return Number(before) < totalNodes - 1;
+        const wasTruncatedToDefaultSize = last == null && range.length > DEFAULT_PAGE_SIZE;
+        return wasTruncatedToDefaultSize || Number(before) < totalNodes - 1;
       }
       return last == null && range.length > DEFAULT_PAGE_SIZE;
     },

@@ -74,6 +74,16 @@ describe('applyRelayPagination', () => {
     expect(page.pageInfo.hasNextPage).toBe(true);
   });
 
+  it('reports when the default page size truncates a before range', () => {
+    const page = applyRelayPagination(
+      Array.from({length: 102}, (_, index) => index),
+      {before: '101'}
+    );
+
+    expect(page.nodes).toHaveLength(100);
+    expect(page.pageInfo.hasNextPage).toBe(true);
+  });
+
   it('returns an empty page when last is zero', () => {
     const page = applyRelayPagination(['a', 'b', 'c'], {last: 0});
 
