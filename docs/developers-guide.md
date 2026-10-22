@@ -45,6 +45,13 @@ The `src/worker/`, `src/engines/`, `src/journal/`, `src/scenarios/`, and
 only; do not wire engine side effects or persistence through them until the
 owned roadmap slice implements that behaviour.
 
+### Relay pagination
+
+`applyRelayPagination` in `src/graphql/relay.ts` returns `Page<T>` when called
+without a mapper, preserving the input node type. With a mapper from `T` to
+`R`, it maps nodes in the selected page and returns `Page<R>`. The input list
+still determines `totalCount` and cursor positions.
+
 ## 2. Architectural decisions
 
 Durable architectural decisions live in `docs/adr/`. Each entry is an
