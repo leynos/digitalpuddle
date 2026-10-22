@@ -7,13 +7,11 @@
  * delegates membership response shape construction to a serializer, and returns
  * handlers for composition by `src/rest/index.ts`.
  */
-import {normalizeUser, serializeMembershipResponse, shouldNormalizeUser, userAnomalyDetails} from '../domain/user.ts';
-import type {RawAuthenticatedUser} from '../domain/user.ts';
+import {normalizeUser, shouldNormalizeUser, userAnomalyDetails} from '../domain/user.ts';
+import type {MembershipProjection, NormalizedAuthenticatedUser, RawAuthenticatedUser} from '../domain/user.ts';
 import {jsonValueSchema, type JsonValue} from '../openapi/artifact.ts';
 import type {ExtendedSimulationStore} from '../store/index.ts';
 import type {SimulationHandler} from './types.ts';
-
-export {serializeMembershipResponse} from '../domain/user.ts';
 
 export type UserHandlerRequest = Pick<Parameters<SimulationHandler>[1], 'get'>;
 export type UserHandlerContext = Parameters<SimulationHandler>[0];
@@ -40,6 +38,28 @@ type AuthenticationFailureDetails = {
   readonly reason: 'no-users-seeded' | 'requested-user-not-found';
 };
 type UserResponseBody = {id: number; login: string; email?: string; name?: string};
+type MembershipOrganization = ReturnType<ExtendedSimulationStore['selectors']['allGithubOrganizations']>[number];
+
+/**
+ * Builds the REST membership shape, including its response URLs.
+ *
+ * @example
+ * ```ts
+ * serializeMembershipResponse({state: 'active', role: 'member'}, organization, user);
+ * ```
+ */
+export const serializeMembershipResponse = (
+  membership: MembershipProjection,
+  organization: MembershipOrganization,
+  user: NormalizedAuthenticatedUser
+) => ({
+  url: `${organization.url}/memberships/${user.login}`,
+  organization_url: organization.url,
+  state: membership.state,
+  role: membership.role,
+  organization,
+  user: Object.fromEntries(Object.entries(user).filter(([, value]) => value !== undefined))
+});
 
 const logUserNormalization = (operationId: string, user: RawAuthenticatedUser) => {
   console.error(

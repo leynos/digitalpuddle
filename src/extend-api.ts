@@ -106,6 +106,13 @@ export const extendRouter =
     router.get(['/login/oauth/authorize'], (request, response) => {
       const query = oauthAuthorizationQuerySchema.safeParse(request.query);
       if (!query.success) {
+        console.error(
+          JSON.stringify({
+            event: 'digitalpuddle.oauth.authorization_validation_failed',
+            operationId: 'login/oauth/authorize',
+            reason: 'missing-or-invalid-redirect-uri'
+          })
+        );
         return response.status(400).json({message: 'Invalid authorization query'});
       }
 

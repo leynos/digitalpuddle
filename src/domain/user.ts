@@ -1,15 +1,22 @@
 /**
- * @file User domain serialization and normalisation helpers.
+ * @file User domain normalisation helpers.
  *
- * This module keeps user and membership projection logic free of HTTP adapter
- * concerns so REST handlers can normalize inherited rows without owning the
- * pure response-shaping rules.
+ * This module owns the user shapes and normalization rules used by the
+ * inherited REST adapter without depending on persistence or HTTP types.
  */
-import type {ExtendedSimulationStore} from '../store/index.ts';
 import {z} from 'zod';
 
-export type AuthenticatedUser = ReturnType<ExtendedSimulationStore['schema']['users']['selectTableAsList']>[number];
-export type MembershipOrganization = ReturnType<ExtendedSimulationStore['selectors']['allGithubOrganizations']>[number];
+export type AuthenticatedUser = {
+  readonly id: number;
+  readonly login: string;
+  readonly name: string;
+  readonly bio: string;
+  readonly email: string;
+  readonly url?: string | undefined;
+  readonly avatar_url: string;
+  readonly organizations: string[];
+  readonly created_at: string;
+};
 
 export type MembershipProjection = {
   readonly role: 'member';
@@ -55,16 +62,3 @@ export function normalizeUser(user: AuthenticatedUser | RawAuthenticatedUser): N
     organizations
   } satisfies NormalizedAuthenticatedUser;
 }
-
-export const serializeMembershipResponse = (
-  membership: MembershipProjection,
-  organization: MembershipOrganization,
-  user: NormalizedAuthenticatedUser
-) => ({
-  url: `${organization.url}/memberships/${user.login}`,
-  organization_url: organization.url,
-  state: membership.state,
-  role: membership.role,
-  organization,
-  user: Object.fromEntries(Object.entries(user).filter(([, value]) => value !== undefined))
-});

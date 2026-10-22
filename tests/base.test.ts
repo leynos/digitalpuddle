@@ -77,10 +77,21 @@ describe('router extension tests', () => {
   });
 
   it('rejects OAuth authorization requests without a redirect URI', async () => {
-    const response = await fetch(`${url}/login/oauth/authorize?state=state-token`);
+    const capture = captureConsoleErrors();
 
-    expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({message: 'Invalid authorization query'});
+    try {
+      const response = await fetch(`${url}/login/oauth/authorize?state=state-token`);
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({message: 'Invalid authorization query'});
+      expect(capture.lines.map((line) => JSON.parse(line))).toContainEqual({
+        event: 'digitalpuddle.oauth.authorization_validation_failed',
+        operationId: 'login/oauth/authorize',
+        reason: 'missing-or-invalid-redirect-uri'
+      });
+    } finally {
+      capture.restore();
+    }
   });
 
   it('exposes the private DigitalPuddle capability matrix', async () => {

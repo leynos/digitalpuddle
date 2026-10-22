@@ -1,13 +1,7 @@
-/** @file Unit tests for pure user domain helpers. */
+/** @file Unit tests for pure user domain normalization helpers. */
 import {describe, expect, it} from 'bun:test';
-import {
-  normalizeUser,
-  serializeMembershipResponse,
-  shouldNormalizeUser,
-  userAnomalyDetails
-} from '../src/domain/user.ts';
-import type {MembershipOrganization, RawAuthenticatedUser} from '../src/domain/user.ts';
-import {githubOrganizationSchema} from '../src/store/entities.ts';
+import {normalizeUser, shouldNormalizeUser, userAnomalyDetails} from '../src/domain/user.ts';
+import type {RawAuthenticatedUser} from '../src/domain/user.ts';
 
 type MalformedUserFixture = {
   readonly id?: number | string;
@@ -65,22 +59,5 @@ describe('user domain helpers', () => {
     const user = normalizeUser(malformedUser({id: 123, login: 'dev', organizations: ['team']}));
 
     expect(normalizeUser(user)).toEqual(user);
-  });
-
-  it('serializes membership responses with computed URLs and embedded records', () => {
-    const organization = {
-      ...githubOrganizationSchema.parse({login: 'team', url: 'https://api.example.test/orgs/team'}),
-      repositories: []
-    } satisfies MembershipOrganization;
-    const user = normalizeUser(malformedUser({id: 123, login: 'dev', organizations: ['team']}));
-
-    expect(serializeMembershipResponse({state: 'active', role: 'member'}, organization, user)).toEqual({
-      url: 'https://api.example.test/orgs/team/memberships/dev',
-      organization_url: 'https://api.example.test/orgs/team',
-      state: 'active',
-      role: 'member',
-      organization,
-      user
-    });
   });
 });

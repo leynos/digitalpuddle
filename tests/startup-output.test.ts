@@ -322,6 +322,58 @@ describe('startup output', () => {
     }
   }, 45_000);
 
+  it('reports a nonzero exit when the TypeScript example port is occupied', async () => {
+    const occupiedServer = net.createServer();
+    await new Promise<void>((resolve, reject) => {
+      occupiedServer.once('error', reject);
+      occupiedServer.listen(0, resolve);
+    });
+    const address = listenAddressSchema.safeParse(occupiedServer.address());
+    if (!address.success) {
+      await new Promise<void>((resolve) => occupiedServer.close(() => resolve()));
+      throw new Error('expected an IPv4 or IPv6 listen address');
+    }
+
+    const port = address.data.port;
+    const child = spawn('node', ['--experimental-transform-types', './example/start.ts'], {
+      cwd: projectRoot,
+      env: childProcessEnv({PORT: String(port)})
+    });
+    let combinedOutput = '';
+
+    try {
+      const exit = await new Promise<{code: number | null; output: string}>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          child.kill('SIGTERM');
+          reject(new Error(`example did not exit after its port bind failed\n${combinedOutput}`));
+        }, 15_000);
+
+        child.stdout.on('data', (data: Buffer) => {
+          combinedOutput += data.toString();
+        });
+        child.stderr.on('data', (data: Buffer) => {
+          combinedOutput += data.toString();
+        });
+        child.once('error', (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        });
+        child.once('close', (code) => {
+          clearTimeout(timeout);
+          resolve({code, output: combinedOutput});
+        });
+      });
+
+      expect(exit.code).toBe(1);
+      expect(exit.output).toContain('Failed to start the DigitalPuddle baseline server');
+    } finally {
+      await stopProcess(child);
+      await new Promise<void>((resolve, reject) => {
+        occupiedServer.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
+  }, 25_000);
+
   it('prints DigitalPuddle route guidance for the TypeScript example', async () => {
     const port = await getOpenPort();
     const {child, output} = startProcess(

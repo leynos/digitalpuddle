@@ -69,8 +69,10 @@ The built CommonJS CLI is available after `bun run build`:
 PORT=3300 bun run start:bin
 ```
 
-If the selected port is already in use, the CLI logs
-`Failed to start the DigitalPuddle simulation server` and exits with code `1`.
+If the selected port is already in use, both entry points log a startup error
+and exit with code `1`. The CommonJS CLI logs
+`Failed to start the DigitalPuddle simulation server`; the TypeScript example
+logs `Failed to start the DigitalPuddle baseline server`.
 
 ## OAuth authorization
 
@@ -79,6 +81,34 @@ The `/login/oauth/authorize` endpoint requires a non-empty `redirect_uri`. The
 and redirects to `redirect_uri` with the development code and any supplied
 `state` and `env` values. An invalid request returns HTTP 400 with
 `{message: 'Invalid authorization query'}`.
+
+## Transitional GraphQL organization query
+
+The inherited GraphQL API is available at `/graphql`. Its root `organizations`
+query returns the seeded organizations in a Relay connection. Use `first` with
+`after` to fetch pages; the response includes `nodes`, `edges`, `pageInfo`, and
+`totalCount`.
+
+```graphql
+query Organizations($first: Int!, $after: String) {
+  organizations(first: $first, after: $after) {
+    nodes {
+      login
+      name
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
+```
+
+For the next page, pass the previous response's `pageInfo.endCursor` as
+`after`. The `pageInfo.hasNextPage` value indicates whether another page is
+available. The inherited Relay connection also accepts `last` and `before` for
+backward pagination.
 
 ## Planned DigitalOcean usage
 
