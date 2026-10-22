@@ -33,6 +33,22 @@ describe('applyRelayPagination', () => {
     expect(page.pageInfo.hasPreviousPage).toBe(false);
   });
 
+  it('uses the default page size when reporting additional pages', () => {
+    const page = applyRelayPagination(
+      Array.from({length: 101}, (_, index) => index),
+      {}
+    );
+    const finalPage = applyRelayPagination(
+      Array.from({length: 100}, (_, index) => index),
+      {}
+    );
+
+    expect(page.nodes).toHaveLength(100);
+    expect(page.pageInfo.hasNextPage).toBe(true);
+    expect(finalPage.nodes).toHaveLength(100);
+    expect(finalPage.pageInfo.hasNextPage).toBe(false);
+  });
+
   it('supports after and last pagination windows', () => {
     const page = applyRelayPagination(['a', 'b', 'c', 'd', 'e'], {after: '1', last: 2});
 

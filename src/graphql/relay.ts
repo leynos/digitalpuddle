@@ -30,6 +30,8 @@ export interface RelayPagingOptions {
   before?: string;
 }
 
+const DEFAULT_PAGE_SIZE = 100;
+
 const parseCursor = (name: 'before' | 'after', cursor: string | undefined, defaultValue: number) => {
   if (cursor == null) {
     return defaultValue;
@@ -68,11 +70,14 @@ export function applyRelayPagination<T, R = never>(nodes: T[], args: PageArgs, m
 
   const pageInfo: PageInfo = {
     get hasNextPage() {
-      const {first, before} = args;
+      const {first, before, last} = args;
       if (first != null) {
         return range.length > first;
       }
-      return before != null && Number(before) < totalNodes - 1;
+      if (before != null) {
+        return Number(before) < totalNodes - 1;
+      }
+      return last == null && range.length > DEFAULT_PAGE_SIZE;
     },
     get hasPreviousPage() {
       const {last, after} = args;
@@ -130,7 +135,7 @@ function applyCursorsToEdges<T>(nodes: T[], before?: string, after?: string) {
 function edgesToReturn<T>(edges: T[], first?: number, last?: number) {
   let newEdges = edges;
   if (first == null && last == null) {
-    first = 100;
+    first = DEFAULT_PAGE_SIZE;
   }
   if (first != null) {
     if (first < 0) {
