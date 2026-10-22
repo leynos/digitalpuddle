@@ -70,8 +70,7 @@ PORT=3300 bun run start:bin
 ```
 
 If the selected port is already in use, the CLI logs
-`Failed to start the DigitalPuddle simulation server` and exits with a nonzero
-status.
+`Failed to start the DigitalPuddle simulation server` and exits with code `1`.
 
 ## OAuth authorization
 
