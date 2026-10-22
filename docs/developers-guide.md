@@ -52,6 +52,20 @@ without a mapper, preserving the input node type. With a mapper from `T` to
 `R`, it maps nodes in the selected page and returns `Page<R>`. The input list
 still determines `totalCount` and cursor positions.
 
+### Inherited data and schema utilities
+
+The inherited `src/domain/user.ts` module is transitional. Its `normalizeUser`
+overload preserves `AuthenticatedUser` for database-backed input. For
+`RawAuthenticatedUser` input, it returns `NormalizedAuthenticatedUser`, with a
+numeric `id` and string-array `organizations` after normalization.
+
+The inherited `src/utils.ts` module also remains part of the compatibility
+surface. `getSchema` returns the validated OpenAPI shape for a `.json` path
+literal and text for the named GraphQL schema literals. A general `string`
+argument has the union return type because its schema format is not known at
+compile time; callers must narrow the result before using a format-specific
+shape.
+
 ## 2. Architectural decisions
 
 Durable architectural decisions live in `docs/adr/`. Each entry is an
