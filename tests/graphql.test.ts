@@ -65,7 +65,7 @@ describe('graphql queries', () => {
     const app = simulation({
       initialState: {
         users: [{login: 'frontsidejack', organizations: ['lovely-org']}],
-        organizations: [{login: 'lovely-org'}, {login: 'second-org'}],
+        organizations: [{login: 'lovely-org'}, {login: 'second-org'}, {login: 'third-org'}],
         repositories: [{owner: 'lovely-org', name: 'awesome-repo'}],
         branches: [{owner: 'lovely-org', repo: 'awesome-repo', name: 'main'}],
         blobs: []
@@ -311,8 +311,8 @@ describe('graphql queries', () => {
 
   describe('getOrganizationsFromQuery', () => {
     const query = gql`
-      query orgs($first: Int!, $after: String) {
-        organizations(first: $first, after: $after) {
+      query orgs($first: Int, $after: String, $last: Int, $before: String) {
+        organizations(first: $first, after: $after, last: $last, before: $before) {
           nodes {
             login
           }
@@ -335,7 +335,7 @@ describe('graphql queries', () => {
       expect(request.organizations.pageInfo.hasPreviousPage).toBe(false);
       expect(request.organizations.pageInfo.startCursor).toBe('0');
       expect(request.organizations.pageInfo.endCursor).toBe('0');
-      expect(request.organizations.totalCount).toBe(2);
+      expect(request.organizations.totalCount).toBe(3);
 
       const nextPage = await client<TopLevelOrganizationsQuery>(query, {
         first: 1,
@@ -343,11 +343,39 @@ describe('graphql queries', () => {
       });
 
       expect(nextPage.organizations.nodes).toEqual([{login: 'second-org'}]);
-      expect(nextPage.organizations.pageInfo.hasNextPage).toBe(false);
+      expect(nextPage.organizations.pageInfo.hasNextPage).toBe(true);
       expect(nextPage.organizations.pageInfo.hasPreviousPage).toBe(true);
       expect(nextPage.organizations.pageInfo.startCursor).toBe('1');
       expect(nextPage.organizations.pageInfo.endCursor).toBe('1');
-      expect(nextPage.organizations.totalCount).toBe(2);
+      expect(nextPage.organizations.totalCount).toBe(3);
+
+      const finalPage = await client<TopLevelOrganizationsQuery>(query, {
+        first: 1,
+        after: nextPage.organizations.pageInfo.endCursor
+      });
+
+      expect(finalPage.organizations.nodes).toEqual([{login: 'third-org'}]);
+      expect(finalPage.organizations.pageInfo.hasNextPage).toBe(false);
+      expect(finalPage.organizations.pageInfo.hasPreviousPage).toBe(true);
+      expect(finalPage.organizations.pageInfo.startCursor).toBe('2');
+      expect(finalPage.organizations.pageInfo.endCursor).toBe('2');
+      expect(finalPage.organizations.totalCount).toBe(3);
+    });
+
+    it('uses the root before and last arguments', async () => {
+      const request = await client<TopLevelOrganizationsQuery>(query, {
+        first: null,
+        after: null,
+        last: 1,
+        before: '2'
+      });
+
+      expect(request.organizations.nodes).toEqual([{login: 'second-org'}]);
+      expect(request.organizations.pageInfo.hasNextPage).toBe(false);
+      expect(request.organizations.pageInfo.hasPreviousPage).toBe(true);
+      expect(request.organizations.pageInfo.startCursor).toBe('1');
+      expect(request.organizations.pageInfo.endCursor).toBe('1');
+      expect(request.organizations.totalCount).toBe(3);
     });
   });
 
