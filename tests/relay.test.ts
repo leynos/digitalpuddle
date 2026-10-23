@@ -5,17 +5,41 @@ import fc from 'fast-check';
 import type {PageArgs} from '../src/graphql/relay.ts';
 import {applyRelayPagination} from '../src/graphql/relay.ts';
 
-const nodeListArbitrary = fc.array(fc.string(), {maxLength: 12});
-const optionalFirstArbitrary = fc.option(fc.integer({min: 0, max: 12}), {nil: undefined});
-const optionalLastArbitrary = fc.option(fc.integer({min: 0, max: 12}), {nil: undefined});
-const optionalAfterArbitrary = fc.option(fc.integer({min: 0, max: 11}).map(String), {nil: undefined});
-const optionalBeforeArbitrary = fc.option(fc.integer({min: 0, max: 12}).map(String), {nil: undefined});
+const nodeListArbitrary = fc.oneof(
+  fc.array(fc.string(), {maxLength: 110}),
+  fc.constantFrom(0, 99, 100, 101, 102).chain((length) => fc.array(fc.string(), {minLength: length, maxLength: length}))
+);
+const optionalFirstArbitrary = fc.option(fc.integer({min: 0, max: 110}), {nil: undefined});
+const optionalLastArbitrary = fc.option(fc.integer({min: 0, max: 110}), {nil: undefined});
+const optionalAfterArbitrary = fc.option(fc.integer({min: 0, max: 112}).map(String), {nil: undefined});
+const optionalBeforeArbitrary = fc.option(fc.integer({min: 0, max: 112}).map(String), {nil: undefined});
 const pageArgsArbitrary = fc.record({
   first: optionalFirstArbitrary,
   last: optionalLastArbitrary,
   after: optionalAfterArbitrary,
   before: optionalBeforeArbitrary
 });
+
+function expectedPageInfo<T>(nodes: T[], args: PageArgs) {
+  const afterIndex = args.after === undefined ? -1 : Number(args.after);
+  const beforeIndex = args.before === undefined ? nodes.length : Number(args.before);
+  const rangeLength = nodes.filter((_, index) => index > afterIndex && index < beforeIndex).length;
+  let hasNextPage: boolean;
+  if (args.first === undefined) {
+    const hasDefaultPageOverflow = args.last === undefined && rangeLength > 100;
+    hasNextPage =
+      args.before === undefined ? hasDefaultPageOverflow : hasDefaultPageOverflow || beforeIndex < nodes.length - 1;
+  } else {
+    hasNextPage = rangeLength > args.first;
+  }
+
+  const hasPreviousPage =
+    args.last === undefined
+      ? args.after !== undefined && afterIndex >= 0 && afterIndex < nodes.length
+      : rangeLength > args.last;
+
+  return {hasNextPage, hasPreviousPage};
+}
 
 describe('applyRelayPagination', () => {
   it('returns the first page with stable cursors', () => {
@@ -127,6 +151,7 @@ describe('applyRelayPagination', () => {
           pageArgs.before = args.before;
         }
         const page = applyRelayPagination(nodes, pageArgs);
+        const referencePageInfo = expectedPageInfo(nodes, pageArgs);
         const cursors = page.edges.map((edge) => Number(edge.cursor));
 
         expect(page.totalCount).toBe(nodes.length);
@@ -144,6 +169,8 @@ describe('applyRelayPagination', () => {
         ).toBe(true);
         expect(page.pageInfo.startCursor).toBe(page.edges[0]?.cursor);
         expect(page.pageInfo.endCursor).toBe(page.edges.at(-1)?.cursor);
+        expect(page.pageInfo.hasNextPage).toBe(referencePageInfo.hasNextPage);
+        expect(page.pageInfo.hasPreviousPage).toBe(referencePageInfo.hasPreviousPage);
       })
     );
   });
