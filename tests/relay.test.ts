@@ -2,7 +2,44 @@
 
 import {describe, expect, it} from 'bun:test';
 import fc from 'fast-check';
+import type {PageArgs} from '../src/graphql/relay.ts';
 import {applyRelayPagination} from '../src/graphql/relay.ts';
+
+const nodeListArbitrary = fc.oneof(
+  fc.array(fc.string(), {maxLength: 110}),
+  fc.constantFrom(0, 99, 100, 101, 102).chain((length) => fc.array(fc.string(), {minLength: length, maxLength: length}))
+);
+const optionalFirstArbitrary = fc.option(fc.integer({min: 0, max: 110}), {nil: undefined});
+const optionalLastArbitrary = fc.option(fc.integer({min: 0, max: 110}), {nil: undefined});
+const optionalAfterArbitrary = fc.option(fc.integer({min: 0, max: 112}).map(String), {nil: undefined});
+const optionalBeforeArbitrary = fc.option(fc.integer({min: 0, max: 112}).map(String), {nil: undefined});
+const pageArgsArbitrary = fc.record({
+  first: optionalFirstArbitrary,
+  last: optionalLastArbitrary,
+  after: optionalAfterArbitrary,
+  before: optionalBeforeArbitrary
+});
+
+function expectedPageInfo<T>(nodes: T[], args: PageArgs) {
+  const afterIndex = args.after === undefined ? -1 : Number(args.after);
+  const beforeIndex = args.before === undefined ? nodes.length : Number(args.before);
+  const rangeLength = nodes.filter((_, index) => index > afterIndex && index < beforeIndex).length;
+  let hasNextPage: boolean;
+  if (args.first === undefined) {
+    const hasDefaultPageOverflow = args.last === undefined && rangeLength > 100;
+    hasNextPage =
+      args.before === undefined ? hasDefaultPageOverflow : hasDefaultPageOverflow || beforeIndex < nodes.length - 1;
+  } else {
+    hasNextPage = rangeLength > args.first;
+  }
+
+  const hasPreviousPage =
+    args.last === undefined
+      ? args.after !== undefined && afterIndex >= 0 && afterIndex < nodes.length
+      : rangeLength > args.last;
+
+  return {hasNextPage, hasPreviousPage};
+}
 
 describe('applyRelayPagination', () => {
   it('returns the first page with stable cursors', () => {
@@ -20,6 +57,22 @@ describe('applyRelayPagination', () => {
     expect(page.pageInfo.hasPreviousPage).toBe(false);
   });
 
+  it('uses the default page size when reporting additional pages', () => {
+    const page = applyRelayPagination(
+      Array.from({length: 101}, (_, index) => index),
+      {}
+    );
+    const finalPage = applyRelayPagination(
+      Array.from({length: 100}, (_, index) => index),
+      {}
+    );
+
+    expect(page.nodes).toHaveLength(100);
+    expect(page.pageInfo.hasNextPage).toBe(true);
+    expect(finalPage.nodes).toHaveLength(100);
+    expect(finalPage.pageInfo.hasNextPage).toBe(false);
+  });
+
   it('supports after and last pagination windows', () => {
     const page = applyRelayPagination(['a', 'b', 'c', 'd', 'e'], {after: '1', last: 2});
 
@@ -28,6 +81,13 @@ describe('applyRelayPagination', () => {
     expect(page.pageInfo.startCursor).toBe('3');
     expect(page.pageInfo.endCursor).toBe('4');
     expect(page.pageInfo.hasNextPage).toBe(false);
+    expect(page.pageInfo.hasPreviousPage).toBe(true);
+  });
+
+  it('reports a previous page after the first edge', () => {
+    const page = applyRelayPagination(['a', 'b'], {first: 1, after: '0'});
+
+    expect(page.nodes).toEqual(['b']);
     expect(page.pageInfo.hasPreviousPage).toBe(true);
   });
 
@@ -42,6 +102,16 @@ describe('applyRelayPagination', () => {
     const page = applyRelayPagination(['a', 'b', 'c', 'd'], {before: '2'});
 
     expect(page.nodes).toEqual(['a', 'b']);
+    expect(page.pageInfo.hasNextPage).toBe(true);
+  });
+
+  it('reports when the default page size truncates a before range', () => {
+    const page = applyRelayPagination(
+      Array.from({length: 102}, (_, index) => index),
+      {before: '101'}
+    );
+
+    expect(page.nodes).toHaveLength(100);
     expect(page.pageInfo.hasNextPage).toBe(true);
   });
 
@@ -66,41 +136,42 @@ describe('applyRelayPagination', () => {
 
   it('preserves pagination invariants across generated windows', async () => {
     await fc.assert(
-      fc.asyncProperty(
-        fc.array(fc.string(), {maxLength: 12}),
-        fc.record({
-          first: fc.option(fc.integer({min: 0, max: 12}), {nil: undefined}),
-          last: fc.option(fc.integer({min: 0, max: 12}), {nil: undefined}),
-          after: fc.option(fc.integer({min: 0, max: 11}).map(String), {nil: undefined}),
-          before: fc.option(fc.integer({min: 0, max: 12}).map(String), {nil: undefined})
-        }),
-        async (nodes, args) => {
-          const pageArgs = {
-            ...(args.first === undefined ? {} : {first: args.first}),
-            ...(args.last === undefined ? {} : {last: args.last}),
-            ...(args.after === undefined ? {} : {after: args.after}),
-            ...(args.before === undefined ? {} : {before: args.before})
-          };
-          const page = applyRelayPagination(nodes, pageArgs);
-          const cursors = page.edges.map((edge) => Number(edge.cursor));
-
-          expect(page.totalCount).toBe(nodes.length);
-          expect(page.edges.length).toBe(page.nodes.length);
-          expect(page.edges.map((edge) => edge.node)).toEqual(page.nodes);
-          expect(
-            cursors.every((cursor, index) => {
-              if (index === 0) {
-                return true;
-              }
-
-              const previousCursor = cursors[index - 1];
-              return previousCursor !== undefined && cursor === previousCursor + 1;
-            })
-          ).toBe(true);
-          expect(page.pageInfo.startCursor).toBe(page.edges[0]?.cursor);
-          expect(page.pageInfo.endCursor).toBe(page.edges.at(-1)?.cursor);
+      fc.asyncProperty(nodeListArbitrary, pageArgsArbitrary, async (nodes, args) => {
+        const pageArgs: PageArgs = {};
+        if (args.first !== undefined) {
+          pageArgs.first = args.first;
         }
-      )
+        if (args.last !== undefined) {
+          pageArgs.last = args.last;
+        }
+        if (args.after !== undefined) {
+          pageArgs.after = args.after;
+        }
+        if (args.before !== undefined) {
+          pageArgs.before = args.before;
+        }
+        const page = applyRelayPagination(nodes, pageArgs);
+        const referencePageInfo = expectedPageInfo(nodes, pageArgs);
+        const cursors = page.edges.map((edge) => Number(edge.cursor));
+
+        expect(page.totalCount).toBe(nodes.length);
+        expect(page.edges.length).toBe(page.nodes.length);
+        expect(page.edges.map((edge) => edge.node)).toEqual(page.nodes);
+        expect(
+          cursors.every((cursor, index) => {
+            if (index === 0) {
+              return true;
+            }
+
+            const previousCursor = cursors[index - 1];
+            return previousCursor !== undefined && cursor === previousCursor + 1;
+          })
+        ).toBe(true);
+        expect(page.pageInfo.startCursor).toBe(page.edges[0]?.cursor);
+        expect(page.pageInfo.endCursor).toBe(page.edges.at(-1)?.cursor);
+        expect(page.pageInfo.hasNextPage).toBe(referencePageInfo.hasNextPage);
+        expect(page.pageInfo.hasPreviousPage).toBe(referencePageInfo.hasPreviousPage);
+      })
     );
   });
 

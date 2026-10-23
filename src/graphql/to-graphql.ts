@@ -31,17 +31,24 @@ export function toGraphql(
   entity: DataSchemas[keyof DataSchemas]
 ): GraphQLData[keyof GraphQLData] {
   switch (__typename) {
-    case 'User':
+    case 'User': {
+      // SAFETY: The public overload binds this entity type to the User tag.
       return convertUserToGraphql(simulationStore, entity as DataSchemas['User'], toGraphql);
-    case 'Organization':
+    }
+    case 'Organization': {
+      // SAFETY: The public overload binds this entity type to the Organization tag.
       return convertOrganizationToGraphql(simulationStore, entity as DataSchemas['Organization'], toGraphql);
-    case 'Repository':
+    }
+    case 'Repository': {
+      // SAFETY: The public overload binds this entity type to the Repository tag.
       return convertRepositoryToGraphql(simulationStore, entity as DataSchemas['Repository'], toGraphql);
-    default:
+    }
+    default: {
       console.error(`toGraphql: unhandled __typename ${__typename}`, {
         entity
       });
       throw new Error(`toGraphql: unhandled __typename ${__typename} for entity ${JSON.stringify(entity)}`);
+    }
   }
 }
 

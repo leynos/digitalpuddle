@@ -52,4 +52,10 @@ describe('normaliseStartupOutput', () => {
 
     expect(normaliseStartupOutput(output, PORT)).toBe('bound <PORT>, advertised http://localhost:<PORT>/simulation');
   });
+
+  it('does not replace the port when it is part of a longer number', () => {
+    const output = 'port 4321, adjacent values 14321 and 43210';
+
+    expect(normaliseStartupOutput(output, PORT)).toBe('port <PORT>, adjacent values 14321 and 43210');
+  });
 });

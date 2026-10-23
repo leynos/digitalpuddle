@@ -1,0 +1,46 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+index cd59051f245407a73517ac8682d5d404546c1c76..6d61d8cb0422c8394753c2c03771d32a90a58a05 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -3,6 +3,7 @@ import { apiProxy } from "./middleware/proxy.mjs";
+ import { delayMiddleware } from "./middleware/delay.mjs";
+ import { generateRoutesHTML } from "./routeTemplate.mjs";
+ import { createAppServer } from "./server.mjs";
++import { once } from "node:events";
+ import express from "express";
+ import cors from "cors";
+ import { fdir } from "fdir";
+@@ -161,9 +162,7 @@ function createFoundationSimulationServer({ port = 9e3, protocol = "http", simul
+ 			if (listenArgs.length === 0) listenArgs = [port];
+ 			if (listenArgs[0] === void 0) listenArgs[0] = port;
+ 			const server = genericAppServer.listen(...listenArgs);
+-			if (!server.listening) await new Promise((resolve) => {
+-				server.once("listening", resolve);
+-			});
++			if (!server.listening) await once(server, "listening");
+ 			const address = server.address();
+ 			return {
+ 				server,
+diff --git a/src/index.ts b/src/index.ts
+index 659534d727306776be9605d980fa3bc60fd05ca7..c09b27240f39511705b13a0a25bc227d85f081b0 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -6,6 +6,7 @@ import type {
+   NextFunction as ExpressNextFunction,
+ } from "express";
+ import type { Server, IncomingMessage, ServerResponse } from "node:http";
++import { once } from "node:events";
+ import { fdir } from "fdir";
+ import fs from "node:fs";
+ import path from "node:path";
+@@ -413,9 +414,7 @@ export function createFoundationSimulationServer<
+         const server = genericAppServer.listen(...listenArgs);
+ 
+         if (!server.listening) {
+-          await new Promise<void>((resolve) => {
+-            server.once("listening", resolve);
+-          });
++          await once(server, "listening");
+         }
+ 
+         const address = server.address();

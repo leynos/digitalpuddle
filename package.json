@@ -64,7 +64,7 @@
     "docs:check": "typedoc --options typedoc.json",
     "fmt": "bunx @biomejs/biome format --write .",
     "generate": "graphql-codegen",
-    "lint": "bunx @biomejs/biome lint .",
+    "lint": "bunx @biomejs/biome lint . && oxlint",
     "prepack": "bun run generate && bun run build",
     "start": "node --experimental-transform-types --watch ./example/start.ts",
     "start:bin": "node ./bin/start.cjs",
@@ -94,8 +94,11 @@
     "@redocly/cli": "2.62.2",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.5",
+    "ai-deslop": "0.4.8",
     "bun-types": "^1.4.3",
     "fast-check": "^4.10.2",
+    "oxlint": "1.82.0",
+    "oxlint-tsgolint": "7.0.2004",
     "publint": "^0.3.25",
     "tsdown": "^0.23.1",
     "typedoc": "^0.28.20",
@@ -117,7 +120,7 @@
     "immutable": "5.1.9",
     "js-yaml": "4.3.2",
     "lodash": "4.18.1",
-    "markdown-it": "14.3.2",
+    "markdown-it": "14.3.3",
     "protobufjs": "7.6.4",
     "proxy-addr": "2.0.8",
     "qs": "6.16.0",
@@ -127,5 +130,8 @@
   "inlinedDependencies": {
     "starfx": "0.16.1"
   },
-  "main": "./dist/index.cjs"
+  "main": "./dist/index.cjs",
+  "patchedDependencies": {
+    "@simulacrum/foundation-simulator@0.8.0": "patches/@simulacrum%2Ffoundation-simulator@0.8.0.patch"
+  }
 }

@@ -31,17 +31,16 @@ export function convertRepositoryToGraphql(
   repo: DataSchemas['Repository'],
   toGraphql: ToGraphqlDispatcher
 ): GraphQLData['Repository'] {
-  const defaultBranchName = repo.default_branch ?? 'main';
-  const defaultBranchId = Buffer.from(`Branch:${repo.id ?? repo.full_name}:${defaultBranchName}`).toString('base64');
+  const defaultBranchName = repo.default_branch;
+  const defaultBranchId = Buffer.from(`Branch:${repo.id}:${defaultBranchName}`).toString('base64');
 
-  return {
+  const graphqlRepository: GraphQLData['Repository'] = {
     __typename: 'Repository',
-    id: String(repo.id ?? repo.full_name),
+    id: String(repo.id),
     name: repo.name,
     nameWithOwner: repo.full_name,
     url: repo.url,
-    createdAt: repo.created_at ?? new Date(0).toISOString(),
-    ...(repo.description ? {description: repo.description} : {}),
+    createdAt: repo.created_at,
     collaborators(pageArgs: PageArgs) {
       return convertRepositoryCollaboratorConnection(applyRelayPagination([], pageArgs, (user: User) => user));
     },
@@ -79,4 +78,8 @@ export function convertRepositoryToGraphql(
     isArchived: repo.archived,
     isFork: repo.fork
   };
+  if (repo.description) {
+    graphqlRepository.description = repo.description;
+  }
+  return graphqlRepository;
 }

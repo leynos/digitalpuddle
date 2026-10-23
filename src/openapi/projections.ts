@@ -64,23 +64,34 @@ export const capabilityLegend: Record<Capability, string> = {
   unsupported: 'Known operation that is intentionally unavailable in this release.'
 };
 
-const toMatrixRow = (entry: CapabilityManifestEntry): CapabilityMatrixRow => ({
-  operationKey: createOperationKey(entry.method, entry.path),
-  operationId: entry.operationId,
-  method: entry.method,
-  path: entry.path,
-  capability: entry.capability,
-  releaseStage: entry.releaseStage,
-  productArea: entry.productArea,
-  exposeInDocs: entry.exposeInDocs,
-  runtimeBehaviour: entry.runtime.behaviour,
-  ...(entry.followOnPhase ? {followOnPhase: entry.followOnPhase} : {}),
-  ...(entry.notes ? {notes: entry.notes} : {}),
-  ...(entry.capability === 'unsupported' ? {unsupported: {behaviour: 'not-implemented' as const}} : {})
-});
+const toMatrixRow = (entry: CapabilityManifestEntry): CapabilityMatrixRow => {
+  const row: CapabilityMatrixRow = {
+    operationKey: createOperationKey(entry.method, entry.path),
+    operationId: entry.operationId,
+    method: entry.method,
+    path: entry.path,
+    capability: entry.capability,
+    releaseStage: entry.releaseStage,
+    productArea: entry.productArea,
+    exposeInDocs: entry.exposeInDocs,
+    runtimeBehaviour: entry.runtime.behaviour
+  };
+  if (entry.followOnPhase) {
+    row.followOnPhase = entry.followOnPhase;
+  }
+  if (entry.notes) {
+    row.notes = entry.notes;
+  }
+  if (entry.capability === 'unsupported') {
+    row.unsupported = {behaviour: 'not-implemented'};
+  }
+  return row;
+};
 
 const sortMatrixRows = (entries: readonly CapabilityManifestEntry[]): readonly CapabilityMatrixRow[] =>
-  entries.map(toMatrixRow).sort((left, right) => left.operationKey.localeCompare(right.operationKey));
+  entries
+    .map((entry) => toMatrixRow(entry))
+    .toSorted((left, right) => left.operationKey.localeCompare(right.operationKey));
 
 export const buildCapabilityMatrix = (
   entries?: readonly CapabilityManifestEntryInput[]

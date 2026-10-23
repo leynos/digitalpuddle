@@ -6,13 +6,21 @@
  * `createHandler` and exposing the shared `ExtendedSimulationStore`.
  */
 import type {createFoundationSimulationServer} from '@simulacrum/foundation-simulator';
-import {stringify} from 'querystring';
-import {extendDigitalPuddleAdminRoutes, registerCapabilitiesRoute} from './admin/routes.ts';
+import {stringify} from 'node:querystring';
+import {z} from 'zod';
+import {extendDigitalPuddleAdminRoutes} from './admin/routes.ts';
+export {registerCapabilitiesRoute} from './admin/routes.ts';
 import {createHandler} from './graphql/handler.ts';
 import type {ExtendedSimulationStore} from './store/index.ts';
 
 type FoundationExtendRouter = NonNullable<Parameters<typeof createFoundationSimulationServer>[0]['extendRouter']>;
 type FoundationRouter = Parameters<FoundationExtendRouter>[0];
+
+const oauthAuthorizationQuerySchema = z.object({
+  redirect_uri: z.string().min(1),
+  state: z.string().optional(),
+  env: z.string().optional()
+});
 
 const isStructuredRequestLoggingEnabled = () => {
   const {DIGITALPUDDLE_REQUEST_LOG: requestLog} = process.env;
@@ -47,13 +55,14 @@ export const registerStructuredRequestLogger = (router: FoundationRouter) => {
     const requestPath = toRequestPath(request.path, request.originalUrl, request.url);
 
     response.on('finish', () => {
+      const durationMs = Math.round((performance.now() - startedAt) * 1000) / 1000;
       console.info(
         JSON.stringify({
           event: 'digitalpuddle.http.response',
           method: request.method,
           path: requestPath,
           status: response.statusCode,
-          durationMs: Math.round((performance.now() - startedAt) * 1000) / 1000
+          durationMs
         })
       );
     });
@@ -61,8 +70,6 @@ export const registerStructuredRequestLogger = (router: FoundationRouter) => {
     next();
   });
 };
-
-export {registerCapabilitiesRoute};
 
 /**
  * Wraps a caller-provided router extension with Simulacat Core's built-in
@@ -97,9 +104,12 @@ export const extendRouter =
     router.use('/graphql', createHandler(simulationStore));
 
     router.get(['/login/oauth/authorize'], (request, response) => {
-      const {redirect_uri, state, env} = request.query as {
-        [k: string]: string;
-      };
+      const query = oauthAuthorizationQuerySchema.safeParse(request.query);
+      if (!query.success) {
+        return response.status(400).json({message: 'Invalid authorization query'});
+      }
+
+      const {redirect_uri, state, env} = query.data;
       const code = 'dev_code';
       const qs = stringify({
         code,

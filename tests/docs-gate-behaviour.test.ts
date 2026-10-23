@@ -17,6 +17,7 @@ import {readFileSync} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import fc from 'fast-check';
+import {z} from 'zod';
 import {propertyTestSeed} from './support/property-test-seed.ts';
 
 const repositoryRoot = path.join(import.meta.dir, '..');
@@ -36,13 +37,14 @@ afterEach(async () => {
 });
 
 /** The repository's TypeDoc options, with the fields the fixture overrides named. */
-type TypedocOptions = {
-  $schema?: string;
-  entryPoints?: string[];
-  tsconfig?: string;
-  name?: string;
-  [option: string]: unknown;
-};
+const typedocOptionsSchema = z
+  .object({
+    $schema: z.string().optional(),
+    entryPoints: z.array(z.string()).optional(),
+    tsconfig: z.string().optional(),
+    name: z.string().optional()
+  })
+  .catchall(z.json());
 
 const FIXTURE_TSCONFIG = {
   compilerOptions: {
@@ -65,7 +67,9 @@ const createFixture = async (entry: string): Promise<{root: string; optionsPath:
   const root = await mkdtemp(path.join(os.tmpdir(), 'digitalpuddle-docs-gate-'));
   fixtureRoots.push(root);
 
-  const options = JSON.parse(readFileSync(path.join(repositoryRoot, 'typedoc.json'), 'utf8')) as TypedocOptions;
+  const optionsText = readFileSync(path.join(repositoryRoot, 'typedoc.json'), 'utf8');
+  const optionsData = JSON.parse(optionsText);
+  const options = typedocOptionsSchema.parse(optionsData);
   delete options.$schema;
   options.entryPoints = [path.join(root, 'index.ts')];
   options.tsconfig = path.join(root, 'tsconfig.json');
@@ -88,8 +92,11 @@ type GateResult = {exitCode: number; output: string};
 /** Runs the gate over a fixture and returns its exit code and combined output. */
 const runGate = async (entry: string): Promise<GateResult & {root: string}> => {
   const {root, optionsPath} = await createFixture(entry);
+  const environment = {...process.env};
+  delete environment['FORCE_COLOR'];
   const gate = Bun.spawn([typedocBinary, '--options', optionsPath], {
     cwd: repositoryRoot,
+    env: environment,
     stdout: 'pipe',
     stderr: 'pipe'
   });
@@ -123,7 +130,7 @@ describe('documentation gate behaviour', () => {
 
       expect(exitCode).toBe(0);
       expect(output.trim()).toBe('');
-      expect([...(await readdir(root))].sort()).toEqual(['index.ts', 'tsconfig.json', 'typedoc.json']);
+      expect([...(await readdir(root))].toSorted()).toEqual(['index.ts', 'tsconfig.json', 'typedoc.json']);
     },
     GATE_TIMEOUT_MS
   );
@@ -207,10 +214,9 @@ const declarationName = (kind: DeclarationKind, index: number): string =>
  * except the one at `undocumentedIndex`, and returns it with the name of that
  * declaration.
  */
-const buildEntry = (
-  kinds: readonly DeclarationKind[],
-  undocumentedIndex: number | null
-): {source: string; undocumented: string | null} => {
+type GeneratedEntry = {source: string; undocumented: string | null};
+
+const buildEntry = (kinds: readonly DeclarationKind[], undocumentedIndex: number | null): GeneratedEntry => {
   const declarations = kinds.map((kind, index) => {
     const name = declarationName(kind, index);
     const documented = index !== undocumentedIndex;

@@ -62,7 +62,7 @@ export const capabilityManifestEntrySchema = z
   .superRefine((entry, context) => {
     if (entry.capability === 'unsupported' && entry.runtime.behaviour !== 'not-implemented') {
       context.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: 'unsupported operations must use not-implemented runtime behaviour',
         path: ['runtime', 'behaviour']
       });
@@ -70,7 +70,7 @@ export const capabilityManifestEntrySchema = z
 
     if (entry.capability !== 'unsupported' && entry.runtime.behaviour === 'not-implemented') {
       context.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: 'only unsupported operations may use not-implemented runtime behaviour',
         path: ['runtime', 'behaviour']
       });
@@ -78,7 +78,7 @@ export const capabilityManifestEntrySchema = z
 
     if (entry.capability === 'engine-backed' && !entry.runtime.workerRequired) {
       context.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: 'engine-backed operations must require worker-owned orchestration',
         path: ['runtime', 'workerRequired']
       });
@@ -86,7 +86,7 @@ export const capabilityManifestEntrySchema = z
 
     if (entry.capability === 'stubbed' && !entry.runtime.deterministicFixture) {
       context.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: 'stubbed operations must identify deterministic fixture behaviour',
         path: ['runtime', 'deterministicFixture']
       });

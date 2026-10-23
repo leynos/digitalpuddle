@@ -8,11 +8,11 @@
  * archive, or Redocly execution.
  */
 import fs, {writeFile} from 'node:fs/promises';
-import {join} from 'node:path';
+import path from 'node:path';
 import {digitalOceanOpenApiSourcePath} from '../../src/openapi/artifact.ts';
-import type {SyncDependencies} from '../../sync-digitalocean-openapi.ts';
+import type {SyncDependencies, SyncLogFields} from '../../sync-digitalocean-openapi.ts';
 
-const fakeProcessId = 12345;
+const fakeProcessId = 12_345;
 
 const fixedNow = new Date('2026-06-14T00:00:00.000Z');
 const fakePin = '0123456789abcdef0123456789abcdef01234567';
@@ -28,11 +28,6 @@ type SyncLogEntry = {
   readonly message: string;
 };
 
-type SyncLogFields = Record<string, unknown> & {
-  readonly elapsedMs?: unknown;
-  readonly errorMessage?: unknown;
-};
-
 type FakeSyncDependencyOverrides = {
   readonly fetchBytes?: SyncDependencies['fetchBytes'];
 };
@@ -40,14 +35,15 @@ type FakeSyncDependencyOverrides = {
 const createFakeSyncDependencies = (overrides: FakeSyncDependencyOverrides = {}): FakeSyncDependencies => {
   const calls: string[] = [];
   const logEntries: SyncLogEntry[] = [];
+  // SAFETY: The fake returns stdout and stderr for the only commands the refresh flow invokes.
   const execFileAsync = (async (command: string, args?: readonly string[] | null) => {
     const commandArgs = args ?? [];
 
     if (command === 'tar') {
       calls.push('tar');
       const destination = String(commandArgs[3]);
-      await fs.mkdir(join(destination, `openapi-${fakePin}`, 'specification'), {recursive: true});
-      await writeFile(join(destination, `openapi-${fakePin}`, digitalOceanOpenApiSourcePath), 'openapi: 3.0.0\n');
+      await fs.mkdir(path.join(destination, `openapi-${fakePin}`, 'specification'), {recursive: true});
+      await writeFile(path.join(destination, `openapi-${fakePin}`, digitalOceanOpenApiSourcePath), 'openapi: 3.0.0\n');
       return {stderr: '', stdout: ''};
     }
 
@@ -84,36 +80,26 @@ const createFakeSyncDependencies = (overrides: FakeSyncDependencyOverrides = {})
     fs,
     getPid: () => fakeProcessId,
     logger: {
-      error: (message, ...values) => logEntries.push(createLogEntry('error', message, values)),
-      info: (message, ...values) => logEntries.push(createLogEntry('info', message, values))
+      error: (message, ...fields) => logEntries.push(createLogEntry('error', message, fields[0] ?? {})),
+      info: (message, ...fields) => logEntries.push(createLogEntry('info', message, fields[0] ?? {}))
     },
     logEntries,
     now: () => fixedNow
   };
 };
 
-const createLogEntry = (level: SyncLogEntry['level'], message: unknown, values: readonly unknown[]): SyncLogEntry => ({
-  fields:
-    values.length === 1 && isRecord(values[0])
-      ? values[0]
-      : {
-          values
-        },
+const createLogEntry = (level: SyncLogEntry['level'], message: string, fields: SyncLogFields): SyncLogEntry => ({
+  fields,
   level,
-  message: String(message)
+  message
 });
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export {
   createFakeSyncDependencies,
   createLogEntry,
   fakePin,
   fixedNow,
-  isRecord,
   type FakeSyncDependencies,
   type FakeSyncDependencyOverrides,
-  type SyncLogEntry,
-  type SyncLogFields
+  type SyncLogEntry
 };

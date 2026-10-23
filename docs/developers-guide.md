@@ -45,6 +45,47 @@ The `src/worker/`, `src/engines/`, `src/journal/`, `src/scenarios/`, and
 only; do not wire engine side effects or persistence through them until the
 owned roadmap slice implements that behaviour.
 
+### Relay pagination
+
+`applyRelayPagination` in `src/graphql/relay.ts` returns `Page<T>` when called
+without a mapper, preserving the input node type. With a mapper from `T` to
+`R`, it maps nodes in the selected page and returns `Page<R>`. The input list
+still determines `totalCount` and cursor positions.
+
+### Inherited data and schema utilities
+
+The inherited `src/domain/user.ts` module is transitional. It owns the
+`AuthenticatedUser` value shape independently of the store. Its `normalizeUser`
+overload preserves that shape for valid input. For `RawAuthenticatedUser`
+input, it returns `NormalizedAuthenticatedUser`, with a numeric `id` and
+string-array `organizations` after normalization. The REST adapter owns
+membership URL construction and response-field cleanup.
+
+The inherited `src/utils.ts` module also remains part of the compatibility
+surface. `getSchema` returns the validated OpenAPI shape for a `.json` path
+literal and text for the named GraphQL schema literals. A general `string`
+argument has the union return type because its schema format is not known at
+compile time; callers must narrow the result before using a format-specific
+shape.
+
+### Transitional handler and GraphQL contracts
+
+`src/handlers/user.ts` owns the `UserHandler` request, context, and response
+types for the extracted REST user routes. `src/rest/index.ts` composes handler
+groups with the inherited route table and defines the REST error value union.
+The package-facing simulation and its `InitialState` input live in
+`src/simulation.ts`.
+
+`src/graphql/to-graphql-shapes.ts` owns the `GraphQLData` entity shapes, their
+`GraphQLUser`, `GraphQLRepository`, and `GraphQLOrganization` aliases, and the
+connection result types consumed by the entity converters. Converter return
+types are checked in `tests/graphql-contracts.test-d.ts`; handler signatures
+are checked in `tests/user-handler-contracts.test-d.ts`.
+
+`src/openapi/artifact.ts` owns `JsonValue` and `jsonValueSchema`, the shared
+runtime boundary for JSON responses. Keep serialization at the handler or
+response-translator boundary and validate the completed value there.
+
 ## 2. Architectural decisions
 
 Durable architectural decisions live in `docs/adr/`. Each entry is an
@@ -64,7 +105,8 @@ Current Architectural Decision Records cover:
 - the temporary treatment of inherited Simulacat transport coupling;
 - the v1 product boundaries for node pools, Spaces, Droplets, and doctl;
 - the release capability policy for `scriptable`, `engine-backed`, `stubbed`,
-  and `unsupported` operations.
+  and `unsupported` operations; and
+- lint ownership and the pinned Oxlint plug-ins.
 
 ## 3. Development workflow
 
@@ -87,7 +129,30 @@ BRANCH=$(git branch --show-current | tr '/ ' '__')
 make all 2>&1 | tee /tmp/all-digitalpuddle-${BRANCH}.out
 ```
 
-`make all` includes the documentation gate described in section 3.2.
+`make all` includes the documentation gate described in section 3.2. The lint
+target runs Biome and Oxlint. See
+[ADR 0008](adr/0008-oxlint-plugin-strategy.md) for rule ownership, pins, and
+the plug-in conflict policy.
+
+### GraphQL code generation
+
+`codegen.ts` reads `schema/schema.docs-enterprise.graphql` and generates
+`src/__generated__/resolvers-types.ts`. Its mapper configuration connects the
+schema's `User`, `Repository`, and `Organization` types to the `GraphQLUser`,
+`GraphQLRepository`, and `GraphQLOrganization` aliases in
+`src/graphql/to-graphql-shapes.ts`. Run `bun run generate` or `make generate`
+after changing the schema or mapper contracts. `make typecheck` also runs code
+generation before TypeScript checks.
+
+### Patched dependencies
+
+Bun applies dependency patches listed in `package.json`'s
+`patchedDependencies`. The foundation-simulator `0.8.0` patch makes its
+listening wait reject on a server error, so both startup entry points can
+report port conflicts. When updating that dependency, keep its version range,
+the `patchedDependencies` key, the patch file, and `bun.lock` aligned. Rebase
+the patch against the matching upstream release and validate the startup
+failure tests after changing it.
 
 Run documentation gates when Markdown changes:
 

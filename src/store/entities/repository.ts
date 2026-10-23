@@ -10,6 +10,23 @@ import {githubEntityPermissionSchema} from './shared.ts';
 
 let nextGeneratedRepositoryId = 3000;
 
+const repositoryLicenseSchema = z.nullable(z.record(z.string(), z.string()));
+const securityStatusSchema = z.object({status: z.string()});
+const securityAnalysisSchema = z
+  .object({
+    advanced_security: securityStatusSchema.optional().default({status: 'enabled'}),
+    secret_scanning: securityStatusSchema.optional().default({status: 'enabled'}),
+    secret_scanning_push_protection: securityStatusSchema.optional().default({status: 'enabled'}),
+    secret_scanning_non_provider_patterns: securityStatusSchema.optional().default({status: 'enabled'})
+  })
+  .optional()
+  .default({
+    advanced_security: {status: 'enabled'},
+    secret_scanning: {status: 'enabled'},
+    secret_scanning_push_protection: {status: 'disabled'},
+    secret_scanning_non_provider_patterns: {status: 'disabled'}
+  });
+
 const nextRepositoryId = () => nextGeneratedRepositoryId++;
 
 export const resetNextRepositoryId = (newValue = 3000) => {
@@ -94,7 +111,7 @@ export const githubRepositorySchema = z
     default_branch: z.string().optional().default('main'),
     visibility: z.enum(['public', 'private']).default('public'),
     private: z.boolean().optional().default(false),
-    license: z.nullable(z.record(z.string(), z.string())).default(null),
+    license: repositoryLicenseSchema.default(null),
     fork: z.boolean().optional().default(false),
     topics: z.array(z.string()).optional().default([]),
 
@@ -119,28 +136,7 @@ export const githubRepositorySchema = z
     open_issues: z.number().optional().default(9001),
 
     permissions: githubEntityPermissionSchema,
-    security_and_analysis: z
-      .object({
-        advanced_security: z.object({status: z.string()}).optional().default({status: 'enabled'}),
-        secret_scanning: z.object({status: z.string()}).optional().default({status: 'enabled'}),
-        secret_scanning_push_protection: z.object({status: z.string()}).optional().default({status: 'enabled'}),
-        secret_scanning_non_provider_patterns: z.object({status: z.string()}).optional().default({status: 'enabled'})
-      })
-      .optional()
-      .default({
-        advanced_security: {
-          status: 'enabled'
-        },
-        secret_scanning: {
-          status: 'enabled'
-        },
-        secret_scanning_push_protection: {
-          status: 'disabled'
-        },
-        secret_scanning_non_provider_patterns: {
-          status: 'disabled'
-        }
-      })
+    security_and_analysis: securityAnalysisSchema
   })
   .transform((repo) => {
     const host = 'localhost:3300';

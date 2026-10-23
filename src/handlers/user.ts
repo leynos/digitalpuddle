@@ -7,20 +7,59 @@
  * delegates membership response shape construction to a serializer, and returns
  * handlers for composition by `src/rest/index.ts`.
  */
-import type {SimulationHandlers} from '@simulacrum/foundation-simulator';
-
-import {normalizeUser, serializeMembershipResponse, shouldNormalizeUser, userAnomalyDetails} from '../domain/user.ts';
-import type {AuthenticatedUser, RawAuthenticatedUser} from '../domain/user.ts';
+import {normalizeUser, shouldNormalizeUser, userAnomalyDetails} from '../domain/user.ts';
+import type {MembershipProjection, NormalizedAuthenticatedUser, RawAuthenticatedUser} from '../domain/user.ts';
+import {jsonValueSchema, type JsonValue} from '../openapi/artifact.ts';
 import type {ExtendedSimulationStore} from '../store/index.ts';
 import type {SimulationHandler} from './types.ts';
 
-export {serializeMembershipResponse} from '../domain/user.ts';
+export type UserHandlerRequest = Pick<Parameters<SimulationHandler>[1], 'get'>;
+export type UserHandlerContext = Parameters<SimulationHandler>[0];
+
+export type UserHandlerResponse = {
+  status(code: number): UserHandlerResponse;
+  json(body: JsonValue): UserHandlerResponse;
+};
+
+export type UserHandler = (
+  context: UserHandlerContext,
+  request: UserHandlerRequest,
+  response: UserHandlerResponse
+) => Promise<void>;
+
+type UserHandlers = {
+  'users/get-authenticated': UserHandler;
+  'orgs/list-memberships-for-authenticated-user': UserHandler;
+};
 
 type AuthenticationFailureDetails = {
   readonly operationId: string;
   readonly userCount: number;
   readonly reason: 'no-users-seeded' | 'requested-user-not-found';
 };
+type UserResponseBody = {id: number; login: string; email?: string; name?: string};
+type MembershipOrganization = ReturnType<ExtendedSimulationStore['selectors']['allGithubOrganizations']>[number];
+
+/**
+ * Builds the REST membership shape, including its response URLs.
+ *
+ * @example
+ * ```ts
+ * serializeMembershipResponse({state: 'active', role: 'member'}, organization, user);
+ * ```
+ */
+export const serializeMembershipResponse = (
+  membership: MembershipProjection,
+  organization: MembershipOrganization,
+  user: NormalizedAuthenticatedUser
+) => ({
+  url: `${organization.url}/memberships/${user.login}`,
+  organization_url: organization.url,
+  state: membership.state,
+  role: membership.role,
+  organization,
+  user: Object.fromEntries(Object.entries(user).filter(([, value]) => value !== undefined))
+});
 
 const logUserNormalization = (operationId: string, user: RawAuthenticatedUser) => {
   console.error(
@@ -41,23 +80,23 @@ const logAuthenticationFailure = (details: AuthenticationFailureDetails) => {
   );
 };
 
-export const createUserHandlers = (simulationStore: ExtendedSimulationStore): SimulationHandlers => {
+export const createUserHandlers = (simulationStore: ExtendedSimulationStore): UserHandlers => {
   const getState = () => simulationStore.store.getState();
   const getUsers = (operationId: string) =>
-    simulationStore.schema.users.selectTableAsList(getState()).map((user) => {
-      const rawUser = user as AuthenticatedUser | RawAuthenticatedUser;
-      if (shouldNormalizeUser(rawUser)) {
-        logUserNormalization(operationId, rawUser);
+    simulationStore.schema.users.selectTableAsList(getState()).map((storedUser) => {
+      const user: RawAuthenticatedUser = storedUser;
+      if (shouldNormalizeUser(user)) {
+        logUserNormalization(operationId, user);
       }
-      return normalizeUser(rawUser);
+      return normalizeUser(user);
     });
 
   return {
     // GET /user
     'users/get-authenticated': async (
-      _context: Parameters<SimulationHandler>[0],
-      _request: Parameters<SimulationHandler>[1],
-      response: Parameters<SimulationHandler>[2]
+      _context: UserHandlerContext,
+      _request: UserHandlerRequest,
+      response: UserHandlerResponse
     ) => {
       const operationId = 'users/get-authenticated';
       const users = getUsers(operationId);
@@ -68,22 +107,27 @@ export const createUserHandlers = (simulationStore: ExtendedSimulationStore): Si
           userCount: users.length,
           reason: 'no-users-seeded'
         });
-        return response.status(401).json({message: 'Authentication required'});
+        response.status(401).json({message: 'Authentication required'});
+        return;
       }
-      const data = {
+      const data: UserResponseBody = {
         id: user.id,
-        login: user.login,
-        email: user.email,
-        name: user.name
+        login: user.login
       };
-      response.status(200).json(data);
+      if (user.email !== undefined) {
+        data.email = user.email;
+      }
+      if (user.name !== undefined) {
+        data.name = user.name;
+      }
+      response.status(200).json(jsonValueSchema.parse(data));
     },
 
     // GET /user/memberships/orgs
     'orgs/list-memberships-for-authenticated-user': async (
-      _context: Parameters<SimulationHandler>[0],
-      request: Parameters<SimulationHandler>[1],
-      response: Parameters<SimulationHandler>[2]
+      _context: UserHandlerContext,
+      request: UserHandlerRequest,
+      response: UserHandlerResponse
     ) => {
       const operationId = 'orgs/list-memberships-for-authenticated-user';
       const users = getUsers(operationId);
@@ -95,14 +139,15 @@ export const createUserHandlers = (simulationStore: ExtendedSimulationStore): Si
           userCount: users.length,
           reason: requestedLogin ? 'requested-user-not-found' : 'no-users-seeded'
         });
-        return response.status(401).json({message: 'Authentication required'});
+        response.status(401).json({message: 'Authentication required'});
+        return;
       }
       const membershipOrganizationLogins = new Set(user.organizations);
       const organizations = simulationStore.selectors.allGithubOrganizations(getState());
       const memberships = organizations
         .filter((organization) => membershipOrganizationLogins.has(organization.login))
         .map((organization) => serializeMembershipResponse({state: 'active', role: 'member'}, organization, user));
-      return response.status(200).json(memberships);
+      response.status(200).json(jsonValueSchema.parse(memberships));
     }
   };
 };

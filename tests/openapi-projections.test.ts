@@ -20,7 +20,7 @@ const rowByOperationId = (operationId: string) => {
 
 const unsupportedEntryByOperationId = (operationId: string) => {
   const entry = v1CapabilityManifest.find((candidate) => candidate.operationId === operationId);
-  if (!entry || entry.capability !== 'unsupported') {
+  if (entry?.capability !== 'unsupported') {
     throw new Error(`missing unsupported fixture operation: ${operationId}`);
   }
   return entry;
@@ -82,7 +82,7 @@ describe('capability matrix projection', () => {
   it('keeps documentation metadata visible and labelled', () => {
     const docs = buildCapabilityDocumentationMetadata();
 
-    expect(Object.keys(docs.legend).sort()).toEqual([...getKnownCapabilityValues()].sort());
+    expect(Object.keys(docs.legend).toSorted()).toEqual([...getKnownCapabilityValues()].toSorted());
     expect(docs.rows.every((row) => row.exposeInDocs)).toBe(true);
     expect(docs.rows.some((row) => row.operationId === 'digitalocean.unsupported')).toBe(false);
   });

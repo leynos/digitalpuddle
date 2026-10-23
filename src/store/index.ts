@@ -24,13 +24,12 @@ import {
 } from './entities.ts';
 
 type ExtendedSchema = ReturnType<typeof inputSchema>;
-type ExtendActions = typeof inputActions;
 type ExtendSelectors = typeof inputSelectors;
 
 // Concrete, exported types for downstream consumers to import and use
 // when they need to reference the GitHub package's store generics.
 export type GitHubSchema = ReturnType<ExtendedSchema>;
-export type GitHubActions = ReturnType<ExtendActions>;
+export type GitHubActions = object;
 export type GitHubSelectors = ReturnType<ExtendSelectors>;
 
 export type ExtendedSimulationStore = SimulationStore<GitHubSchema, GitHubActions, GitHubSelectors>;
@@ -67,27 +66,25 @@ const inputSchema =
     const storeInitialState = convertInitialStateToStoreState(initialState);
     const extended = extendedSchema ? extendedSchema({slice}) : {};
     const slices = {
-      users: slice.table<GitHubUser>(!storeInitialState ? {} : {initialState: storeInitialState.users}),
+      users: slice.table<GitHubUser>(storeInitialState ? {initialState: storeInitialState.users} : {}),
       installations: slice.table<GitHubAppInstallation>(
-        !storeInitialState ? {} : {initialState: storeInitialState.installations}
+        storeInitialState ? {initialState: storeInitialState.installations} : {}
       ),
       repositories: slice.table<GitHubRepository>(
-        !storeInitialState ? {} : {initialState: storeInitialState.repositories}
+        storeInitialState ? {initialState: storeInitialState.repositories} : {}
       ),
-      branches: slice.table<GitHubBranch>(!storeInitialState ? {} : {initialState: storeInitialState.branches}),
+      branches: slice.table<GitHubBranch>(storeInitialState ? {initialState: storeInitialState.branches} : {}),
       organizations: slice.table<GitHubOrganization>(
-        !storeInitialState ? {} : {initialState: storeInitialState.organizations}
+        storeInitialState ? {initialState: storeInitialState.organizations} : {}
       ),
-      blobs: slice.table<GitHubBlob>(!storeInitialState ? {} : {initialState: storeInitialState.blobs}),
+      blobs: slice.table<GitHubBlob>(storeInitialState ? {initialState: storeInitialState.blobs} : {}),
       ...extended
     };
     return slices;
   };
 
 /** Returns the package's built-in action set before caller extensions. */
-const inputActions = (_args: ExtendSimulationActions<ExtendedSchema>): ExtendSimulationActions<ExtendedSchema> => {
-  return {} as ExtendSimulationActions<ExtendedSchema>;
-};
+const inputActions = (_args: ExtendSimulationActions<ExtendedSchema>) => ({}) satisfies GitHubActions;
 
 /** Merges built-in actions with caller-provided extensions. */
 const extendActions =
@@ -97,9 +94,9 @@ const extendActions =
     if (!extendedActions) return base;
     const extResult = extendedActions(args);
     return {
-      ...(base as object),
-      ...(extResult as object)
-    } as GitHubActions;
+      ...base,
+      ...extResult
+    };
   };
 
 /** Creates the built-in selector suite used by REST and GraphQL handlers. */
@@ -127,20 +124,20 @@ const inputSelectors = ({createSelector, schema}: ExtendSimulationSelectors<Exte
     (_state: AnyState, _org: string, repo?: string) => repo,
     (installations, orgs, repos, org, repo) => {
       const appInstall = installations.find((install) => install.account === org);
-      if (!appInstall) return undefined;
+      if (!appInstall) return;
       let account;
       if (repo) {
-        const repoData = repos.find((r) => r.owner === appInstall?.account && r.name === repo);
+        const repoData = repos.find((r) => r.owner === appInstall.account && r.name === repo);
         if (repoData) account = orgs.find((o) => o.login === repoData.owner);
       } else {
-        account = orgs.find((o) => o.login === appInstall?.account);
+        account = orgs.find((o) => o.login === appInstall.account);
       }
-      if (!account) return undefined;
+      if (!account) return;
       return {
         ...appInstall,
         account: {...account},
-        target_id: account?.id,
-        target_type: account?.type
+        target_id: account.id,
+        target_type: account.type
       };
     }
   );
@@ -151,50 +148,41 @@ const inputSelectors = ({createSelector, schema}: ExtendSimulationSelectors<Exte
       schema.organizations.selectTable,
       (_: AnyState, org?: string) => org,
       (allRepos, orgMap, org) => {
-        if (org && !orgMap?.[org]) return undefined;
-        const repos = !org ? allRepos : allRepos.filter((r) => r.owner === org);
+        if (org && !orgMap[org]) return;
+        const repos = org ? allRepos.filter((r) => r.owner === org) : allRepos;
         return repos.map((repo) => {
-          const ownerOrg = orgMap?.[repo.owner];
-          const linkedRepo: GitHubRepositoryWithOrganizationOwner = {
-            ...repo,
-            id: Number(repo.id),
-            owner: ownerOrg
-              ? {
-                  ...ownerOrg,
-                  id: Number(ownerOrg.id)
-                }
-              : repo.owner
-          };
-          if (linkedRepo.owner && typeof linkedRepo.owner !== 'string') {
-            linkedRepo.owner = {
-              id: linkedRepo.owner.id,
-              login: linkedRepo.owner.login,
-              node_id: linkedRepo.owner.node_id,
-              type: linkedRepo.owner.type,
-              description: linkedRepo.owner.description,
-              created_at: linkedRepo.owner.created_at,
-              teams: linkedRepo.owner.teams,
-              avatar_url: linkedRepo.owner.avatar_url,
-              gravatar_id: linkedRepo.owner.gravatar_id,
-              site_admin: linkedRepo.owner.site_admin,
-              url: linkedRepo.owner.url,
-              html_url: linkedRepo.owner.html_url,
-              followers_url: linkedRepo.owner.followers_url,
-              following_url: linkedRepo.owner.following_url,
-              gists_url: linkedRepo.owner.gists_url,
-              starred_url: linkedRepo.owner.starred_url,
-              subscriptions_url: linkedRepo.owner.subscriptions_url,
-              organizations_url: linkedRepo.owner.organizations_url,
-              repos_url: linkedRepo.owner.repos_url,
-              events_url: linkedRepo.owner.events_url,
-              received_events_url: linkedRepo.owner.received_events_url,
-              hooks_url: linkedRepo.owner.hooks_url,
-              issues_url: linkedRepo.owner.issues_url,
-              members_url: linkedRepo.owner.members_url,
-              public_members_url: linkedRepo.owner.public_members_url
-            };
-          }
-          return linkedRepo;
+          const ownerOrg = orgMap[repo.owner];
+          const owner: GitHubRepositoryWithOrganizationOwner['owner'] = ownerOrg
+            ? {
+                id: Number(ownerOrg.id),
+                login: ownerOrg.login,
+                node_id: ownerOrg.node_id,
+                type: ownerOrg.type,
+                description: ownerOrg.description,
+                created_at: ownerOrg.created_at,
+                teams: ownerOrg.teams,
+                avatar_url: ownerOrg.avatar_url,
+                gravatar_id: ownerOrg.gravatar_id,
+                site_admin: ownerOrg.site_admin,
+                url: ownerOrg.url,
+                html_url: ownerOrg.html_url,
+                followers_url: ownerOrg.followers_url,
+                following_url: ownerOrg.following_url,
+                gists_url: ownerOrg.gists_url,
+                starred_url: ownerOrg.starred_url,
+                subscriptions_url: ownerOrg.subscriptions_url,
+                organizations_url: ownerOrg.organizations_url,
+                repos_url: ownerOrg.repos_url,
+                events_url: ownerOrg.events_url,
+                received_events_url: ownerOrg.received_events_url,
+                hooks_url: ownerOrg.hooks_url,
+                issues_url: ownerOrg.issues_url,
+                members_url: ownerOrg.members_url,
+                public_members_url: ownerOrg.public_members_url
+              }
+            : repo.owner;
+
+          return {...repo, id: Number(repo.id), owner};
         });
       }
     );
@@ -241,9 +229,9 @@ const extendSelectors =
     if (!extendedSelectors) return base;
     const extResult = extendedSelectors(args);
     return {
-      ...(base as object),
-      ...(extResult as object)
-    } as GitHubSelectors;
+      ...base,
+      ...extResult
+    };
   };
 
 /**
@@ -255,17 +243,24 @@ const extendSelectors =
  * const storeConfig = extendStore(parsedInitialState);
  * ```
  */
-export const extendStore = (
-  initialState: GitHubStore | undefined,
-  extended?: GitHubExtendStoreInput
-): {
+type ExtendStoreResult = {
   schema: ExtendSimulationSchemaInput<GitHubSchema>;
   actions?: ExtendSimulationActionsInput<GitHubActions, GitHubSchema>;
   selectors?: ExtendSimulationSelectorsInput<GitHubSelectors, GitHubSchema>;
   logs?: boolean;
-} => ({
-  actions: extendActions(extended?.actions),
-  selectors: extendSelectors(extended?.selectors),
-  schema: inputSchema(initialState, extended?.schema),
-  ...(extended?.logs === undefined ? {} : {logs: extended.logs})
-});
+};
+
+export const extendStore = (
+  initialState: GitHubStore | undefined,
+  extended?: GitHubExtendStoreInput
+): ExtendStoreResult => {
+  const result: ExtendStoreResult = {
+    actions: extendActions(extended?.actions),
+    selectors: extendSelectors(extended?.selectors),
+    schema: inputSchema(initialState, extended?.schema)
+  };
+  if (extended?.logs !== undefined) {
+    result.logs = extended.logs;
+  }
+  return result;
+};

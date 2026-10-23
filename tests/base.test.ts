@@ -1,7 +1,7 @@
 /** @file Integration tests for top-level router extension hooks. */
 import {afterAll, beforeAll, describe, expect, it} from 'bun:test';
-import type {AddressInfo} from 'node:net';
 import express from 'express';
+import {z} from 'zod';
 import {createCapabilitiesPayloadProvider} from '../src/admin/capabilities.ts';
 import {registerCapabilitiesRoute} from '../src/admin/routes.ts';
 import {simulation} from '../src/index.ts';
@@ -10,6 +10,21 @@ import type {GitHubExtendStoreInput} from '../src/store/index.ts';
 
 type SimulationServer = Awaited<ReturnType<ReturnType<typeof simulation>['listen']>>;
 type CapabilitiesRouter = Parameters<typeof registerCapabilitiesRoute>[0];
+
+const captureConsoleErrors = () => {
+  const originalConsoleError = console.error;
+  const lines: string[] = [];
+  console.error = (message?: string) => {
+    lines.push(message ?? '');
+  };
+
+  return {
+    lines,
+    restore: () => {
+      console.error = originalConsoleError;
+    }
+  };
+};
 
 const basePort = 2999;
 const host = 'http://localhost';
@@ -45,6 +60,27 @@ describe('router extension tests', () => {
     const body = await res.json();
     expect(res.ok).toBe(true);
     expect(body).toEqual({message: 'Hello from GitHub API simulator!'});
+  });
+
+  it('redirects valid OAuth authorization requests', async () => {
+    const query = new URLSearchParams({
+      redirect_uri: 'https://example.test/callback',
+      state: 'state-token',
+      env: 'test'
+    });
+    const response = await fetch(`${url}/login/oauth/authorize?${query}`, {redirect: 'manual'});
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe(
+      'https://example.test/callback?code=dev_code&env=test&state=state-token'
+    );
+  });
+
+  it('rejects OAuth authorization requests without a redirect URI', async () => {
+    const response = await fetch(`${url}/login/oauth/authorize?state=state-token`);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({message: 'Invalid authorization query'});
   });
 
   it('exposes the private DigitalPuddle capability matrix', async () => {
@@ -89,8 +125,8 @@ describe('router extension tests', () => {
     });
     app.use(router);
 
-    console.error = (message?: unknown) => {
-      errorLogs.push(String(message));
+    console.error = (message?: string) => {
+      errorLogs.push(message ?? '');
     };
 
     try {
@@ -137,7 +173,7 @@ describe('router extension tests', () => {
     let callCount = 0;
     let concurrentServer: ReturnType<typeof app.listen> | undefined;
 
-    console.info = () => undefined;
+    console.info = () => {};
     registerCapabilitiesRoute(
       router,
       createCapabilitiesPayloadProvider(() => {
@@ -153,7 +189,7 @@ describe('router extension tests', () => {
           resolve(listeningServer);
         });
       });
-      const address = concurrentServer.address() as AddressInfo;
+      const address = z.object({port: z.number()}).parse(concurrentServer.address());
       const concurrentUrl = `${host}:${address.port}/_digitalpuddle/capabilities`;
 
       const responses = await Promise.all(Array.from({length: 8}, () => fetch(concurrentUrl)));
@@ -183,7 +219,7 @@ describe('router extension tests', () => {
 describe('capabilities payload provider', () => {
   it('lazily builds and independently caches capability payloads', () => {
     const originalConsoleInfo = console.info;
-    console.info = () => undefined;
+    console.info = () => {};
 
     try {
       let firstCallCount = 0;
@@ -225,21 +261,6 @@ describe('capabilities payload provider', () => {
 });
 
 describe('simulation assembly observability', () => {
-  const captureConsoleErrors = () => {
-    const originalConsoleError = console.error;
-    const lines: string[] = [];
-    console.error = (message?: unknown) => {
-      lines.push(String(message));
-    };
-
-    return {
-      lines,
-      restore: () => {
-        console.error = originalConsoleError;
-      }
-    };
-  };
-
   it('logs a bounded reason when initial state schema validation fails', () => {
     const captured = captureConsoleErrors();
 
@@ -269,11 +290,11 @@ describe('simulation assembly observability', () => {
 
   it('logs a bounded reason when store composition fails', () => {
     const captured = captureConsoleErrors();
-    const extendStore = Object.defineProperty({} as GitHubExtendStoreInput, 'schema', {
-      get() {
+    const extendStore = {
+      get schema(): NonNullable<GitHubExtendStoreInput['schema']> {
         throw new Error('schema extension unavailable');
       }
-    });
+    } satisfies GitHubExtendStoreInput;
 
     try {
       expect(() =>

@@ -5,12 +5,32 @@
  * store, using `applyRelayPagination`, `toGraphql`, and `deriveOwner` to serve
  * GraphQL queries.
  */
-import type {PageArgs} from './relay.ts';
+import type {QueryOrganizationsArgs, Resolvers} from '../__generated__/resolvers-types.ts';
+import {convertOrganizationConnection} from './connections.ts';
 import {applyRelayPagination} from './relay.ts';
-import type {Resolvers} from '../__generated__/resolvers-types.ts';
+import type {PageArgs} from './relay.ts';
 import {toGraphql, deriveOwner} from './to-graphql.ts';
 import {assert} from 'assert-ts';
 import type {ExtendedSimulationStore} from '../store/index.ts';
+
+const toPageArgs = (args: Partial<QueryOrganizationsArgs>): PageArgs => {
+  const pageArgs: PageArgs = {};
+
+  if (args.first !== undefined && args.first !== null) {
+    pageArgs.first = args.first;
+  }
+  if (args.last !== undefined && args.last !== null) {
+    pageArgs.last = args.last;
+  }
+  if (args.after !== undefined && args.after !== null) {
+    pageArgs.after = args.after;
+  }
+  if (args.before !== undefined && args.before !== null) {
+    pageArgs.before = args.before;
+  }
+
+  return pageArgs;
+};
 
 /**
  * Creates the root resolver map for the simulated GitHub GraphQL API.
@@ -21,31 +41,34 @@ import type {ExtendedSimulationStore} from '../store/index.ts';
  * ```
  */
 export function createResolvers(simulationStore: ExtendedSimulationStore): Resolvers {
-  return {
+  const resolverMap = {
     Query: {
       viewer() {
         const [user] = simulationStore.schema.users.selectTableAsList(simulationStore.store.getState());
         assert(!!user, `no logged in user`);
         return toGraphql(simulationStore, 'User', user);
       },
-      user(_: unknown, {login}: {login: string}) {
+      user<T>(_parent: T, {login}: {login: string}) {
         const user = simulationStore.schema.users
           .selectTableAsList(simulationStore.store.getState())
           .find((u) => u.login === login);
         assert(!!user, `no user found for ${login}`);
         return toGraphql(simulationStore, 'User', user);
       },
-      organization(_: unknown, {login}: {login: string}) {
+      organizations<T>(_parent: T, args: Partial<QueryOrganizationsArgs>) {
+        const organizations = simulationStore.schema.organizations.selectTableAsList(simulationStore.store.getState());
+        const page = applyRelayPagination(organizations, toPageArgs(args), (organization) =>
+          toGraphql(simulationStore, 'Organization', organization)
+        );
+        return convertOrganizationConnection(page);
+      },
+      organization<T>(_parent: T, {login}: {login: string}) {
         const orgs = simulationStore.schema.organizations.selectTableAsList(simulationStore.store.getState());
-        const [org] = orgs.filter((o) => o.login === login);
+        const org = orgs.find((candidate) => candidate.login === login);
         assert(!!org, `no organization found for ${login}`);
         return toGraphql(simulationStore, 'Organization', org);
       },
-      organizations(pageArgs: PageArgs) {
-        const orgs = simulationStore.schema.organizations.selectTableAsList(simulationStore.store.getState());
-        return applyRelayPagination(orgs, pageArgs, (org) => toGraphql(simulationStore, 'Organization', org));
-      },
-      repository(_root: unknown, {owner, name}: {owner: string; name: string}) {
+      repository<T>(_root: T, {owner, name}: {owner: string; name: string}) {
         const repo = simulationStore.schema.repositories
           .selectTableAsList(simulationStore.store.getState())
           .find(
@@ -56,11 +79,10 @@ export function createResolvers(simulationStore: ExtendedSimulationStore): Resol
         assert(!!repo, `no repository found for ${name}`);
         return toGraphql(simulationStore, 'Repository', repo);
       },
-      repositoryOwner(_root: unknown, {login}: {login: string}) {
+      repositoryOwner<T>(_root: T, {login}: {login: string}) {
         return deriveOwner(simulationStore, login);
       }
     }
-    // The generated `Resolvers` signatures do not line up exactly with the
-    // lightweight callback shapes used here for the simulated root fields.
-  } as unknown as Resolvers;
+  } satisfies Resolvers;
+  return resolverMap;
 }

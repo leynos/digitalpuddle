@@ -24,6 +24,7 @@ import {
 import type {SchemaFile} from './utils.ts';
 
 /** Seed data accepted for the GitHub fixtures a simulation server starts with. */
+// oxlint-disable-next-line deslop/no-pass-through-type-alias -- Required to keep TypeDoc from expanding the schema.
 export type InitialState = GitHubInitialStore;
 
 type FoundationRouter = Parameters<
@@ -74,7 +75,7 @@ const logSimulationAssemblyFailure = (reason: SimulationAssemblyFailureReason) =
 
 const parseInitialState = (initialState: GitHubInitialStore | undefined) => {
   if (!initialState) {
-    return undefined;
+    return;
   }
 
   try {
@@ -122,12 +123,12 @@ export const simulation = (args: GitHubSimulatorArgs = {}): FoundationSimulator<
     port: 3300, // default port
     simulationContextPage: '/simulation',
     extendStore: extendStoreConfig,
-    extendRouter: extendRouter(args?.extend?.extendRouter),
+    extendRouter: extendRouter(args.extend?.extendRouter),
     openapi: openapi(
       parsedInitialState,
-      args?.apiUrl ?? '/',
-      args?.apiSchema ?? 'api.github.com.json',
-      args?.extend?.openapiHandlers
+      args.apiUrl ?? '/',
+      args.apiSchema ?? 'api.github.com.json',
+      args.extend?.openapiHandlers
     )
   })();
 };

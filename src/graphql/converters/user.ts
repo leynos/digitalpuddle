@@ -13,23 +13,24 @@ export function convertUserToGraphql(
   user: DataSchemas['User'],
   toGraphql: ToGraphqlDispatcher
 ): GraphQLData['User'] {
-  return {
+  const graphqlUser: GraphQLData['User'] = {
     ...toGithubRepositoryOwner(simulationStore, user, toGraphql),
     __typename: 'User',
     id: user.id.toString(),
     bio: user.bio,
-    createdAt: user.created_at ?? new Date(0).toISOString(),
-    ...(user.name ? {name: user.name} : {}),
+    createdAt: user.created_at,
     organizations(pageArgs: PageArgs) {
-      return convertOrganizationConnection(
-        applyRelayPagination(
-          simulationStore.schema.organizations.selectByIds(simulationStore.store.getState(), {
-            ids: user.organizations
-          }),
-          pageArgs,
-          (org) => toGraphql(simulationStore, 'Organization', org)
-        )
+      const organizations = simulationStore.schema.organizations.selectByIds(simulationStore.store.getState(), {
+        ids: user.organizations
+      });
+      const page = applyRelayPagination(organizations, pageArgs, (org) =>
+        toGraphql(simulationStore, 'Organization', org)
       );
+      return convertOrganizationConnection(page);
     }
   };
+  if (user.name) {
+    graphqlUser.name = user.name;
+  }
+  return graphqlUser;
 }

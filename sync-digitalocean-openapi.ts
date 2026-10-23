@@ -7,7 +7,6 @@
  */
 import {execFile} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
-import type {Dirent} from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -22,6 +21,9 @@ import {
   digitalOceanOpenApiSourcePath,
   getDigitalOceanOpenApiRawSourceUrl,
   getDigitalOceanOpenApiSourceArchiveUrl,
+  isJsonObject,
+  isJsonString,
+  jsonValueSchema,
   sha256Hex,
   stringifyCanonicalJson,
   validateDigitalOceanOpenApiProvenance,
@@ -32,7 +34,7 @@ import {
 const execFileAsync = promisify(execFile);
 
 const repoRoot = import.meta.dirname;
-const defaultTimeoutMs = 60000;
+const defaultTimeoutMs = 60_000;
 const maxTimeoutMs = 10 * 60 * 1000;
 const maxArchiveBytes = 50 * 1024 * 1024;
 const syncTimeoutEnvKey = 'DIGITALPUDDLE_OPENAPI_SYNC_TIMEOUT_MS';
@@ -41,7 +43,7 @@ const bundlingTool = {
   version: '2.31.5'
 } as const;
 
-const secretShapeReplacements: readonly {
+export const credentialExampleReplacements: readonly {
   readonly description: string;
   readonly pattern: RegExp;
   readonly replacement: string;
@@ -63,9 +65,11 @@ const secretShapeReplacements: readonly {
   }
 ];
 
+export type SyncLogFields = Readonly<Record<string, string | number | undefined>>;
+
 type SyncLogger = {
-  info: (...values: readonly unknown[]) => void;
-  error: (...values: readonly unknown[]) => void;
+  info: (message: string, ...fields: SyncLogFields[]) => void;
+  error: (message: string, ...fields: SyncLogFields[]) => void;
 };
 
 type SyncFileSystem = {
@@ -143,18 +147,16 @@ const readCappedResponseBytes = async (url: string, response: Response): Promise
   const reader = response.body.getReader();
 
   try {
-    while (true) {
-      const {done, value} = await reader.read();
-      if (done) {
-        break;
-      }
-
+    let result = await reader.read();
+    while (!result.done) {
+      const {value} = result;
       receivedBytes += value.byteLength;
       assertArchiveSize(url, receivedBytes);
       chunks.push(value);
+      result = await reader.read();
     }
   } catch (error) {
-    await reader.cancel().catch(() => undefined);
+    await reader.cancel().catch(() => {});
     throw error;
   }
 
@@ -199,7 +201,7 @@ const findExtractedRepositoryRoot = async (
   pin: string,
   dependencies: SyncDependencies
 ): Promise<string> => {
-  const entries = (await dependencies.fs.readdir(destination, {withFileTypes: true})) as Dirent[];
+  const entries = await dependencies.fs.readdir(destination, {withFileTypes: true});
   const expectedPrefix = `openapi-${pin}`;
   const directories = entries.filter((entry) => entry.isDirectory() && entry.name.startsWith(expectedPrefix));
 
@@ -209,7 +211,7 @@ const findExtractedRepositoryRoot = async (
     );
   }
 
-  const [repositoryRoot] = directories;
+  const repositoryRoot = directories.at(0);
   if (repositoryRoot === undefined) {
     throw new Error(`archive did not contain ${expectedPrefix} under ${destination}`);
   }
@@ -236,22 +238,23 @@ const bundleOpenApi = async (
 
 const parseBundledJson = async (bundledPath: string, dependencies: SyncDependencies): Promise<JsonValue> => {
   const content = await dependencies.fs.readFile(bundledPath, 'utf8');
-  return JSON.parse(content) as JsonValue;
+  return jsonValueSchema.parse(JSON.parse(content));
 };
 
 const scrubSecretLikeExamples = (value: JsonValue): JsonValue => {
-  if (typeof value === 'string') {
-    return secretShapeReplacements.reduce(
-      (scrubbed, rule) => scrubbed.replaceAll(rule.pattern, rule.replacement),
-      value
-    );
+  if (isJsonString(value)) {
+    let scrubbed = value;
+    for (const rule of credentialExampleReplacements) {
+      scrubbed = scrubbed.replaceAll(rule.pattern, rule.replacement);
+    }
+    return scrubbed;
   }
 
   if (Array.isArray(value)) {
     return value.map((item) => scrubSecretLikeExamples(item));
   }
 
-  if (value !== null && typeof value === 'object') {
+  if (isJsonObject(value)) {
     return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, scrubSecretLikeExamples(item)]));
   }
 
@@ -362,7 +365,7 @@ const refreshDigitalOceanOpenApi = async (
     const provenance = validateDigitalOceanOpenApiProvenance(buildProvenance(pin, artifactHash, dependencies.now));
     const provenancePath = path.join(commandRepoRoot, digitalOceanOpenApiProvenancePath);
 
-    await writeCanonicalJson(provenancePath, provenance as unknown as JsonValue, dependencies);
+    await writeCanonicalJson(provenancePath, jsonValueSchema.parse(provenance), dependencies);
 
     dependencies.logger.info('[syncDigitalOceanOpenApi] wrote artefact to', {artifactPath});
     dependencies.logger.info('[syncDigitalOceanOpenApi] wrote provenance to', {provenancePath});
@@ -393,7 +396,6 @@ export {
   createTempOutputPath,
   createDefaultSyncDependencies,
   refreshDigitalOceanOpenApi,
-  secretShapeReplacements,
   scrubSecretLikeExamples,
   type SyncDependencies
 };

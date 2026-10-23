@@ -9,7 +9,22 @@
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
 
-export type JsonValue = null | boolean | number | string | readonly JsonValue[] | {readonly [key: string]: JsonValue};
+export type JsonObject = {readonly [key: string]: JsonValue};
+export type JsonValue = null | boolean | number | string | readonly JsonValue[] | JsonObject;
+
+export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    z.null(),
+    z.boolean(),
+    z.number(),
+    z.string(),
+    z.array(jsonValueSchema),
+    z.record(z.string(), jsonValueSchema)
+  ])
+);
+
+export const jsonStringSchema = z.string();
+export const jsonObjectSchema = z.record(z.string(), jsonValueSchema);
 
 export const digitalOceanOpenApiArtifactPath = 'src/openapi/digitalocean.openapi.json';
 export const digitalOceanOpenApiProvenancePath = 'src/openapi/digitalocean.openapi.provenance.json';
@@ -26,8 +41,8 @@ export const digitalOceanOpenApiProvenanceSchema = z
     upstreamRepository: z.literal(digitalOceanOpenApiRepositoryUrl),
     upstreamCommit: z.string().regex(digitalOceanOpenApiCommitPattern),
     sourcePath: z.literal(digitalOceanOpenApiSourcePath),
-    rawSourceUrl: z.string().url(),
-    sourceArchiveUrl: z.string().url(),
+    rawSourceUrl: z.url(),
+    sourceArchiveUrl: z.url(),
     refreshCommand: z.literal(digitalOceanOpenApiRefreshCommand),
     bundlingTool: z.object({
       name: z.literal('@redocly/cli'),
@@ -35,13 +50,13 @@ export const digitalOceanOpenApiProvenanceSchema = z
     }),
     generatedArtifactPath: z.literal(digitalOceanOpenApiArtifactPath),
     generatedArtifactSha256: z.string().regex(sha256Pattern),
-    refreshedAt: z.string().datetime()
+    refreshedAt: z.iso.datetime()
   })
   .superRefine((provenance, context) => {
     const expectedRawSourceUrl = getDigitalOceanOpenApiRawSourceUrl(provenance.upstreamCommit);
     if (provenance.rawSourceUrl !== expectedRawSourceUrl) {
       context.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: `rawSourceUrl must match upstreamCommit: ${expectedRawSourceUrl}`,
         path: ['rawSourceUrl']
       });
@@ -50,7 +65,7 @@ export const digitalOceanOpenApiProvenanceSchema = z
     const expectedSourceArchiveUrl = getDigitalOceanOpenApiSourceArchiveUrl(provenance.upstreamCommit);
     if (provenance.sourceArchiveUrl !== expectedSourceArchiveUrl) {
       context.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: `sourceArchiveUrl must match upstreamCommit: ${expectedSourceArchiveUrl}`,
         path: ['sourceArchiveUrl']
       });
@@ -58,6 +73,11 @@ export const digitalOceanOpenApiProvenanceSchema = z
   });
 
 export type DigitalOceanOpenApiProvenance = z.infer<typeof digitalOceanOpenApiProvenanceSchema>;
+
+export const isJsonObject = (value: JsonValue): value is JsonObject =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+export const isJsonString = (value: JsonValue): value is string => typeof value === 'string';
 
 export const getDigitalOceanOpenApiRawSourceUrl = (pin = digitalOceanOpenApiPin): string =>
   `https://raw.githubusercontent.com/digitalocean/openapi/${pin}/${digitalOceanOpenApiSourcePath}`;
@@ -70,10 +90,18 @@ export const canonicalizeJson = (value: JsonValue): JsonValue => {
     return value.map((item) => canonicalizeJson(item));
   }
 
-  if (value !== null && typeof value === 'object') {
+  if (isJsonObject(value)) {
     return Object.fromEntries(
       Object.entries(value)
-        .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+        .toSorted(([left], [right]) => {
+          if (left < right) {
+            return -1;
+          }
+          if (left > right) {
+            return 1;
+          }
+          return 0;
+        })
         .map(([key, item]) => [key, canonicalizeJson(item)])
     );
   }
@@ -89,11 +117,11 @@ export const stringifyCanonicalJson = (value: JsonValue): string =>
 
 export const sha256Hex = (content: string | Uint8Array): string => createHash('sha256').update(content).digest('hex');
 
-export const validateDigitalOceanOpenApiProvenance = (provenance: unknown): DigitalOceanOpenApiProvenance =>
+export const validateDigitalOceanOpenApiProvenance = (provenance: JsonValue): DigitalOceanOpenApiProvenance =>
   digitalOceanOpenApiProvenanceSchema.parse(provenance);
 
 export const assertDigitalOceanOpenApiProvenanceMatchesArtifact = (
-  provenance: unknown,
+  provenance: JsonValue,
   artifactBytes: string | Uint8Array
 ): DigitalOceanOpenApiProvenance => {
   const parsed = validateDigitalOceanOpenApiProvenance(provenance);

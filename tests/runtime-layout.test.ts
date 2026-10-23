@@ -64,8 +64,11 @@ describe('target runtime layout', () => {
   it('keeps the empty scenario registry deterministic across calls', () => {
     const registry = createEmptyScenarioRegistry();
 
-    expect(registry.list()).toEqual([]);
-    expect(registry.list()).toEqual([]);
+    const firstList = registry.list();
+    const secondList = registry.list();
+
+    expect(firstList).toEqual([]);
+    expect(secondList).toEqual(firstList);
   });
 
   it('runs CLI command contracts with caller-provided arguments', async () => {

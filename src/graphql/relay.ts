@@ -30,7 +30,7 @@ export interface RelayPagingOptions {
   before?: string;
 }
 
-const identity = <A>(a: A): A => a;
+const DEFAULT_PAGE_SIZE = 100;
 
 const parseCursor = (name: 'before' | 'after', cursor: string | undefined, defaultValue: number) => {
   if (cursor == null) {
@@ -54,48 +54,52 @@ const parseCursor = (name: 'before' | 'after', cursor: string | undefined, defau
  * // => nodes ['a', 'b'], startCursor '0', endCursor '1'
  * ```
  */
-export function applyRelayPagination<T, R>(
-  nodes: T[],
-  args: PageArgs,
-  mapper: (a: T) => R = identity as (a: T) => R
-): Page<R> {
+export function applyRelayPagination<T>(nodes: T[], args: PageArgs): Page<T>;
+export function applyRelayPagination<T, R>(nodes: T[], args: PageArgs, mapper: (node: T) => R): Page<R>;
+export function applyRelayPagination<T, R = never>(nodes: T[], args: PageArgs, mapper?: (node: T) => R): Page<T | R> {
   const totalNodes = nodes.length;
   const range = applyCursorsToEdges(nodes, args.before, args.after);
 
   const edges = edgesToReturn(range, args.first, args.last).map((edge) => ({
     ...edge,
-    node: mapper(edge.node)
+    node: mapper === undefined ? edge.node : mapper(edge.node)
   }));
 
   const [first] = edges;
-  const last = edges.slice().pop();
+  const last = [...edges].pop();
+
+  const pageInfo: PageInfo = {
+    get hasNextPage() {
+      const {first, before, last} = args;
+      if (first != null) {
+        return range.length > first;
+      }
+      if (before != null) {
+        const wasTruncatedToDefaultSize = last == null && range.length > DEFAULT_PAGE_SIZE;
+        return wasTruncatedToDefaultSize || Number(before) < totalNodes - 1;
+      }
+      return last == null && range.length > DEFAULT_PAGE_SIZE;
+    },
+    get hasPreviousPage() {
+      const {last, after} = args;
+      if (last != null) {
+        return range.length > last;
+      }
+      return after != null && Number(after) >= 0 && Number(after) < totalNodes;
+    }
+  };
+  if (first !== undefined) {
+    pageInfo.startCursor = first.cursor;
+  }
+  if (last !== undefined) {
+    pageInfo.endCursor = last.cursor;
+  }
 
   return {
     totalCount: nodes.length,
     edges,
     nodes: edges.map((e) => e.node),
-    pageInfo: {
-      get hasNextPage() {
-        const {first, before} = args;
-        if (first != null) {
-          return range.length > first;
-        } else if (before != null) {
-          return Number(before) < totalNodes - 1;
-        }
-        return false;
-      },
-      get hasPreviousPage() {
-        const {last, after} = args;
-        if (last != null) {
-          return range.length > last;
-        } else if (after != null) {
-          return Number(after) > 0;
-        }
-        return false;
-      },
-      startCursor: first?.cursor,
-      endCursor: last?.cursor
-    } as PageInfo
+    pageInfo
   };
 }
 
@@ -132,7 +136,7 @@ function applyCursorsToEdges<T>(nodes: T[], before?: string, after?: string) {
 function edgesToReturn<T>(edges: T[], first?: number, last?: number) {
   let newEdges = edges;
   if (first == null && last == null) {
-    first = 100;
+    first = DEFAULT_PAGE_SIZE;
   }
   if (first != null) {
     if (first < 0) {
@@ -144,11 +148,7 @@ function edgesToReturn<T>(edges: T[], first?: number, last?: number) {
     if (last < 0) {
       throw new Error(`value of 'last' must be greater than 0, was ${last}`);
     }
-    if (last === 0) {
-      newEdges = [];
-    } else {
-      newEdges = newEdges.slice(-last);
-    }
+    newEdges = last === 0 ? [] : newEdges.slice(-last);
   }
 
   return newEdges;

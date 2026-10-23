@@ -1,14 +1,16 @@
-/** @file Unit tests for pure user domain helpers. */
+/** @file Unit tests for pure user domain normalization helpers. */
 import {describe, expect, it} from 'bun:test';
-import {
-  normalizeUser,
-  serializeMembershipResponse,
-  shouldNormalizeUser,
-  userAnomalyDetails
-} from '../src/domain/user.ts';
-import type {AuthenticatedUser, MembershipOrganization, RawAuthenticatedUser} from '../src/domain/user.ts';
+import {normalizeUser, shouldNormalizeUser, userAnomalyDetails} from '../src/domain/user.ts';
+import type {RawAuthenticatedUser} from '../src/domain/user.ts';
 
-const malformedUser = (user: unknown): RawAuthenticatedUser => user as RawAuthenticatedUser;
+type MalformedUserFixture = {
+  readonly id?: number | string;
+  readonly login: string;
+  readonly email?: string;
+  readonly organizations?: string[] | string;
+};
+
+const malformedUser = (user: MalformedUserFixture): RawAuthenticatedUser => user;
 
 describe('user domain helpers', () => {
   it('detects malformed user id and organization fields', () => {
@@ -54,25 +56,8 @@ describe('user domain helpers', () => {
   });
 
   it('preserves valid user identifiers and organization lists', () => {
-    const user = {id: 123, login: 'dev', organizations: ['team']} as AuthenticatedUser;
+    const user = normalizeUser(malformedUser({id: 123, login: 'dev', organizations: ['team']}));
 
     expect(normalizeUser(user)).toEqual(user);
-  });
-
-  it('serializes membership responses with computed URLs and embedded records', () => {
-    const organization = {
-      login: 'team',
-      url: 'https://api.example.test/orgs/team'
-    } as MembershipOrganization;
-    const user = {id: 123, login: 'dev', organizations: ['team']} as AuthenticatedUser;
-
-    expect(serializeMembershipResponse({state: 'active', role: 'member'}, organization, user)).toEqual({
-      url: 'https://api.example.test/orgs/team/memberships/dev',
-      organization_url: 'https://api.example.test/orgs/team',
-      state: 'active',
-      role: 'member',
-      organization,
-      user
-    });
   });
 });

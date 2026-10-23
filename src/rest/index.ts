@@ -9,11 +9,22 @@
 import type {Document, SimulationHandlers} from '@simulacrum/foundation-simulator';
 import {createUserHandlers} from '../handlers/user.ts';
 import type {ExtendedSimulationStore} from '../store/index.ts';
+import type {GitHubInitialStore} from '../store/entities.ts';
 import {getSchema, type SchemaFile} from '../utils.ts';
 import {blobAsBase64, commitStatusResponse, gitTrees} from './utils.ts';
 import type {SimulationHandler} from '../handlers/types.ts';
+import {z} from 'zod';
 
-export const errorDetails = (error: unknown) => {
+const installationIdSchema = z.union([z.string(), z.number()]);
+const installationParamsSchema = z
+  .object({
+    installation_id: z.union([installationIdSchema, z.array(installationIdSchema)]).optional()
+  })
+  .loose();
+
+export type RestErrorValue = Error | string | number | boolean | bigint | symbol | null | undefined;
+
+export const errorDetails = (error: RestErrorValue) => {
   if (error instanceof Error) {
     return {
       name: error.name,
@@ -27,7 +38,7 @@ export const errorDetails = (error: unknown) => {
   };
 };
 
-export const logRestHandlerError = (operationId: string, error: unknown) => {
+export const logRestHandlerError = (operationId: string, error: RestErrorValue) => {
   console.error(
     JSON.stringify({
       event: 'digitalpuddle.rest.handler.error',
@@ -43,7 +54,7 @@ export const withErrorLogging =
     try {
       return await handler(...args);
     } catch (error) {
-      logRestHandlerError(operationId, error);
+      logRestHandlerError(operationId, error instanceof Error ? error : String(error));
       throw error;
     }
   };
@@ -58,14 +69,13 @@ export const withErrorLoggingForHandlers = (simulationHandlers: SimulationHandle
 
 const handlers =
   (
-    initialState: Record<string, any> | undefined,
+    initialState: GitHubInitialStore | undefined,
     extendedHandlers: ((simulationStore: ExtendedSimulationStore) => SimulationHandlers) | undefined
   ) =>
   (simulationStore: ExtendedSimulationStore): SimulationHandlers => {
     const getState = () => simulationStore.store.getState();
-    const baseHandlers = !initialState
-      ? {}
-      : {
+    const baseHandlers = initialState
+      ? {
           // GET /user/installations
           'apps/list-installations': async (
             _context: Parameters<SimulationHandler>[0],
@@ -86,10 +96,10 @@ const handlers =
             request: Parameters<SimulationHandler>[1],
             _response: Parameters<SimulationHandler>[2]
           ) => {
-            const contextParams = context.request.params as {installation_id?: string | string[]};
-            const requestParams = request.params as {installation_id?: string | string[]} | undefined;
             const installationIdParam =
-              contextParams.installation_id ?? requestParams?.installation_id ?? request.body?.installation_id;
+              installationParamsSchema.parse(context.request.params).installation_id ??
+              installationParamsSchema.parse(request.params).installation_id ??
+              installationParamsSchema.parse(request.body ?? {}).installation_id;
             const installationId = Number(
               Array.isArray(installationIdParam) ? installationIdParam[0] : installationIdParam
             );
@@ -216,9 +226,7 @@ const handlers =
           ) => {
             const {owner, repo, path} = context.request.params;
             const blob = simulationStore.selectors.getBlob(simulationStore.store.getState(), owner, repo, path);
-            if (!blob) {
-              response.status(404).send('fixture does not exist');
-            } else {
+            if (blob) {
               const data = blobAsBase64({
                 blob,
                 host: `${request.protocol}://${request.headers.host}`,
@@ -227,6 +235,8 @@ const handlers =
                 ref: path
               });
               response.status(200).json(data);
+            } else {
+              response.status(404).send('fixture does not exist');
             }
           },
           // GET /repos/{owner}/{repo}/git/blobs/{file_sha}
@@ -237,9 +247,7 @@ const handlers =
           ) => {
             const {owner, repo, file_sha} = context.request.params;
             const blob = simulationStore.selectors.getBlob(simulationStore.store.getState(), owner, repo, file_sha);
-            if (!blob) {
-              response.status(404).send('fixture does not exist');
-            } else {
+            if (blob) {
               const data = blobAsBase64({
                 blob,
                 host: `${request.protocol}://${request.headers.host}`,
@@ -249,6 +257,8 @@ const handlers =
                 kind: 'git-blob'
               });
               response.status(200).json(data);
+            } else {
+              response.status(404).send('fixture does not exist');
             }
           },
           // GET /repos/{owner}/{repo}/git/trees/{tree_sha}
@@ -280,15 +290,19 @@ const handlers =
               response.status(200).json(tree);
             }
           }
-        };
+        }
+      : {};
 
     // note for any cases where it `return`s an object,
     //  that will validate the response per the schema
-    return withErrorLoggingForHandlers({
-      ...baseHandlers,
-      ...(initialState ? createUserHandlers(simulationStore) : {}),
-      ...(extendedHandlers ? extendedHandlers(simulationStore) : {})
-    });
+    const mergedHandlers = Object.assign({}, baseHandlers);
+    if (initialState) {
+      Object.assign(mergedHandlers, createUserHandlers(simulationStore));
+    }
+    if (extendedHandlers) {
+      Object.assign(mergedHandlers, extendedHandlers(simulationStore));
+    }
+    return withErrorLoggingForHandlers(mergedHandlers);
   };
 
 /**
@@ -300,13 +314,14 @@ const handlers =
  * ```
  */
 export const openapi = (
-  initialState: Record<string, any> | undefined,
+  initialState: GitHubInitialStore | undefined,
   apiRoot: string,
   apiSchema: SchemaFile | string,
   openapiHandlers: ((simulationStore: ExtendedSimulationStore) => SimulationHandlers) | undefined
 ) => [
   {
-    document: getSchema(apiSchema) as unknown as Document,
+    // SAFETY: JSON documents are validated for a version and paths before this adapter boundary.
+    document: getSchema(apiSchema) as Document,
     handlers: handlers(initialState, openapiHandlers),
     apiRoot,
     additionalOptions: {
