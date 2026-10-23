@@ -60,6 +60,13 @@ describe('applyRelayPagination', () => {
     expect(page.pageInfo.hasPreviousPage).toBe(true);
   });
 
+  it('reports a previous page after the first edge', () => {
+    const page = applyRelayPagination(['a', 'b'], {first: 1, after: '0'});
+
+    expect(page.nodes).toEqual(['b']);
+    expect(page.pageInfo.hasPreviousPage).toBe(true);
+  });
+
   it('applies last to the already-trimmed first window', () => {
     const page = applyRelayPagination(['a', 'b', 'c', 'd'], {first: 3, last: 1});
 

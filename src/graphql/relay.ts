@@ -85,7 +85,7 @@ export function applyRelayPagination<T, R = never>(nodes: T[], args: PageArgs, m
       if (last != null) {
         return range.length > last;
       }
-      return after != null && Number(after) > 0;
+      return after != null && Number(after) >= 0 && Number(after) < totalNodes;
     }
   };
   if (first !== undefined) {
