@@ -148,11 +148,11 @@ generation before TypeScript checks.
 
 Bun applies dependency patches listed in `package.json`'s
 `patchedDependencies`. The foundation-simulator `0.8.0` patch makes its
-listening wait reject on a server error so both startup entry points can report
-port conflicts. When updating that dependency, keep its version range, the
-`patchedDependencies` key, the patch file, and `bun.lock` aligned. Rebase the
-patch against the matching upstream release and validate the startup failure
-tests after changing it.
+listening wait reject on a server error, so both startup entry points can
+report port conflicts. When updating that dependency, keep its version range,
+the `patchedDependencies` key, the patch file, and `bun.lock` aligned. Rebase
+the patch against the matching upstream release and validate the startup
+failure tests after changing it.
 
 Run documentation gates when Markdown changes:
 
