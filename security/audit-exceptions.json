@@ -13,7 +13,7 @@
     "package": "digitalpuddle",
     "advisory": "GHSA-g3hv-75wg-m249",
     "introducedBy": "typedoc",
-    "reason": "minimatch is patched only in 11.0.1, and the newest typedoc (0.28.20) depends on minimatch ^10.2.5 and fails with 'mini.matchOne is not a function' when 11.x is forced by an override. The package reaches the tree only through two development-only paths: typedoc, which runs the docs:check gate over this repository's own entry points, and @graphql-codegen/cli > graphql-config, which runs code generation over this repository's own codegen.ts configuration. No pattern is matched at runtime and DigitalPuddle's own source never imports it. Rationale and exposure: docs/dependency-policy-exception-minimatch-globparts.md. Remove this entry once a typedoc release accepts minimatch 11 and the lockfile resolves 11.0.1 or later for both paths.",
+    "reason": "minimatch is patched only in 11.0.1, and the newest typedoc (0.28.20) depends on minimatch ^10.2.5 and fails with 'mini.matchOne is not a function' when 11.x is forced by an override. The package reaches the tree only through two development-only paths: typedoc, which runs the docs:check gate over this repository's own entry points, and @graphql-codegen/cli > graphql-config, a dependency of the code-generation CLI, which runs only over this repository's own codegen.ts. No pattern is matched at runtime and DigitalPuddle's own source never imports it. Rationale and exposure: docs/dependency-policy-exception-minimatch-globparts.md. Remove this entry once a typedoc release accepts minimatch 11 and the lockfile resolves 11.0.1 or later for both paths.",
     "addedAt": "2026-11-07",
     "expiresAt": "2027-01-07"
   }
