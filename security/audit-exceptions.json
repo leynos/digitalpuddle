@@ -7,5 +7,14 @@
     "reason": "braces 3.0.3 is the newest release and the advisory covers every release up to it, so there is no patched release. It reaches the tree through @graphql-codegen/cli > micromatch (a devDependency that runs code generation over this repository's own codegen.ts patterns) and through @simulacrum/foundation-simulator > http-proxy-middleware > micromatch. The simulator is a production dependency, but its proxy middleware (dist/middleware/proxy.mjs) calls createProxyMiddleware with a target and no pathFilter, and http-proxy-middleware reaches micromatch only when a glob pathFilter is configured (the configured glob is the pattern; the request path is only the string matched), so no brace pattern is ever matched at runtime, and DigitalPuddle's own source never imports either package. Rationale and exposure: docs/dependency-policy-exception-braces-nested-patterns.md. Remove this entry once a patched braces exists or micromatch drops braces 3.",
     "addedAt": "2026-10-09",
     "expiresAt": "2026-12-09"
+  },
+  {
+    "id": "MINIMATCH_GLOBPARTS_DOS_2026_11",
+    "package": "digitalpuddle",
+    "advisory": "GHSA-g3hv-75wg-m249",
+    "introducedBy": "typedoc",
+    "reason": "minimatch is patched only in 11.0.1, and the newest typedoc (0.28.20) depends on minimatch ^10.2.5 and fails with 'mini.matchOne is not a function' when 11.x is forced by an override. The package reaches the tree only through two development-only paths: typedoc, which runs the docs:check gate over this repository's own entry points, and @graphql-codegen/cli > graphql-config, a dependency of the code-generation CLI, which runs only over this repository's own codegen.ts. No pattern is matched at runtime and DigitalPuddle's own source never imports it. Rationale and exposure: docs/dependency-policy-exception-minimatch-globparts.md. Remove this entry once a typedoc release accepts minimatch 11 and the lockfile resolves 11.0.1 or later for both paths.",
+    "addedAt": "2026-11-07",
+    "expiresAt": "2027-01-07"
   }
 ]
