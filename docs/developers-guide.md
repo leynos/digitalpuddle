@@ -280,7 +280,11 @@ vulnerable version over forcing a version past its declared range.
 One advisory has no patched release: `braces` (GHSA-vfj7-8cjw-p6xm). It is
 covered by a dated ledger entry that expires on 2026-12-09, with its rationale
 in `docs/dependency-policy-exception-braces-nested-patterns.md`. An expired or
-undated entry fails the gate, so the exception cannot outlive its review.
+undated entry fails the gate, so the exception cannot outlive its review. A
+second, `minimatch` (GHSA-g3hv-75wg-m249, dev-only through `typedoc`), is
+covered until 2027-01-07 and explained in
+`docs/dependency-policy-exception-minimatch-globparts.md`; it ends when a
+`typedoc` release accepts `minimatch` 11.
 
 Run `bun run audit` before pushing. When it reports something new, raise the
 matching `overrides` entry rather than the direct dependency, run `bun install`
