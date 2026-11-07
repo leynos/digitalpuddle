@@ -32,8 +32,8 @@ Table 1: advisory covered by this exception.
   installs, but `typedoc` then fails with `mini.matchOne is not a function`,
   because it calls an API that 11.x removed. This path is what blocks the fix.
 - `@graphql-codegen/cli > graphql-config`, which declares `minimatch@^10.0.0`
-  and resolves the same single copy. It would accept 11.x, but one copy serves
-  both paths, so the override cannot be raised for it alone.
+  and resolves the same single copy. Its caret range excludes 11.x too, so one
+  copy serves both paths and neither path accepts the patched major version.
 
 Replacing `typedoc` is out of scope for an audit fix.
 
@@ -43,10 +43,11 @@ Replacing `typedoc` is out of scope for an audit fix.
 CI). It uses `minimatch` to filter the repository's own entry points and
 `typedoc.json` patterns, which come from the repository, not from runtime input.
 `graphql-config` runs only during code generation over this repository's own
-`codegen.ts` document patterns, also repository-controlled. The package is not
-a production dependency and DigitalPuddle's source does not import it. A pull
-request that changes those patterns could make its own CI run slow, but that is
-a self-inflicted failure in a change under review, not a production risk.
+`codegen.ts` schema and plugin configuration, also repository-controlled. The
+package is not a production dependency and DigitalPuddle's source does not
+import it. A pull request that changes those patterns could make its own CI run
+slow, but that is a self-inflicted failure in a change under review, not a
+production risk.
 
 ## Review trigger
 

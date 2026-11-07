@@ -285,7 +285,8 @@ second, `minimatch` (GHSA-g3hv-75wg-m249, dev-only and `graphql-config`), is
 covered until 2027-01-07 (two dev-only paths: `typedoc` and
 `@graphql-codegen/cli > graphql-config`) and explained in
 `docs/dependency-policy-exception-minimatch-globparts.md`; it ends when a
-`typedoc` release accepts `minimatch` 11.
+`typedoc` release accepts `minimatch` 11 and the lockfile resolves 11.0.1 or
+later for both paths.
 
 Run `bun run audit` before pushing. When it reports something new, raise the
 matching `overrides` entry rather than the direct dependency, run `bun install`
