@@ -39,9 +39,10 @@ Replacing `typedoc` is out of scope for an audit fix.
 
 ## Exposure
 
-`typedoc` runs only for `bun run docs:check` (and so for `make docs-check` and
-CI). It uses `minimatch` to filter the repository's own entry point, which
-comes from the repository, not from runtime input. `graphql-config` is a
+`typedoc` runs for `bun run docs:check` (and so for `make docs-check` and CI)
+and in the documentation-gate behaviour tests, which use temporary fixture
+entry points. It uses `minimatch` to filter the repository's own entry point,
+which comes from the repository, not from runtime input. `graphql-config` is a
 dependency of the code-generation CLI, which runs only for `bun run generate`
 over this repository's own `codegen.ts`; whether that path invokes its
 `minimatch` matching has not been established, and the input is
