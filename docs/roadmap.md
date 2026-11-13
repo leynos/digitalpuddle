@@ -11,7 +11,7 @@ step is a workstream that validates or falsifies part of that idea, and each
 task is an execution unit with explicit dependencies and design citations. The
 primary source is
 [`docs/digitalpuddle-technical-design.md`](digitalpuddle-technical-design.md).
-Architectural decisions are recorded under `docs/adr/`. There are no RFCs in
+Architectural decisions are recorded under `docs/adrs/`. There are no RFCs in
 this repository yet, so early tasks still include the unresolved product
 questions that need durable records before implementation broadens.
 
@@ -44,13 +44,13 @@ OpenAPI pin, first API slice, and future Droplet or Spaces work.
   - See `digitalpuddle-technical-design.md` §§8.2, 8.3, 12.2, 12.3, 18, and 20.
   - Success: every open question in §20 is either in the v1 scope, moved to a
     named follow-on phase, or explicitly rejected.
-  - Decision: see `adr/0006-v1-product-boundaries.md`.
+  - Decision: see `adrs/adr-0006-v1-product-boundaries.md`.
 - [x] 1.1.3. Define the release capability policy for `scriptable`,
       `engine-backed`, `stubbed`, and `unsupported` operations.
   - See `digitalpuddle-technical-design.md` §§7.1, 8.2, and 16.
   - Success: capability classifications can drive both generated docs and
     `501 Not Implemented` responses.
-  - Decision: see `adr/0007-release-capability-policy.md`.
+  - Decision: see `adrs/adr-0007-release-capability-policy.md`.
 
 ### 1.2. Keep the repository shape honest
 
@@ -74,7 +74,7 @@ outcome keeps later source moves deliberate instead of cosmetic.
       production surfaces.
   - Requires 1.2.2.
   - See `digitalpuddle-technical-design.md` §§4 and 16.
-  - See `adr/0005-transitional-simulacat-boundaries.md`.
+  - See `adrs/adr-0005-transitional-simulacat-boundaries.md`.
   - Success: any remaining GitHub schemas, GraphQL helpers, or tests are marked
     as transitional fixtures or removed when no longer used by gates.
 
@@ -374,7 +374,7 @@ depends on Nile Valley's scaling workflows.
       behaviour if Nile Valley requires scaling workflows.
   - Requires phase 4.
   - See `digitalpuddle-technical-design.md` §§8.2, 10.3, and 20.
-  - See `adr/0006-v1-product-boundaries.md`.
+  - See `adrs/adr-0006-v1-product-boundaries.md`.
   - Success: node-pool actions update k3d agent counts and preserve action
     polling semantics.
 
@@ -388,7 +388,7 @@ entering v1 without evidence.
       if customer tests require Droplet control-plane behaviour.
   - Requires phase 4.
   - See `digitalpuddle-technical-design.md` §§3, 9.1, 12.3, and 20.
-  - See `adr/0006-v1-product-boundaries.md`.
+  - See `adrs/adr-0006-v1-product-boundaries.md`.
   - Success: Droplet work has a named customer scenario and does not require
     QEMU accuracy.
 - [ ] 5.2.2. Reassess a QEMU-backed engine only when cloud-init or boot
@@ -408,7 +408,7 @@ outcome informs future API coverage without proxying object traffic.
       Terraform, or doctl needs them.
   - Requires phase 4.
   - See `digitalpuddle-technical-design.md` §§2, 12.2, and 20.
-  - See `adr/0006-v1-product-boundaries.md`.
+  - See `adrs/adr-0006-v1-product-boundaries.md`.
   - Success: object-level S3 traffic still goes directly to MinIO.
 - [ ] 5.3.2. Add bucket metadata control-plane routes only if Nile Valley needs
       them.
@@ -419,6 +419,6 @@ outcome informs future API coverage without proxying object traffic.
       after the v1 route matrix is stable.
   - Requires phase 4.
   - See `digitalpuddle-technical-design.md` §§8.3 and 20.
-  - See `adr/0006-v1-product-boundaries.md`.
+  - See `adrs/adr-0006-v1-product-boundaries.md`.
   - Success: the CI matrix states which doctl workflows are supported and which
     remain best-effort.

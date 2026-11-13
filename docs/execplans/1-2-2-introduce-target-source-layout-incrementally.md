@@ -570,7 +570,7 @@ The implementation is accepted when all of the following are true:
   whether LemmaScript proof is required; if proof is required, it must be
   rigorous and not a restatement of the assumption.
 - `docs/developers-guide.md`, `docs/users-guide.md`,
-  `docs/digitalpuddle-technical-design.md`, and `docs/adr/*` are updated where
+  `docs/digitalpuddle-technical-design.md`, and `docs/adrs/*` are updated where
   their owned facts change.
 - `docs/roadmap.md` marks item 1.2.2 done only after implementation completes.
 - `make check-fmt`, `make lint`, `make typecheck`, and `make test` all pass.
@@ -619,10 +619,11 @@ Relevant project documents:
   shape, capability-policy paths, and transitional architecture rules.
 - `docs/users-guide.md` owns user-visible service and CLI behaviour.
 - `docs/documentation-style-guide.md` owns Markdown style.
-- `docs/adr/0001-simulacrum-backplane.md`,
-  `docs/adr/0002-digitalocean-openapi-pin.md`,
-  `docs/adr/0005-transitional-simulacat-boundaries.md`, and
-  `docs/adr/0007-release-capability-policy.md` are the primary ADR guardrails.
+- `docs/adrs/adr-0001-simulacrum-backplane.md`,
+  `docs/adrs/adr-0002-digitalocean-openapi-pin.md`,
+  `docs/adrs/adr-0005-transitional-simulacat-boundaries.md`, and
+  `docs/adrs/adr-0007-release-capability-policy.md` are the primary ADR
+  guardrails.
 
 External prior-art checks:
 
