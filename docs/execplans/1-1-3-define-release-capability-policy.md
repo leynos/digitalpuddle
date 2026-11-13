@@ -40,13 +40,13 @@ implementation on 2026-05-20.
 ## Constraints
 
 - Keep Simulacrum as the HTTP and routing backplane. This follows
-  `docs/adr/0001-simulacrum-backplane.md`.
+  `docs/adrs/adr-0001-simulacrum-backplane.md`.
 - Keep the DigitalOcean OpenAPI pin as the public route source. This follows
-  `docs/adr/0002-digitalocean-openapi-pin.md`.
+  `docs/adrs/adr-0002-digitalocean-openapi-pin.md`.
 - Keep v1 optimized for the Nile Valley DigitalOcean Kubernetes Service (DOKS)
   path, not broad DigitalOcean emulation. This follows
-  `docs/adr/0003-doks-first-slice.md` and
-  `docs/adr/0006-v1-product-boundaries.md`.
+  `docs/adrs/adr-0003-doks-first-slice.md` and
+  `docs/adrs/adr-0006-v1-product-boundaries.md`.
 - Keep worker-owned engine side effects out of public handlers. Public
   handlers may classify and enqueue work, but they must not call k3d, Docker,
   MinIO, QEMU, or future engine adapters directly.
@@ -200,12 +200,13 @@ should not add those tools unless an approved later change needs them.
 
 ### Milestone 1: record the policy decision
 
-Create a narrow ADR, probably `docs/adr/0007-release-capability-policy.md`,
-that makes the capability vocabulary and source-of-truth rule durable. The ADR
-should state that every public DigitalOcean operation known to the pinned
-contract must have exactly one DigitalPuddle capability classification before
-release, and that generated docs plus unsupported runtime responses must be
-derived from the same classification source.
+Create a narrow ADR, probably
+`docs/adrs/adr-0007-release-capability-policy.md`, that makes the capability
+vocabulary and source-of-truth rule durable. The ADR should state that every
+public DigitalOcean operation known to the pinned contract must have exactly
+one DigitalPuddle capability classification before release, and that generated
+docs plus unsupported runtime responses must be derived from the same
+classification source.
 
 Update `docs/digitalpuddle-technical-design.md` sections 7.1, 8.2, 16, 17.2,
 and 20 so the design explains how the policy feeds the operation registry,

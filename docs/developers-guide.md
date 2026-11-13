@@ -3,7 +3,7 @@ scope: Maintainer and contributor workflows for the DigitalPuddle repository,
   covering layout targets, ADR usage, testing expectations, logging, and
   transitional rules while the codebase adapts from Simulacat Core.
 precedence: Informative companion to docs/digitalpuddle-technical-design.md and
-  docs/adr/*.md; defers to ADRs and the technical design for normative
+  docs/adrs/*.md; defers to ADRs and the technical design for normative
   architecture decisions.
 ---
 
@@ -88,7 +88,7 @@ response-translator boundary and validate the completed value there.
 
 ## 2. Architectural decisions
 
-Durable architectural decisions live in `docs/adr/`. Each entry is an
+Durable architectural decisions live in `docs/adrs/`. Each entry is an
 Architectural Decision Record (ADR). Add an ADR when a change settles a
 boundary, rejects a plausible alternative, changes a dependency, or defines
 compatibility policy. Keep ADRs short and link them from the roadmap when they
@@ -131,8 +131,8 @@ make all 2>&1 | tee /tmp/all-digitalpuddle-${BRANCH}.out
 
 `make all` includes the documentation gate described in section 3.2. The lint
 target runs Biome and Oxlint. See
-[ADR 0008](adr/0008-oxlint-plugin-strategy.md) for rule ownership, pins, and
-the plug-in conflict policy.
+[ADR 0008](adrs/adr-0008-oxlint-plugin-strategy.md) for rule ownership, pins,
+and the plug-in conflict policy.
 
 ### GraphQL code generation
 
@@ -426,5 +426,5 @@ DigitalPuddle code should follow these rules:
   logic runs;
 - keep engine side effects in worker-owned adapters, not public handlers.
 
-See [ADR 0005](adr/0005-transitional-simulacat-boundaries.md) for the
+See [ADR 0005](adrs/adr-0005-transitional-simulacat-boundaries.md) for the
 transition policy.

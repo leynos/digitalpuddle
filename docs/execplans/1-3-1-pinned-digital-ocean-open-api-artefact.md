@@ -42,15 +42,15 @@ gates, push, and roadmap closure have been implemented and closed.
 ## Constraints
 
 - Keep Simulacrum as the HTTP and routing backplane. This follows
-  `docs/adr/0001-simulacrum-backplane.md` and
+  `docs/adrs/adr-0001-simulacrum-backplane.md` and
   `docs/digitalpuddle-technical-design.md` section 4.
 - Keep the DigitalOcean OpenAPI contract as the public route source. This
-  follows `docs/adr/0002-digitalocean-openapi-pin.md` and
+  follows `docs/adrs/adr-0002-digitalocean-openapi-pin.md` and
   `docs/digitalpuddle-technical-design.md` sections 7.1 and 8.1.
 - Keep v1 focused on the Nile Valley DigitalOcean Kubernetes Service (DOKS)
   path, not broad DigitalOcean emulation. This follows
-  `docs/adr/0003-doks-first-slice.md`,
-  `docs/adr/0006-v1-product-boundaries.md`, and the v1 matrix in
+  `docs/adrs/adr-0003-doks-first-slice.md`,
+  `docs/adrs/adr-0006-v1-product-boundaries.md`, and the v1 matrix in
   `docs/digitalpuddle-technical-design.md` section 8.2.
 - Use hexagonal architecture to protect boundaries. OpenAPI refresh and file
   loading are adapter/tooling concerns; operation classification policy remains
@@ -323,10 +323,10 @@ milestone.
 
 Update documentation after the artefact and tests are in place.
 
-In `docs/adr/0007-release-capability-policy.md`, replace the wording that says
-the pinned contract is not yet present. State that roadmap task 1.3.1 adds the
-pin and provenance record, while roadmap task 1.3.2 still owns the operation
-registry derived from that pin.
+In `docs/adrs/adr-0007-release-capability-policy.md`, replace the wording that
+says the pinned contract is not yet present. State that roadmap task 1.3.1 adds
+the pin and provenance record, while roadmap task 1.3.2 still owns the
+operation registry derived from that pin.
 
 In `docs/developers-guide.md`, add the concrete artefact and provenance paths,
 the refresh command, and the rule that capability policy remains separate from

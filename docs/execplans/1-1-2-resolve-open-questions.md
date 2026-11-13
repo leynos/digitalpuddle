@@ -18,7 +18,7 @@ After this plan is implemented, a maintainer can open
 section 20 is either included in v1, assigned to a named follow-on phase, or
 explicitly rejected. The observable success signal is that `docs/roadmap.md`
 marks task 1.1.2 as done, the accepted decision is recorded in
-`docs/adr/0006-v1-product-boundaries.md`, and documentation gates plus the
+`docs/adrs/adr-0006-v1-product-boundaries.md`, and documentation gates plus the
 project code gates pass.
 
 This plan is planning-only until approved. Do not implement it until the user
@@ -44,14 +44,14 @@ until a user message explicitly approves the plan or asks for named revisions.
   for the 1.1.2 closure instead of rewriting existing accepted decisions,
   except for typo-only fixes discovered during editing.
 - Keep Simulacrum as the HTTP backplane. This follows
-  `docs/adr/0001-simulacrum-backplane.md`.
+  `docs/adrs/adr-0001-simulacrum-backplane.md`.
 - Keep the DigitalOcean OpenAPI pinning strategy intact. This follows
-  `docs/adr/0002-digitalocean-openapi-pin.md`.
+  `docs/adrs/adr-0002-digitalocean-openapi-pin.md`.
 - Keep v1 optimized for DigitalOcean Kubernetes Service (DOKS), not broad
-  DigitalOcean emulation. This follows `docs/adr/0003-doks-first-slice.md`.
+  DigitalOcean emulation. This follows `docs/adrs/adr-0003-doks-first-slice.md`.
 - Keep worker-owned engine side effects out of public handlers. This follows
-  `docs/adr/0004-deterministic-worker.md` and the hexagonal architecture rule
-  that adapters do not leak into domain policy.
+  `docs/adrs/adr-0004-deterministic-worker.md` and the hexagonal architecture
+  rule that adapters do not leak into domain policy.
 - Documentation must use en-GB-oxendict spelling and follow
   `docs/documentation-style-guide.md`.
 - Run gates sequentially. Do not run format checks, lint, or tests in parallel.
@@ -217,7 +217,7 @@ dispatches them to simulator handlers.
 
 The source of truth for the product boundary is
 `docs/digitalpuddle-technical-design.md`. The build order is recorded in
-`docs/roadmap.md`. Durable architecture decisions are stored in `docs/adr/`.
+`docs/roadmap.md`. Durable architecture decisions are stored in `docs/adrs/`.
 
 Roadmap task 1.1.2 is in `docs/roadmap.md` under "1.1. Close the first
 implementation decisions". It cites these sections of
@@ -239,14 +239,15 @@ official command-line client.
 
 The existing ADRs constrain the answer:
 
-- `docs/adr/0001-simulacrum-backplane.md` keeps Simulacrum as the backplane.
-- `docs/adr/0002-digitalocean-openapi-pin.md` requires a pinned OpenAPI
+- `docs/adrs/adr-0001-simulacrum-backplane.md` keeps Simulacrum as the
+  backplane.
+- `docs/adrs/adr-0002-digitalocean-openapi-pin.md` requires a pinned OpenAPI
   contract and generated operation registry.
-- `docs/adr/0003-doks-first-slice.md` prioritizes the DOKS path over broad
+- `docs/adrs/adr-0003-doks-first-slice.md` prioritizes the DOKS path over broad
   DigitalOcean emulation.
-- `docs/adr/0004-deterministic-worker.md` requires deterministic virtual-time
-  worker behaviour and keeps engine calls out of public handlers.
-- `docs/adr/0005-transitional-simulacat-boundaries.md` treats inherited
+- `docs/adrs/adr-0004-deterministic-worker.md` requires deterministic
+  virtual-time worker behaviour and keeps engine calls out of public handlers.
+- `docs/adrs/adr-0005-transitional-simulacat-boundaries.md` treats inherited
   GitHub-oriented boundaries as temporary.
 
 ## Hexagonal boundaries
@@ -312,7 +313,7 @@ this plan before editing project docs.
 
 ### Stage B: add ADR 0006
 
-Create `docs/adr/0006-v1-product-boundaries.md`. The ADR should include
+Create `docs/adrs/adr-0006-v1-product-boundaries.md`. The ADR should include
 context, decision, rejected alternatives, and consequences. It must explicitly
 answer all four open questions from section 20 of the technical design. It
 should cite official DigitalOcean evidence in prose or footnotes without
@@ -408,7 +409,7 @@ sed -n '1,120p' docs/roadmap.md
 Create and edit the ADR and documentation files. Keep edits narrow:
 
 ```plaintext
-docs/adr/0006-v1-product-boundaries.md
+docs/adrs/adr-0006-v1-product-boundaries.md
 docs/digitalpuddle-technical-design.md
 docs/users-guide.md
 docs/developers-guide.md
@@ -450,10 +451,10 @@ Review and commit after gates pass:
 
 ```bash
 git status --short
-git diff -- docs/adr/0006-v1-product-boundaries.md
+git diff -- docs/adrs/adr-0006-v1-product-boundaries.md
 git diff -- docs/digitalpuddle-technical-design.md docs/users-guide.md
 git diff -- docs/developers-guide.md docs/roadmap.md
-git add docs/adr/0006-v1-product-boundaries.md
+git add docs/adrs/adr-0006-v1-product-boundaries.md
 git add docs/digitalpuddle-technical-design.md docs/users-guide.md
 git add docs/developers-guide.md docs/roadmap.md
 git diff --cached
@@ -466,8 +467,8 @@ Do not use `git commit -m`.
 
 This implementation is accepted when all of the following are true:
 
-- `docs/adr/0006-v1-product-boundaries.md` exists and explicitly answers the
-  node-pool, Spaces control-plane, Droplet engine, and doctl compatibility
+- `docs/adrs/adr-0006-v1-product-boundaries.md` exists and explicitly answers
+  the node-pool, Spaces control-plane, Droplet engine, and doctl compatibility
   questions.
 - `docs/digitalpuddle-technical-design.md` section 20 no longer lists open
   questions for task 1.1.2.
