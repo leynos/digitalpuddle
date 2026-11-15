@@ -383,6 +383,8 @@ The lessons applied here:
   modes and verification, alternatives and viability) applied. Verdict: proceed
   with conditions. Every condition is folded into this revision (see
   `Decision log` D11-D16).
+- [x] (2026-11-15) Branch pushed and draft pull request opened:
+  <https://github.com/leynos/digitalpuddle/pull/119>.
 - [ ] Plan approved by the user.
 - [ ] `EP-M1` module-boundary harness and fixture boundary test with the exact
   baseline violation list.
