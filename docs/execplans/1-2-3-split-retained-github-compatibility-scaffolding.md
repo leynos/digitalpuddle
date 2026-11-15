@@ -296,6 +296,14 @@ lines but expensive in paths.
   named in the task brief, does not exist in this repository. Evidence:
   `ls docs/`. Impact: none. The relevant guidance comes from `AGENTS.md`
   "Refactoring Heuristics" and the Simulacrum guide §§8 and 30.
+- Observation: `make spelling` rewrites `typos.toml` from the shared policy
+  base on every run, and it checks only Markdown files that Git tracks.
+  Evidence: running it left `typos.toml` modified, and an untracked draft
+  passed the gate but failed after commit on backticked identifiers such as
+  `…_analyze_…`. Impact: revert `typos.toml` after each spelling run
+  (`git checkout -- typos.toml`), commit documentation before trusting the
+  spelling gate, and use Oxford spellings (`normalizer`, `analyse`) even inside
+  code spans.
 - Observation: `src/__generated__/resolvers-types.ts` is absent until
   `bun run generate` runs, so a bare `bun test` fails on module resolution.
   Evidence: `.gitignore:13`; survey of `src/graphql/connections.ts:20`. Impact:
@@ -509,7 +517,7 @@ its snapshot moved and renamed alongside). Mixed tests are split:
 
 Tests that stay as DigitalPuddle production tests: `base.test.ts` (after the
 split), `logging.test.ts` (after the split), `simulation-layout.test.ts`,
-`startup-output.test.ts`, `startup-output-normalisation.test.ts`,
+`startup-output.test.ts`, the startup-output normalizer test,
 `runtime-layout.test.ts`, `openapi-layout.test.ts`,
 `openapi-capabilities.test.ts`, `openapi-capabilities.test-d.ts`,
 `openapi-projections.test.ts`, the `*.test-d.ts` skeleton tests,
@@ -538,9 +546,9 @@ tests.
   policy-versus-adapter split); `typescript-router`, routing to
   `typescript-testing`, `fast-check`, `typescript-modules-and-packaging`
   (package surface and bundle checks), and `typescript-quality-tools` (one
-  owner per static concern); `codegraph-mcp` (`codegraph_analyze_impact` and
-  `codegraph_find_related_tests` before each move); `biome-typescript`;
-  `en-gb-oxendict-style`; `commit-message`; and `pr-creation`.
+  owner per static concern); `codegraph-mcp` (its impact and related-tests
+  queries before each move); `biome-typescript`; `en-gb-oxendict-style`;
+  `commit-message`; and `pr-creation`.
 
 ## Conformance basis
 
@@ -844,10 +852,9 @@ Feature: Retained GitHub scaffolding is a quarantined transitional fixture
 
 Work in milestones `EP-M1` to `EP-M5`. Each milestone ends with the four
 mandated gates passing and one or more commits. Before each move, run the
-CodeGraph impact query (`codegraph_analyze_impact` on the moved file) and
-`codegraph_find_related_tests`, so that no caller is missed. Use `git mv` for
-every move. Fix import paths with targeted edits. After each milestone, record
-the measured category counts in `Progress`.
+CodeGraph impact and related-tests queries on the moved file, so that no caller
+is missed. Use `git mv` for every move. Fix import paths with targeted edits.
+After each milestone, record the measured category counts in `Progress`.
 
 ### `EP-M1` boundary policy, scanner, and failing fitness test
 
