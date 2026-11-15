@@ -299,8 +299,8 @@ lines but expensive in paths.
 - Observation: `make spelling` rewrites `typos.toml` from the shared policy
   base on every run, and it checks only Markdown files that Git tracks.
   Evidence: running it left `typos.toml` modified, and an untracked draft
-  passed the gate but failed after commit on backticked identifiers such as
-  `…_analyze_…`. Impact: revert `typos.toml` after each spelling run
+  passed the gate but failed after commit on backticked US-spelt identifiers.
+  Impact: revert `typos.toml` after each spelling run
   (`git checkout -- typos.toml`), commit documentation before trusting the
   spelling gate, and use Oxford spellings (`normalizer`, `analyse`) even inside
   code spans.
