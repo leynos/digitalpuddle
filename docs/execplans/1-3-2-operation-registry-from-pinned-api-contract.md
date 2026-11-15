@@ -1,9 +1,9 @@
 # 1.3.2 Build the operation registry from the pinned OpenAPI contract
 
-This ExecPlan (execution plan) is a living document. The sections
-`Constraints`, `Tolerances`, `Risks`, `Progress`, `Surprises & discoveries`,
-`Decision log`, `Outcomes & retrospective`, `Conformance basis`, and
-`Verification plan` must be kept up to date as work proceeds.
+This ExecPlan (execution plan) is a living document. The sections `Constraints`,
+`Tolerances`, `Risks`, `Progress`, `Surprises & discoveries`, `Decision log`,
+`Outcomes & retrospective`, `Conformance basis`, and `Verification plan` must
+be kept up to date as work proceeds.
 
 Status: DRAFT (awaiting design review and user approval)
 
@@ -41,9 +41,9 @@ and a templated upload URL. None of the 620 has a classification.
 After this work, a developer can build an **operation registry**: an immutable,
 in-memory index of every `/v2` operation in the pin. Each operation carries
 exactly one release capability classification: `scriptable`, `engine-backed`,
-`stubbed`, or `unsupported`. Classifications come from the reconciled
-manifest; every operation the manifest does not list is `unsupported` by rule.
-The registry can be queried by operation ID, by method and path template, by
+`stubbed`, or `unsupported`. Classifications come from the reconciled manifest;
+every operation the manifest does not list is `unsupported` by rule. The
+registry can be queried by operation ID, by method and path template, by
 capability class, and by a concrete request such as
 `DELETE /v2/kubernetes/clusters/9f1c`. For example:
 
@@ -79,10 +79,10 @@ and path templates, will no longer list the non-existent rate-limit route, and
 will move SSH keys to `/v2/account/keys`. The users' guide documents that
 change.
 
-This task closes the open questions that ADR 0007 and the 1.1.3 and 1.3.1
-plans left for "the registry". They are: how the sidecar manifest relates to
-the pin, what classification an unlisted operation receives, and how 404, 405,
-and 501 are told apart for a concrete request.
+This task closes the open questions that ADR 0007 and the 1.1.3 and 1.3.1 plans
+left for "the registry". They are: how the sidecar manifest relates to the pin,
+what classification an unlisted operation receives, and how 404, 405, and 501
+are told apart for a concrete request.
 
 ## Constraints
 
@@ -107,8 +107,8 @@ and 501 are told apart for a concrete request.
   provenance file must not be modified. The registry reads them, verifies the
   recorded SHA-256 hash, and never decorates or rewrites them.
 - The registry must use the pin's upstream `operationId` values verbatim.
-  Never normalize, re-case, or strip suffixes from them. Two upstream IDs end
-  in `.yml`, `monitoring_get_appRestartCountMetrics.yml` and
+  Never normalize, re-case, or strip suffixes from them. Two upstream IDs end in
+  `.yml`, `monitoring_get_appRestartCountMetrics.yml` and
   `monitoring_get_droplet_autoscale_current_cpu_utilization.yml`, and must
   survive unchanged.
 - The functions that the LemmaScript proof covers must be the functions that
@@ -143,9 +143,9 @@ and 501 are told apart for a concrete request.
 
 ## Tolerances (exception triggers)
 
-ExecPlan files, including this one, are excluded from every count below.
-Counts compare the working tree against the merge base with `origin/main`. Use
-these commands:
+ExecPlan files, including this one, are excluded from every count below. Counts
+compare the working tree against the merge base with `origin/main`. Use these
+commands:
 
 ```bash
 base="$(git merge-base origin/main HEAD)"
@@ -200,13 +200,13 @@ The planned new code is:
 - a proof wrapper script, about 90 lines;
 - the hand-maintained `.dfy` proof, about 250 lines.
 
-That totals about 2,000 net lines. A 15% contingency gives 2,300.
-Configuration covers 2 development dependencies, 1 script, a 3-line
-LemmaScript list, and about 45 lines of CI steps for Dafny and Z3, roughly 60
-in all, with 90 allowed. Documentation covers a new ADR (about 110 lines), the
-technical design §§7.1, 8.2, 16 (about 70), the developers' guide (about 110),
-the users' guide (about 50), and the roadmap and changelog (about 15), roughly
-355 in all, with 450 allowed.
+That totals about 2,000 net lines. A 15% contingency gives 2,300. Configuration
+covers 2 development dependencies, 1 script, a 3-line LemmaScript list, and
+about 45 lines of CI steps for Dafny and Z3, roughly 60 in all, with 90
+allowed. Documentation covers a new ADR (about 110 lines), the technical design
+§§7.1, 8.2, 16 (about 70), the developers' guide (about 110), the users' guide
+(about 50), and the roadmap and changelog (about 15), roughly 355 in all, with
+450 allowed.
 
 Historical evidence:
 
@@ -223,8 +223,8 @@ instead of using one blended line count.
 Other triggers:
 
 - Interface: stop if any change is needed to `src/index.ts` exports, the
-  `simulation()` argument types, or the `/_digitalpuddle/capabilities`
-  envelope beyond row content.
+  `simulation()` argument types, or the `/_digitalpuddle/capabilities` envelope
+  beyond row content.
 - Dependencies: stop if any dependency beyond the two authorized in
   `Constraints` is needed, or if either must become a runtime dependency.
 - Architecture: stop if the registry cannot be built without modifying the
@@ -245,12 +245,12 @@ Other triggers:
 ## Risks
 
 - Risk: LemmaScript is a technology preview (0.6.10 at 15 November 2026). It
-  may not translate the chosen TypeScript subset, or it may change
-  behaviour between patch releases. Severity: medium. Likelihood: medium.
-  Mitigation: `EP-M3` starts with a time-boxed prototype that decides go or
-  no-go. Pin the version with a caret range and commit `bun.lock`. Keep the
-  proved module small and free of string parsing. If no-go, escalate with the
-  fallback options in `Verification plan`, "Formal verification decision".
+  may not translate the chosen TypeScript subset, or it may change behaviour
+  between patch releases. Severity: medium. Likelihood: medium. Mitigation:
+  `EP-M3` starts with a time-boxed prototype that decides go or no-go. Pin the
+  version with a caret range and commit `bun.lock`. Keep the proved module
+  small and free of string parsing. If no-go, escalate with the fallback
+  options in `Verification plan`, "Formal verification decision".
 
 - Risk: CI has no Dafny or Z3. A `make prove` that passes locally but never
   runs in CI gives false assurance. Severity: medium. Likelihood: high.
@@ -261,8 +261,8 @@ Other triggers:
   `bin/prove.sh`.
 
 - Risk: Loading 3.5 MB of JSON and hashing it adds start-up cost if a later
-  task does it on every request. Severity: low. Likelihood: low. Mitigation:
-  a planning probe measured the parse at about 20 ms under Bun. The loader is
+  task does it on every request. Severity: low. Likelihood: low. Mitigation: a
+  planning probe measured the parse at about 20 ms under Bun. The loader is
   memoized per process, and the registry builds once.
 
 - Risk: Resolving `import.meta.url` to read the artefact may break in the
@@ -276,8 +276,8 @@ Other triggers:
 
 - Risk: The registry's resolution rule disagrees with `openapi-backend`, the
   router Simulacrum uses. Requests could then be classified as one operation
-  and dispatched as another. Severity: high for later routing tasks. Likelihood:
-  certain; the planning probe found it. Mitigation: `D3` adopts the
+  and dispatched as another. Severity: high for later routing tasks.
+  Likelihood: certain; the planning probe found it. Mitigation: `D3` adopts the
   OpenAPI-specified rule. `EP-M6` adds a parity test over a collision-rich
   corpus generated from the pin. Every divergence is pinned in a checked-in
   fixture, so a pin refresh that adds a new divergence fails the gate. ADR 0009
@@ -351,12 +351,13 @@ Other triggers:
   the method. `DELETE /v2/databases/options` dispatches to
   `databases_destroy_cluster`, where ADR 0007 requires `405`. Second, it ranks
   templated candidates by the total length of their literal characters, not
-  segment by segment. `GET /v2/droplets/autoscale/destroy_with_associated_resources`
-  dispatches to `droplets_list_associatedResources`, not to
-  `autoscalepools_get`. Evidence: `node_modules/openapi-backend/router.js`
-  `matchOperation`, and a probe over 3,945 generated requests. It found 67
-  method fallthrough disagreements and 4 path-precedence disagreements, which
-  are 2 distinct paths each counted twice. Impact: `D3`, `EP-M6`, and ADR 0009.
+  segment by segment.
+  `GET /v2/droplets/autoscale/destroy_with_associated_resources` dispatches to
+  `droplets_list_associatedResources`, not to `autoscalepools_get`. Evidence:
+  `node_modules/openapi-backend/router.js` `matchOperation`, and a probe over
+  3,945 generated requests. It found 67 method fallthrough disagreements and 4
+  path-precedence disagreements, which are 2 distinct paths each counted twice.
+  Impact: `D3`, `EP-M6`, and ADR 0009.
 
 - Observation: `src/handlers/unsupported.ts` and
   `buildUnsupportedOperationLookup` have no production caller. Nothing matches
@@ -381,17 +382,16 @@ Other triggers:
     union. It does not throw for invalid data.
   - The pinned artefact is loaded by a separate driven adapter,
     `src/openapi/pinned-contract-file.ts`. It reads bytes, verifies the hash
-    through the existing `artifact.ts` helpers, and parses JSON.
+    through the existing helpers in `src/openapi/artifact.ts`, and parses JSON.
   - `loadDigitalOceanOperationRegistry()` composes the two and throws
     `OperationRegistryBuildError`, with the structured issues, on failure.
 
   Rationale: ADR 0007 requires capability policy to stay independent of
   filesystem I/O and Express. The pure builder can be unit- and property-tested
   with small synthetic contracts. The rejected alternative was to build the
-  registry at module initialization, as `v1CapabilityManifest` does. That
-  would read 3.5 MB of JSON as a side effect of any import, and make unhappy
-  paths untestable without the real file. Date/Author: 2026-11-15, planning
-  agent.
+  registry at module initialization, as `v1CapabilityManifest` does. That would
+  read 3.5 MB of JSON as a side effect of any import, and make unhappy paths
+  untestable without the real file. Date/Author: 2026-11-15, planning agent.
 
 - D2. Decision: keep classifications in the sidecar manifest, rekeyed to the
   pin's `operationId`, method, and path template. Do not write
@@ -399,15 +399,15 @@ Other triggers:
   must match exactly one pinned `/v2` operation on all three fields, or
   registry construction fails. Rationale: the artefact is a hashed release
   input, and its provenance test asserts that its bytes match the upstream
-  bundle. Decorating it would break that guarantee and couple policy changes
-  to pin refreshes. ADR 0007 permits the extension ("may"); it does not
-  require it. A projection that decorates a copy of the document belongs to
-  the `/_digitalpuddle/openapi` admin route (design §13), not here. The
-  manifest keeps `method` and `path` alongside `operationId`. They are
-  redundant with the pin, but the existing projections and the admin payload
-  read them, and the cross-check turns any drift into a build failure. Task
-  1.3.3 may remove the redundancy when it moves projections onto the registry.
-  Date/Author: 2026-11-15, planning agent.
+  bundle. Decorating it would break that guarantee and couple policy changes to
+  pin refreshes. ADR 0007 permits the extension ("may"); it does not require
+  it. A projection that decorates a copy of the document belongs to the
+  `/_digitalpuddle/openapi` admin route (design §13), not here. The manifest
+  keeps `method` and `path` alongside `operationId`. They are redundant with
+  the pin, but the existing projections and the admin payload read them, and
+  the cross-check turns any drift into a build failure. Task 1.3.3 may remove
+  the redundancy when it moves projections onto the registry. Date/Author:
+  2026-11-15, planning agent.
 
 - D3. Decision: concrete requests resolve by the OpenAPI path-item-first rule.
   1. Normalize the request path by removing trailing `/` characters (except
@@ -444,12 +444,12 @@ Other triggers:
   (`excludedOperations`). Rationale: ADR 0007 requires exactly one
   classification per operation known to the pinned contract. Technical design
   Table 1's final row ("any other `/v2/*` → unsupported, explicit `501`") is
-  that default stated in prose. The roadmap success criterion counts only
-  `/v2` operations, and design §8.1 places all public endpoints under `/v2`.
-  The pseudo-entry `GET /v2/{path*}` is removed from the manifest because the
-  rule replaces it. A request to an unknown `/v2` path remains `not-found`
-  (`404`), not `501`, as ADR 0007 keeps them distinct. Date/Author:
-  2026-11-15, planning agent.
+  that default stated in prose. The roadmap success criterion counts only `/v2`
+  operations, and design §8.1 places all public endpoints under `/v2`. The
+  pseudo-entry `GET /v2/{path*}` is removed from the manifest because the rule
+  replaces it. A request to an unknown `/v2` path remains `not-found` (`404`),
+  not `501`, as ADR 0007 keeps them distinct. Date/Author: 2026-11-15, planning
+  agent.
 
 - D5. Decision (requires user acceptance; this is a proposed deviation):
   remove `account.getRateLimit` (`GET /v2/account/ratelimit`) from the
@@ -482,22 +482,21 @@ Other triggers:
   backend), applied to the production module `src/openapi/path-template.ts`.
   Back them with `fast-check` properties that use an independent oracle.
   Discharge classification totality and manifest reconciliation by exhaustive
-  tests over the real pin, not by proof. Rationale: precedence is
-  contractual routing logic with a universally quantified claim (uniqueness
-  of the most specific match, and independence from order). Sampling cannot
-  establish that. Classification totality is total by construction (a lookup
-  with a default), so a proof would only restate the code. The data-dependent
-  part, that every manifest entry maps to exactly one pinned operation, is a
-  finite check over 620 operations, and an exhaustive test establishes it
-  fully. Date/Author: 2026-11-15, planning agent.
+  tests over the real pin, not by proof. Rationale: precedence is contractual
+  routing logic with a universally quantified claim (uniqueness of the most
+  specific match, and independence from order). Sampling cannot establish that.
+  Classification totality is total by construction (a lookup with a default),
+  so a proof would only restate the code. The data-dependent part, that every
+  manifest entry maps to exactly one pinned operation, is a finite check over
+  620 operations, and an exhaustive test establishes it fully. Date/Author:
+  2026-11-15, planning agent.
 
 - D8. Decision: record D2 to D4 and D6 in a new ADR,
   `docs/adrs/adr-0009-operation-registry-resolution.md`, rather than amending
   the accepted ADR 0007. Rationale: ADR 0007 defines the vocabulary and leaves
   the registry mechanism open. The resolution rule and its divergence from the
   backplane router are durable, hard-to-reverse decisions with consequences for
-  2.4.1, so they need their own record. Date/Author: 2026-11-15, planning
-  agent.
+  2.4.1, so they need their own record. Date/Author: 2026-11-15, planning agent.
 
 ## Outcomes & retrospective
 
@@ -526,11 +525,10 @@ checks `*.test-d.ts` type tests. The other tools are:
 
 `make test` runs `bun test --max-concurrency=1 tests`.
 
-There is no BDD runner and none will be added. Behavioural tests are
-`bun:test` suites whose `@file` header says "Behavioural tests". They use
-`describe` and `it` sentences. Proposed Gherkin scenarios (in `Verification
-plan`) are implemented as `describe('Feature: …')` blocks with one `it` per
-scenario.
+There is no BDD runner and none will be added. Behavioural tests are `bun:test`
+suites whose `@file` header says "Behavioural tests". They use `describe` and
+`it` sentences. Proposed Gherkin scenarios (in `Verification plan`) are
+implemented as `describe('Feature: …')` blocks with one `it` per scenario.
 
 The host has Dafny 4.11.0 at `~/.local/bin/dafny`, with its Z3 under
 `~/.dotnet/tools`. CI (`.github/workflows/ci.yml`) has neither Dafny nor Z3,
@@ -554,9 +552,8 @@ The pieces that exist today:
 - `src/openapi/artifact.ts` (137 lines) holds pure helpers for the pin. These
   are the paths, the commit
   `digitalOceanOpenApiPin = 'ef3868ee4cadd34fd4f9624371f7a45d7a205fc1'`,
-  `sha256Hex`, `validateDigitalOceanOpenApiProvenance`, and
-  `assertDigitalOceanOpenApiProvenanceMatchesArtifact(provenance, bytes)`. It
-  performs no I/O.
+  `sha256Hex`, `validateDigitalOceanOpenApiProvenance`, and the
+  provenance-to-bytes hash assertion. It performs no I/O.
 - `src/openapi/index.ts` is the barrel that later work imports from.
 - `src/admin/capabilities.ts` memoizes
   `buildCapabilityDocumentationMetadata()` for
@@ -574,8 +571,8 @@ The tests that touch this area are:
 - `tests/openapi-capabilities.test.ts`, with unit and property tests that
   assert dotted IDs such as `account.get`;
 - `tests/openapi-projections.test.ts`, with behavioural tests that include the
-  `501` envelope message `'GET /v2/droplets is not implemented by DigitalPuddle
-  v1.'`;
+  `501` envelope message
+  `'GET /v2/droplets is not implemented by DigitalPuddle v1.'`;
 - `tests/openapi-layout.test.ts`, which checks barrel exports and snapshots the
   full matrix;
 - `tests/base.test.ts`, which starts the server on port 2999, snapshots
@@ -624,8 +621,8 @@ Load these skills:
 - `execplans`, for maintaining this document;
 - `hexagonal-architecture`, for the port and adapter boundaries in `D1`;
 - `typescript-router`, then `typescript-boundaries-and-validation` for the
-  contract schema, and `typescript-errors-and-outcomes` for the
-  build-result union;
+  contract schema, and `typescript-errors-and-outcomes` for the build-result
+  union;
 - `fast-check`, for properties;
 - `typescript-verification` and `lemmascript`, for `EP-M3`;
 - `codegraph-mcp`, for caller and impact queries before the rekey;
@@ -679,13 +676,18 @@ Observed gaps:
 Trace links:
 
 ```plaintext
-ADR-0007 -> REQ-every-v2-classified -> EP-M4, EP-M5 -> tests/digitalocean-operation-registry.test.ts::"classifies every /v2 operation exactly once"
+ADR-0007 -> REQ-every-v2-classified -> EP-M4, EP-M5
+  -> tests/digitalocean-operation-registry.test.ts::"classifies every /v2 operation exactly once"
 roadmap-1.3.2 -> REQ-query-dimensions -> EP-M4 -> tests/operation-registry.test.ts::"Feature: query the operation registry"
-ADR-0007 -> REQ-concrete-resolution -> EP-M2, EP-M3, EP-M4 -> tests/path-template.test.ts, make prove (L-no-tie, INV-most-specific)
-ADR-0007 -> REQ-single-source -> EP-M5 -> tests/digitalocean-operation-registry.test.ts::"every manifest entry matches exactly one pinned operation"
-ADR-0002 -> REQ-pin-faithful -> EP-M5 -> tests/digitalocean-operation-registry.test.ts::"rejects an artefact whose hash differs from provenance"
+ADR-0007 -> REQ-concrete-resolution -> EP-M2, EP-M3, EP-M4
+  -> tests/path-template.test.ts, make prove (L-no-tie, INV-most-specific)
+ADR-0007 -> REQ-single-source -> EP-M5
+  -> tests/digitalocean-operation-registry.test.ts::"every manifest entry matches exactly one pinned operation"
+ADR-0002 -> REQ-pin-faithful -> EP-M5
+  -> tests/digitalocean-operation-registry.test.ts::"rejects an artefact whose hash differs from provenance"
 ADR-0001 -> REQ-backplane -> EP-M6 -> tests/operation-registry-backplane-parity.test.ts
-ADR-0007 -> REQ-pure-policy -> EP-M1..EP-M5 -> tests/openapi-layout.test.ts::"domain modules import no I/O or framework modules"
+ADR-0007 -> REQ-pure-policy -> EP-M1..EP-M5
+  -> tests/openapi-layout.test.ts::"domain modules import no I/O or framework modules"
 GAP-manifest-drift -> D2, D5 -> EP-M5 -> tests/openapi-capabilities.test.ts (rekeyed), tests/base.test.ts snapshot
 GAP-oversize-module -> EP-M1 -> wc -l src/openapi/*.ts (all <= 400)
 GAP-backplane-divergence -> D3, D8 -> EP-M6, EP-M7 -> tests/fixtures/openapi-backend-divergences.json, ADR 0009
@@ -699,8 +701,8 @@ A *template* `t` is a finite sequence of segments. Each segment is either
 `Lit(s)`, for a non-empty string `s`, or `Param`. A *request* `r` is a finite
 sequence of strings. `t` *matches* `r` when `|t| = |r|`, and for each `i`,
 either `t[i] = Param` and `r[i] ≠ ""`, or `t[i] = Lit(r[i])`. The *shape* of
-`t` is `t` with every parameter name erased. The model's `Param` already
-erases names.
+`t` is `t` with every parameter name erased. The model's `Param` already erases
+names.
 
 The *kind vector* of `t` is the sequence of booleans `isLiteral(t[i])`.
 `compare(a, b)`, defined for `|a| = |b|`, returns `-1`, `0`, or `1`. It
@@ -712,12 +714,13 @@ A *contract* is a finite set `T` of templates in which no two distinct members
 share a shape (`NoShapeCollision(T)`). Each member has a path item: a finite
 map from method to operation. `resolve(T, m, r)` follows `D3`. It takes
 `C = {t ∈ T : t matches r}`. If `C = ∅`, the result is `not-found`. Otherwise
-it chooses `best ∈ C` with `compare(best, c) ≤ 0` for every `c ∈ C`. It
-returns the operation for `m` on `best`, or `method-not-allowed` with the keys
-of `best`'s path item.
+it chooses `best ∈ C` with `compare(best, c) ≤ 0` for every `c ∈ C`. It returns
+the operation for `m` on `best`, or `method-not-allowed` with the keys of
+`best`'s path item.
 
-Classification is `classify(op) = overlay[op.operationId]?.capability ??
-'unsupported'`, defined over the set `O` of `/v2` operations in the pin.
+Classification is
+`classify(op) = overlay[op.operationId]?.capability ?? 'unsupported'`, defined
+over the set `O` of `/v2` operations in the pin.
 
 Malformed inputs are rejected at the boundary, by `contract-document.ts` and
 `buildOperationRegistry`, and are reported as issues. They are:
@@ -741,8 +744,8 @@ with `/v2/` resolve to `not-found`.
   `|registry.operations| = |O| = 620` for the current pin.
   `Σ_cap |listByCapability(cap)| = |O|`.
 - `INV-overlay-exact` (`REQ-single-source`): every manifest entry matches
-  exactly one `o ∈ O` on `operationId`, method, and path template. A
-  successful build implies this.
+  exactly one `o ∈ O` on `operationId`, method, and path template. A successful
+  build implies this.
 - `INV-query-agreement` (`REQ-query-dimensions`): for every `o ∈ O`, all of the
   following hold:
   - `findByOperationId(o.id) = o`;
@@ -789,8 +792,8 @@ with `/v2/` resolve to `not-found`.
 - `AXIOM-oas-paths`: OpenAPI 3.0.3 semantics. Concrete paths match before
   templated ones; same-shape templates are identical and forbidden; and
   `operationId` is unique. Source: the OpenAPI Specification 3.0.3, Paths
-  Object and Operation Object. Depends on it: `D3`, and the builder's
-  rejection rules.
+  Object and Operation Object. Depends on it: `D3`, and the builder's rejection
+  rules.
 - `AXIOM-openapi-backend-router`: `openapi-backend` 5.18.0's
   `OpenAPIRouter.matchOperation`.
   1. An exact path with the requested method wins.
@@ -803,8 +806,8 @@ with `/v2/` resolve to `not-found`.
 - `AXIOM-lemmascript-translation`: `lsc` (LemmaScript 0.6.x) translates the
   annotated TypeScript subset to Dafny faithfully, and Dafny 4.11 with Z3
   4.12.1 is sound. Source: LemmaScript `SPEC.md` and `SPEC_DAFNY.md`. Depends
-  on it: `EP-M3`. The residual risk is mitigated by running the same
-  TypeScript functions under `fast-check` with an independent oracle.
+  on it: `EP-M3`. The residual risk is mitigated by running the same TypeScript
+  functions under `fast-check` with an independent oracle.
 - `AXIOM-js-string`: JavaScript `===` and `<` on strings compare UTF-16 code
   units deterministically across runtimes. Source: ECMA-262. Depends on it:
   matching and listing order.
@@ -914,7 +917,7 @@ with `/v2/` resolve to `not-found`.
     - `manifest-entry-not-in-contract`;
     - `manifest-entry-mismatch`;
     - `duplicate-manifest-entry`;
-    - `artifact-hash-mismatch`, raised by the adapter.
+    - `contract-hash-mismatch`, raised by the adapter.
 
     Each row asserts the issue code and the offending key.
   - Artefacts: `tests/operation-registry.test.ts` and
@@ -965,11 +968,11 @@ If the `EP-M3` prototype is a no-go, the fallback options to escalate are:
 ### Suggested BDD features
 
 There is no BDD runner. These features are implemented as `bun:test`
-`describe('Feature: …')` blocks, with one `it` per scenario, in the files
-named below.
+`describe('Feature: …')` blocks, with one `it` per scenario, in the files named
+below.
 
-Proposed for `tests/operation-registry.test.ts`, which uses a synthetic
-contract (`EP-M4`, `REQ-query-dimensions`, `REQ-concrete-resolution`):
+Proposed for `tests/operation-registry.test.ts`, which uses a synthetic contract
+(`EP-M4`, `REQ-query-dimensions`, `REQ-concrete-resolution`):
 
 ```gherkin
 Feature: Query the operation registry
@@ -1031,7 +1034,7 @@ Feature: Classify the pinned DigitalOcean contract
   Scenario: A tampered artefact is rejected
     Given artefact bytes whose SHA-256 differs from the provenance record
     When I load the operation registry from those bytes
-    Then loading fails with issue artifact-hash-mismatch
+    Then loading fails with issue contract-hash-mismatch
 ```
 
 Proposed for `tests/base.test.ts`, end to end over HTTP (`EP-M5`):
@@ -1060,25 +1063,24 @@ Assigned: `GAP-oversize-module`. No behaviour change.
 Move `v1CapabilityManifest`, the four runtime presets (`scriptableRuntime`,
 `engineBackedRuntime`, `stubbedRuntime`, `unsupportedRuntime`), and
 `validateV1CapabilityManifest` from `src/openapi/capabilities.ts` into a new
-`src/openapi/v1-capability-manifest.ts`, with an `@file` header. The new
-module imports `validateCapabilityManifest` and the types from
-`capabilities.ts`.
+`src/openapi/v1-capability-manifest.ts`, with an `@file` header. The new module
+imports `validateCapabilityManifest` and the types from `capabilities.ts`.
 
-Update the imports in `src/openapi/projections.ts`, `src/openapi/index.ts`,
-and the tests. Use `codegraph_find_by_imports` or
+Update the imports in `src/openapi/projections.ts`, `src/openapi/index.ts`, and
+the tests. Use `codegraph_find_by_imports` or
 `grep -rn v1CapabilityManifest src tests` to find every importer. Keep the
 barrel's public names unchanged.
 
-Validation is the existing suite, unchanged and passing. `wc -l
-src/openapi/*.ts` shows every file at or below 400 lines. This is a pure
+Validation is the existing suite, unchanged and passing.
+`wc -l src/openapi/*.ts` shows every file at or below 400 lines. This is a pure
 refactor with no red step; the existing tests are the safety net. Commit:
 "Split v1 capability manifest from policy".
 
 ### `EP-M2` path-template domain module
 
 Assigned: `REQ-concrete-resolution` (the runtime part), `INV-trailing-slash`,
-and `INV-concrete-first`. Create `src/openapi/path-template.ts`, which is
-pure, with no imports except types. It holds:
+and `INV-concrete-first`. Create `src/openapi/path-template.ts`, which is pure,
+with no imports except types. It holds:
 
 - `PathSegment` (`{readonly isParameter: boolean; readonly literal: string}`,
   where `literal` is `''` for parameters);
@@ -1099,13 +1101,13 @@ expressions.
 Red: write `tests/path-template.test.ts` first. It has named examples from the
 pin (`/v2/projects/default` against `/v2/projects/{project_id}`, and the
 `droplets/autoscale` pair), table rows for the parser issues, and the
-properties with the brute-force oracle from `Verification plan`. Run it
-against stub exports that throw `new Error('not implemented')`, and expect
-failures for that reason. Green: implement. Refactor: extract helpers if any
-function exceeds about 25 lines.
+properties with the brute-force oracle from `Verification plan`. Run it against
+stub exports that throw `new Error('not implemented')`, and expect failures for
+that reason. Green: implement. Refactor: extract helpers if any function
+exceeds about 25 lines.
 
-Focused command: `bun test tests/path-template.test.ts`. Then run the full
-gate sequence. Commit: "Add OpenAPI path-template precedence module".
+Focused command: `bun test tests/path-template.test.ts`. Then run the full gate
+sequence. Commit: "Add OpenAPI path-template precedence module".
 
 ### `EP-M3` LemmaScript proof of precedence (starts with a prototype)
 
@@ -1114,18 +1116,18 @@ Assigned: `L-compare-order`, `L-no-tie`, `INV-most-specific`, and `D7`.
 The prototype gate comes first, time-boxed to 2 hours inside the 6-hour proof
 tolerance:
 
-1. Add `lemmascript@^0.6.10` as a development dependency (`bun add -d
-   lemmascript@^0.6.10`).
+1. Add `lemmascript@^0.6.10` as a development dependency
+   (`bun add -d lemmascript@^0.6.10`).
 2. Run `node_modules/.bin/lsc gen --backend=dafny src/openapi/path-template.ts`
    against an annotation of `compareSpecificity` only.
-3. Run `node_modules/.bin/lsc check --backend=dafny
-   src/openapi/path-template.ts`.
+3. Run
+   `node_modules/.bin/lsc check --backend=dafny src/openapi/path-template.ts`.
 
 Go if Dafny verifies a non-trivial `ensures` on `compareSpecificity`, such as
-antisymmetry stated through a ghost call. No-go if `lsc` rejects the subset,
-or cannot express the record segments. On no-go, set this plan to `BLOCKED`,
-record the transcript in `Artefacts and notes`, and escalate with the
-fallbacks from `Verification plan`. Keep the prototype only if go.
+antisymmetry stated through a ghost call. No-go if `lsc` rejects the subset, or
+cannot express the record segments. On no-go, set this plan to `BLOCKED`,
+record the transcript in `Artefacts and notes`, and escalate with the fallbacks
+from `Verification plan`. Keep the prototype only if go.
 
 Then:
 
@@ -1134,8 +1136,8 @@ Then:
 2. Add ghost specification functions for `kindVector` and `sameShape`.
 3. State `L-no-tie` as a lemma in `path-template.dfy`, and prove it there.
 4. Add the witness method and the mutation check from `Verification plan`.
-5. Create `LemmaScript-files.txt`, containing `src/openapi/path-template.ts
-   120`.
+5. Create `LemmaScript-files.txt`, containing
+   `src/openapi/path-template.ts 120`.
 6. Create `bin/prove.sh`, adapted from the velocetty guard pattern. It must:
    - require the local `node_modules/.bin/lsc`, rather than `bunx lsc`, which
      resolves an unrelated npm package;
@@ -1146,9 +1148,10 @@ Then:
 7. Add a `prove` target to the `Makefile` and to its `.PHONY` list. Do not add
    it to `all`, because CI runs it as a separate step after installing Dafny.
 8. Extend `.github/workflows/ci.yml` with an "Install Dafny and Z3 for
-   LemmaScript" step, using `dotnet tool install --global dafny --version
-   4.11.0` and the checksummed Z3 4.12.1 release. Add a "Prove LemmaScript
-   contracts" step that runs `make prove` after `bun install`.
+   LemmaScript" step, using
+   `dotnet tool install --global dafny --version 4.11.0` and the checksummed Z3
+   4.12.1 release. Add a "Prove LemmaScript contracts" step that runs
+   `make prove` after `bun install`.
 9. Exclude `*.dfy` and `*.dfy.gen` from Biome if Biome tries to read them, by
    adding to `files.includes` negations in `biome.json`.
 
@@ -1160,14 +1163,14 @@ path-template precedence with LemmaScript".
 
 ### `EP-M4` contract boundary schema and pure registry
 
-Assigned: `REQ-query-dimensions`, `REQ-concrete-resolution`,
-`INV-405-allow`, `INV-deterministic-listing`, `D1`, `D4`, and `D6`.
+Assigned: `REQ-query-dimensions`, `REQ-concrete-resolution`, `INV-405-allow`,
+`INV-deterministic-listing`, `D1`, `D4`, and `D6`.
 
 Create `src/openapi/contract-document.ts`. It defines a Zod schema,
 `contractDocumentSchema`, for the subset the registry reads. That subset is
 `paths`, each path item's method keys (passing all eight OpenAPI method names
-through, so the builder can reject them), and per operation `operationId`
-(a non-empty string), `tags` (an optional string array), and `summary` (an
+through, so the builder can reject them), and per operation `operationId` (a
+non-empty string), `tags` (an optional string array), and `summary` (an
 optional string). Unknown keys are allowed, because the pin carries many
 others. Export `parseContractDocument(json: unknown)`, which returns a
 discriminated outcome.
@@ -1175,9 +1178,9 @@ discriminated outcome.
 Create `src/openapi/operation-registry.ts` with:
 
 - `RegisteredOperation`, `RequestResolution`, `OperationRegistryIssue` (a
-  discriminated union keyed by `code`), `OperationRegistryBuildResult`, and
-  the `OperationRegistry` interface. The signatures are in `Interfaces and
-  dependencies`.
+  discriminated union keyed by `code`), `OperationRegistryBuildResult`, and the
+  `OperationRegistry` interface. The signatures are in
+  `Interfaces and dependencies`.
 - `buildOperationRegistry({contract, classifications, identity})`, which:
   1. walks the paths in sorted order;
   2. excludes those not under `/v2/` into `excludedOperations`;
@@ -1194,14 +1197,14 @@ Create `src/openapi/operation-registry.ts` with:
   of templates (so a lookup scans only same-length templates),
   `templateMatches`, `selectMostSpecific`, and the path item's method table.
 
-The builder must stay at or below 400 lines. If it grows past about 300,
-split the indexing helpers into `src/openapi/operation-registry-index.ts`.
+The builder must stay at or below 400 lines. If it grows past about 300, split
+the indexing helpers into `src/openapi/operation-registry-index.ts`.
 
 Red: `tests/operation-registry.test.ts`, with a synthetic-contract builder
 (`buildContract({paths: {...}})` in `tests/support/contract-builder.ts`). It
 holds the Gherkin-mapped scenarios, the issue-code table, and the
-listing-determinism property. Run it against stub exports and expect
-failures. Green: implement. Extend `tests/openapi-layout.test.ts` with:
+listing-determinism property. Run it against stub exports and expect failures.
+Green: implement. Extend `tests/openapi-layout.test.ts` with:
 
 1. the new barrel exports;
 2. an import-direction fitness test. It reads each domain module's source and
@@ -1220,55 +1223,54 @@ user has accepted `D5`.
 Rekey `src/openapi/v1-capability-manifest.ts` in one atomic change. Old dotted
 IDs become pinned IDs, and paths become pinned templates.
 
-Table 1: v1 manifest rekey mapping (planning-probe evidence, pin
-`ef3868ee`).
+Table 1: v1 manifest rekey mapping (planning-probe evidence, pin `ef3868ee`).
 
-| Old ID / path                                                                 | New `operationId`          | New path template                                                |
-| ----------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------------- |
-| `account.get` `/v2/account`                                                   | `account_get`              | `/v2/account`                                                    |
-| `account.getRateLimit` `/v2/account/ratelimit`                                | removed (`D5`)             | absent from pin                                                  |
-| `regions.list` `/v2/regions`                                                  | `regions_list`             | `/v2/regions`                                                    |
-| `sizes.list` `/v2/sizes`                                                      | `sizes_list`               | `/v2/sizes`                                                      |
-| `images.list` `/v2/images`                                                    | `images_list`              | `/v2/images`                                                     |
-| `sshKeys.list` `/v2/ssh_keys`                                                 | `sshKeys_list`             | `/v2/account/keys`                                               |
-| `sshKeys.create` `/v2/ssh_keys`                                               | `sshKeys_create`           | `/v2/account/keys`                                               |
-| `sshKeys.get` `/v2/ssh_keys/{id}`                                             | `sshKeys_get`              | `/v2/account/keys/{ssh_key_identifier}`                          |
-| `sshKeys.delete` `/v2/ssh_keys/{id}`                                          | `sshKeys_delete`           | `/v2/account/keys/{ssh_key_identifier}`                          |
-| `projects.list` `/v2/projects`                                                | `projects_list`            | `/v2/projects`                                                   |
-| `projects.create` `/v2/projects`                                              | `projects_create`          | `/v2/projects`                                                   |
-| `projects.get` `/v2/projects/{id}`                                            | `projects_get`             | `/v2/projects/{project_id}`                                      |
-| `projects.assignResources` `/v2/projects/{id}/resources`                      | `projects_assign_resources` | `/v2/projects/{project_id}/resources`                           |
-| `projects.listResources` `/v2/projects/{id}/resources`                        | `projects_list_resources`  | `/v2/projects/{project_id}/resources`                            |
-| `actions.get` `/v2/actions/{id}`                                              | `actions_get`              | `/v2/actions/{action_id}`                                        |
-| `kubernetes.getOptions` `/v2/kubernetes/options`                              | `kubernetes_list_options`  | `/v2/kubernetes/options`                                         |
-| `kubernetes.listClusters` `/v2/kubernetes/clusters`                           | `kubernetes_list_clusters` | `/v2/kubernetes/clusters`                                        |
-| `kubernetes.createCluster` `/v2/kubernetes/clusters`                          | `kubernetes_create_cluster` | `/v2/kubernetes/clusters`                                       |
-| `kubernetes.getCluster` `/v2/kubernetes/clusters/{id}`                        | `kubernetes_get_cluster`   | `/v2/kubernetes/clusters/{cluster_id}`                           |
-| `kubernetes.deleteCluster` `/v2/kubernetes/clusters/{id}`                     | `kubernetes_delete_cluster` | `/v2/kubernetes/clusters/{cluster_id}`                          |
-| `kubernetes.getKubeconfig` `/v2/kubernetes/clusters/{id}/kubeconfig`          | `kubernetes_get_kubeconfig` | `/v2/kubernetes/clusters/{cluster_id}/kubeconfig`               |
-| `kubernetes.listNodePools` `/v2/kubernetes/clusters/{id}/node_pools`          | `kubernetes_list_nodePools` | `/v2/kubernetes/clusters/{cluster_id}/node_pools`               |
-| `kubernetes.getNodePool` `…/node_pools/{pool_id}`                             | `kubernetes_get_nodePool`  | `/v2/kubernetes/clusters/{cluster_id}/node_pools/{node_pool_id}` |
-| `kubernetes.updateNodePool` `…/node_pools/{pool_id}` (PUT)                    | `kubernetes_update_nodePool` | `/v2/kubernetes/clusters/{cluster_id}/node_pools/{node_pool_id}` |
-| `droplets.list` `/v2/droplets`                                                | `droplets_list`            | `/v2/droplets`                                                   |
-| `spacesKeys.list` `/v2/spaces/keys`                                           | `spacesKey_list`           | `/v2/spaces/keys`                                                |
-| `digitalocean.unsupported` `/v2/{path*}`                                      | removed (`D4`)             | replaced by the default rule                                     |
+| Old ID / path                                                        | New `operationId`            | New path template                                                |
+| -------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------- |
+| `account.get` `/v2/account`                                          | `account_get`                | `/v2/account`                                                    |
+| `account.getRateLimit` `/v2/account/ratelimit`                       | removed (`D5`)               | absent from pin                                                  |
+| `regions.list` `/v2/regions`                                         | `regions_list`               | `/v2/regions`                                                    |
+| `sizes.list` `/v2/sizes`                                             | `sizes_list`                 | `/v2/sizes`                                                      |
+| `images.list` `/v2/images`                                           | `images_list`                | `/v2/images`                                                     |
+| `sshKeys.list` `/v2/ssh_keys`                                        | `sshKeys_list`               | `/v2/account/keys`                                               |
+| `sshKeys.create` `/v2/ssh_keys`                                      | `sshKeys_create`             | `/v2/account/keys`                                               |
+| `sshKeys.get` `/v2/ssh_keys/{id}`                                    | `sshKeys_get`                | `/v2/account/keys/{ssh_key_identifier}`                          |
+| `sshKeys.delete` `/v2/ssh_keys/{id}`                                 | `sshKeys_delete`             | `/v2/account/keys/{ssh_key_identifier}`                          |
+| `projects.list` `/v2/projects`                                       | `projects_list`              | `/v2/projects`                                                   |
+| `projects.create` `/v2/projects`                                     | `projects_create`            | `/v2/projects`                                                   |
+| `projects.get` `/v2/projects/{id}`                                   | `projects_get`               | `/v2/projects/{project_id}`                                      |
+| `projects.assignResources` `/v2/projects/{id}/resources`             | `projects_assign_resources`  | `/v2/projects/{project_id}/resources`                            |
+| `projects.listResources` `/v2/projects/{id}/resources`               | `projects_list_resources`    | `/v2/projects/{project_id}/resources`                            |
+| `actions.get` `/v2/actions/{id}`                                     | `actions_get`                | `/v2/actions/{action_id}`                                        |
+| `kubernetes.getOptions` `/v2/kubernetes/options`                     | `kubernetes_list_options`    | `/v2/kubernetes/options`                                         |
+| `kubernetes.listClusters` `/v2/kubernetes/clusters`                  | `kubernetes_list_clusters`   | `/v2/kubernetes/clusters`                                        |
+| `kubernetes.createCluster` `/v2/kubernetes/clusters`                 | `kubernetes_create_cluster`  | `/v2/kubernetes/clusters`                                        |
+| `kubernetes.getCluster` `/v2/kubernetes/clusters/{id}`               | `kubernetes_get_cluster`     | `/v2/kubernetes/clusters/{cluster_id}`                           |
+| `kubernetes.deleteCluster` `/v2/kubernetes/clusters/{id}`            | `kubernetes_delete_cluster`  | `/v2/kubernetes/clusters/{cluster_id}`                           |
+| `kubernetes.getKubeconfig` `/v2/kubernetes/clusters/{id}/kubeconfig` | `kubernetes_get_kubeconfig`  | `/v2/kubernetes/clusters/{cluster_id}/kubeconfig`                |
+| `kubernetes.listNodePools` `/v2/kubernetes/clusters/{id}/node_pools` | `kubernetes_list_nodePools`  | `/v2/kubernetes/clusters/{cluster_id}/node_pools`                |
+| `kubernetes.getNodePool` `…/node_pools/{pool_id}`                    | `kubernetes_get_nodePool`    | `/v2/kubernetes/clusters/{cluster_id}/node_pools/{node_pool_id}` |
+| `kubernetes.updateNodePool` `…/node_pools/{pool_id}` (PUT)           | `kubernetes_update_nodePool` | `/v2/kubernetes/clusters/{cluster_id}/node_pools/{node_pool_id}` |
+| `droplets.list` `/v2/droplets`                                       | `droplets_list`              | `/v2/droplets`                                                   |
+| `spacesKeys.list` `/v2/spaces/keys`                                  | `spacesKey_list`             | `/v2/spaces/keys`                                                |
+| `digitalocean.unsupported` `/v2/{path*}`                             | removed (`D4`)               | replaced by the default rule                                     |
 
 `productArea` values stay as authored (for example `SSH keys`). The registry
 exposes the upstream first tag separately as `RegisteredOperation.tag`, so the
 admin payload does not churn on capitalization.
 
 Create `src/openapi/pinned-contract-file.ts`, the driven adapter. It exports
-`readPinnedContract(options?: {artifactUrl?: URL; provenanceUrl?: URL})`,
-which returns `Promise<PinnedContract>`, where `PinnedContract` is
+`readPinnedContract(options?: {contractUrl?: URL; provenanceUrl?: URL})`, which
+returns `Promise<PinnedContract>`, where `PinnedContract` is
 `{document: unknown; identity: PinnedContractIdentity}`. It:
 
 1. reads both files with `node:fs/promises`. The default URLs are
    `new URL('./digitalocean.openapi.json', import.meta.url)` and the
    corresponding provenance file;
 2. validates the provenance with `validateDigitalOceanOpenApiProvenance`;
-3. checks the hash with
-   `assertDigitalOceanOpenApiProvenanceMatchesArtifact`, mapping a throw to
-   issue `artifact-hash-mismatch` with the original error as `cause`;
+3. checks the hash with the provenance hash assertion in
+   `src/openapi/artifact.ts`, mapping a throw to issue `contract-hash-mismatch`
+   with the original error as `cause`;
 4. parses the JSON.
 
 Create `src/openapi/digitalocean-operation-registry.ts`, the composition. It
@@ -1276,10 +1278,11 @@ holds `loadDigitalOceanOperationRegistry(options?)`, memoized per process
 unless options are given. It chains `readPinnedContract`,
 `parseContractDocument`, and `buildOperationRegistry`, using
 `v1CapabilityManifest` as the classifications. On failure it throws
-`OperationRegistryBuildError extends Error`, with `issues` and `cause`. It
-logs one structured line, `{"event":"digitalpuddle.registry.built",
-"operationCount":620,"excludedCount":15,"pin":"ef3868ee…"}`, in the same style
-as `digitalpuddle.manifest.validated`.
+`OperationRegistryBuildError extends Error`, with `issues` and `cause`. It logs
+one structured line,
+`{"event":"digitalpuddle.registry.built",
+"operationCount":620,"excludedCount":15,"pin":"ef3868ee…"}`,
+in the same style as `digitalpuddle.manifest.validated`.
 
 Export the new public names from `src/openapi/index.ts`.
 
@@ -1287,20 +1290,20 @@ Red:
 
 1. Update the existing tests to the new IDs. This covers
    `tests/openapi-capabilities.test.ts`, `tests/openapi-projections.test.ts`
-   (the `501` message becomes `'GET /v2/droplets is not implemented by
-   DigitalPuddle v1.'`, unchanged because the path is unchanged), and the
-   `tests/base.test.ts` assertions. Then write
-   `tests/digitalocean-operation-registry.test.ts`. Run them before editing
-   the manifest; they fail on the old IDs.
+   (the `501` message becomes
+   `'GET /v2/droplets is not implemented by DigitalPuddle v1.'`, unchanged
+   because the path is unchanged), and the `tests/base.test.ts` assertions.
+   Then write `tests/digitalocean-operation-registry.test.ts`. Run them before
+   editing the manifest; they fail on the old IDs.
 2. Green: rekey and implement the adapter.
-3. Regenerate the snapshots with `bun test --update-snapshots
-   tests/openapi-layout.test.ts tests/base.test.ts`. Review the snapshot diff
-   by hand: only operation IDs, paths, and the removed rate-limit row may
-   change.
+3. Regenerate the snapshots with
+   `bun test --update-snapshots tests/openapi-layout.test.ts tests/base.test.ts`.
+   Review the snapshot diff by hand: only operation IDs, paths, and the
+   removed rate-limit row may change.
 
-Gates: the standard four, plus `make prove`. Commit: "Rekey capability
-manifest to pinned operations". The message body lists Table 1. A follow-up
-commit, "Load operation registry from pinned artefact", adds the adapter and
+Gates: the standard four, plus `make prove`. Commit: "Rekey capability manifest
+to pinned operations". The message body lists Table 1. A follow-up commit,
+"Load operation registry from pinned artefact", adds the adapter and
 composition if the first commit is already large. Each commit must pass the
 gates.
 
@@ -1311,22 +1314,24 @@ Assigned: `REQ-backplane` and `GAP-backplane-divergence`.
 1. Add `openapi-backend@^5.18.0` as a development dependency.
 2. Write `tests/operation-registry-backplane-parity.test.ts`. It builds the
    deterministic corpus from `Verification plan`, and resolves each request
-   with the registry and with `new OpenAPIRouter({definition, apiRoot: '/'})
-   .matchOperation({method, path, headers: {}}, false)`. It collects the
-   disagreements as sorted
+   with the registry and with
+   `new OpenAPIRouter({definition, apiRoot: '/'})
+   .matchOperation({method, path, headers: {}}, false)`.
+   It collects the disagreements as sorted
    `{method, path, registry: string, backend: string | null}` records.
-3. Assert that they deep-equal `tests/fixtures/openapi-backend-divergences.json`.
+3. Assert that they deep-equal
+   `tests/fixtures/openapi-backend-divergences.json`.
 
 Red: commit an empty fixture first, and observe the failure listing the
 divergences. Green: write the observed set to the fixture. Check by hand that
 it contains only the two kinds in `Surprises & discoveries`; any other kind
-trips the architecture tolerance. Gates: the standard four, plus
-`make prove`. Commit: "Pin registry and backplane resolution divergences".
+trips the architecture tolerance. Gates: the standard four, plus `make prove`.
+Commit: "Pin registry and backplane resolution divergences".
 
 ### `EP-M7` documentation and delivery closure
 
-Delegate the mechanical documentation edits to the `scribe` agent, with
-exact, evidence-based instructions.
+Delegate the mechanical documentation edits to the `scribe` agent, with exact,
+evidence-based instructions.
 
 1. Create `docs/adrs/adr-0009-operation-registry-resolution.md`, recording
    `D2` to `D4` and `D6`. It covers the rejected alternatives and the
@@ -1344,16 +1349,19 @@ exact, evidence-based instructions.
    resolution rules, how to add a classification, `make prove`, and the
    requirement that pin refreshes re-run the parity and count tests.
 4. Update `docs/users-guide.md`, "Capability classifications" and "Inspecting
-   the capability metadata". Pinned operation IDs and paths now appear in
-   admin rows. SSH keys are at `/v2/account/keys`. Unlisted `/v2` operations
-   are `unsupported` by default.
+   the capability metadata". Pinned operation IDs and paths now appear in admin
+   rows. SSH keys are at `/v2/account/keys`. Unlisted `/v2` operations are
+   `unsupported` by default.
 5. Add a `CHANGELOG.md` entry under an "Unreleased" heading, following the
    file's existing style.
 6. Mark roadmap item 1.3.2 `[x]` in `docs/roadmap.md`. Reword 2.1.1 per `D5`.
-7. Search for stale claims with `grep -rn "ssh_keys\|ratelimit\|account\.get\|
-   kubernetes\.createCluster\|{path\*}" docs src tests README.md
-   --exclude-dir=execplans`. Fix every live hit. Completed ExecPlans are
-   historical and must not be edited.
+7. Search for stale claims with the command below, and fix every live hit.
+   Completed ExecPlans are historical and must not be edited.
+
+   ```bash
+   grep -rn 'ssh_keys\|ratelimit\|account\.get\|kubernetes\.createCluster\|{path\*}' \
+     docs src tests README.md --exclude-dir=execplans
+   ```
 
 Gates:
 
@@ -1362,9 +1370,9 @@ Gates:
 3. `make markdownlint`, which also runs spelling;
 4. `make nixie`.
 
-Commit: "Document the operation registry". Then reconcile the `Conformance
-basis` items, fill in `Outcomes & retrospective`, and set the status to
-`COMPLETE`.
+Commit: "Document the operation registry". Then reconcile the
+`Conformance basis` items, fill in `Outcomes & retrospective`, and set the
+status to `COMPLETE`.
 
 ## Milestones and plateaus
 
@@ -1449,9 +1457,8 @@ basis` items, fill in `Outcomes & retrospective`, and set the status to
 
 ## Concrete steps
 
-Working directory: the repository root. Use Bash with
-`set -o pipefail`, so that a failed gate cannot appear to pass through `tee`.
-Log files follow
+Working directory: the repository root. Use Bash with `set -o pipefail`, so
+that a failed gate cannot appear to pass through `tee`. Log files follow
 `/tmp/$ACTION-digitalpuddle-1-3-2-operation-registry-from-pinned-api-contract.out`.
 
 ```bash
@@ -1466,8 +1473,8 @@ make markdownlint 2>&1 | tee /tmp/markdownlint-digitalpuddle-$BR.out  # docs cha
 make nixie     2>&1 | tee /tmp/nixie-digitalpuddle-$BR.out           # docs changes
 ```
 
-Delegate full gate runs to the `scrutineer` agent where possible, then read
-the cited logs on failure rather than re-running.
+Delegate full gate runs to the `scrutineer` agent where possible, then read the
+cited logs on failure rather than re-running.
 
 Focused red, green, and refactor loops, by milestone:
 
@@ -1483,8 +1490,8 @@ EP-M6 Red:   bun test tests/operation-registry-backplane-parity.test.ts -> diver
 ```
 
 Known baseline: at `889431f`, the gates are expected to pass. Before `EP-M1`,
-run the four gates once on the unchanged tree and record the results here.
-That separates baseline failures from regressions.
+run the four gates once on the unchanged tree and record the results here. That
+separates baseline failures from regressions.
 
 ## Validation and acceptance
 
@@ -1516,8 +1523,8 @@ Quality criteria:
     `INV-most-specific`, with the mutation transcript recorded;
   - the property statistics meet the thresholds in `Verification plan`.
 - Lint and types: `make check-fmt`, `make typecheck`, and `make lint` pass
-  with no new suppressions. Any `as` assertion carries the safety comment
-  that Oxlint requires.
+  with no new suppressions. Any `as` assertion carries the safety comment that
+  Oxlint requires.
 - Documentation: `make markdownlint` and `make nixie` pass.
 - Performance: building the registry from the real pin takes under 250 ms on
   the development host. A test asserts a generous bound of 2,000 ms, to catch
@@ -1553,8 +1560,8 @@ non-/v2 paths: /<upload_url>, /api/v1/chat/completions, /v1/async-invoke, /v1/ba
 shape collisions: none; templated/literal sibling pairs: 35
 ```
 
-`openapi-backend` parity probe, with the corpus as described in `Verification
-plan`:
+`openapi-backend` parity probe, with the corpus as described in
+`Verification plan`:
 
 ```plaintext
 { total: 3945, diffPath: 4, diff405: 67 }
@@ -1569,21 +1576,35 @@ DELETE /v2/databases/options: registry=405 backend=databases_destroy_cluster
 `src/openapi/path-template.ts` (pure):
 
 ```ts
-export interface PathSegment { readonly isParameter: boolean; readonly literal: string; readonly name: string }
-export interface ParsedTemplate { readonly template: string; readonly segments: readonly PathSegment[]; readonly shape: string }
-export type PathTemplateIssue = { readonly code: 'empty-path-segment' | 'partial-segment-parameter'; readonly template: string };
+export interface PathSegment {
+  readonly isParameter: boolean;
+  readonly literal: string;
+  readonly name: string;
+}
+export interface ParsedTemplate {
+  readonly template: string;
+  readonly segments: readonly PathSegment[];
+  readonly shape: string;
+}
+export type PathTemplateIssue = {
+  readonly code: 'empty-path-segment' | 'partial-segment-parameter';
+  readonly template: string;
+};
 export const parsePathTemplate: (template: string) => ParsedTemplate | PathTemplateIssue;
 export const splitRequestPath: (path: string) => readonly string[];
 export const templateMatches: (segments: readonly PathSegment[], request: readonly string[]) => boolean;
 export const compareSpecificity: (a: readonly PathSegment[], b: readonly PathSegment[]) => -1 | 0 | 1;
 export const selectMostSpecific: (candidates: readonly (readonly PathSegment[])[]) => number;
-export const extractPathParameters: (template: ParsedTemplate, request: readonly string[]) => Readonly<Record<string, string>>;
+export const extractPathParameters: (
+  template: ParsedTemplate,
+  request: readonly string[]
+) => Readonly<Record<string, string>>;
 ```
 
 `src/openapi/operation-registry.ts` (pure):
 
 ```ts
-export interface PinnedContractIdentity { readonly upstreamCommit: string; readonly artifactSha256: string }
+export interface PinnedContractIdentity { readonly upstreamCommit: string; readonly contractSha256: string }
 export interface RegisteredOperation {
   readonly operationId: string;
   readonly method: HttpMethod;
@@ -1596,10 +1617,22 @@ export interface RegisteredOperation {
   readonly manifestEntry: CapabilityManifestEntry | undefined;
 }
 export type RequestResolution =
-  | { readonly kind: 'operation'; readonly operation: RegisteredOperation; readonly pathParameters: Readonly<Record<string, string>> }
-  | { readonly kind: 'method-not-allowed'; readonly pathTemplate: string; readonly allow: readonly HttpMethod[] }
+  | {
+      readonly kind: 'operation';
+      readonly operation: RegisteredOperation;
+      readonly pathParameters: Readonly<Record<string, string>>;
+    }
+  | {
+      readonly kind: 'method-not-allowed';
+      readonly pathTemplate: string;
+      readonly allow: readonly HttpMethod[];
+    }
   | { readonly kind: 'not-found' };
-export type OperationRegistryIssue = { readonly code: OperationRegistryIssueCode; readonly key: string; readonly detail: string };
+export type OperationRegistryIssue = {
+  readonly code: OperationRegistryIssueCode;
+  readonly key: string;
+  readonly detail: string;
+};
 export interface OperationRegistry {
   readonly identity: PinnedContractIdentity;
   readonly operations: readonly RegisteredOperation[];         // sorted by operationKey (code-unit order)
