@@ -1,5 +1,5 @@
 .PHONY: all fmt check-fmt typecheck docs-check lint test build clean generate markdownlint \
-	nixie spelling spelling-helper-test
+	nixie spelling
 
 MDLINT ?= markdownlint-cli2
 # `make fmt` and `make check-fmt` call mdtablefix directly. `--git` selects the
@@ -12,8 +12,10 @@ MDTABLEFIX_SELECT = --git --include-untracked
 MDTABLEFIX_RULES = --wrap --renumber --breaks --ellipsis --fences
 UV ?= uv
 UV_ENV = UV_CACHE_DIR=.uv-cache UV_TOOL_DIR=.uv-tools
-TYPOS_VERSION ?= 1.48.0
-TYPOS = $(UV) tool run typos@$(TYPOS_VERSION)
+TYPOS_CONFIG_BUILDER_VERSION ?= v0.1.4
+TYPOS_CONFIG_BUILDER = $(UV_ENV) $(UV) tool run --python 3.14 --from \
+	"git+https://github.com/leynos/typos-config-builder.git@$(TYPOS_CONFIG_BUILDER_VERSION)" \
+	typos-config-builder
 XARGS_R := $(shell if xargs --help 2>&1 | grep -q '\\-r'; then printf -- '-r'; fi)
 
 all: check-fmt typecheck docs-check lint test spelling
@@ -36,34 +38,7 @@ typecheck:
 docs-check: typecheck
 	bun run docs:check
 
-# The repository's Python is the typos roll-out helpers and their tests under
-# scripts/. Interrogate scans each target recursively, subject to its default
-# exclusions.
-INTERROGATE_VERSION ?= 1.7.0
-INTERROGATE_TARGETS ?= scripts
-# Level 2 prints a MISSED row per undocumented definition, which the
-# `interrogate` recipe below looks for: the rounded percentage alone can pass a
-# lone gap.
-INTERROGATE_FLAGS ?= -vv --fail-under 100
-INTERROGATE ?= $(UV_ENV) $(UV) tool run --python 3.13 --from 'interrogate==$(INTERROGATE_VERSION)' interrogate
-
-# Interrogate rounds its percentage to one decimal, so `--fail-under 100` alone
-# can pass a lone gap in a large repository. This recipe also fails when `grep`
-# finds a MISSED row in the report on standard output, which `-vv` or higher
-# prints for each undocumented definition.
-.PHONY: interrogate
-interrogate: ## Enforce complete Python docstring coverage
-	@report="$$($(INTERROGATE) $(INTERROGATE_FLAGS) $(INTERROGATE_TARGETS))"; \
-	  status=$$?; \
-	  printf '%s\n' "$$report"; \
-	  test "$$status" -eq 0 || exit "$$status"; \
-	  if printf '%s\n' "$$report" | grep -q '| *MISSED *|'; then \
-	    printf '%s\n' 'interrogate: undocumented definitions remain; see the MISSED rows above' >&2; \
-	    exit 1; \
-	  fi
-
 lint:
-	$(MAKE) --no-print-directory interrogate
 	bun run lint
 
 test:
@@ -81,17 +56,8 @@ generate:
 markdownlint: spelling # Lint Markdown files and enforce repository spelling
 	find . -type f -name '*.md' -not -path '*/target/*' -not -path '*/node_modules/*' -print0 | xargs -0 $(XARGS_R) $(MDLINT)
 
-spelling: spelling-helper-test # Enforce en-GB-oxendict spelling in Markdown prose
-	@$(UV_ENV) $(UV) run scripts/generate_typos_config.py
-	@git ls-files -z '*.md' | \
-		xargs -0 $(XARGS_R) env $(UV_ENV) $(TYPOS) --config typos.toml --force-exclude
-
-spelling-helper-test: # Validate the shared spelling-policy integration
-	@PYTHONPATH=scripts $(UV_ENV) $(UV) run --python 3.13 \
-		--with pytest==9.0.2 --with pytest-cov==7.0.0 \
-		python -m pytest scripts/tests/test_typos_rollout.py \
-		--cov=generate_typos_config --cov=typos_rollout \
-		--cov=typos_rollout_cache --cov-fail-under=90
+spelling: ## Enforce en-GB-oxendict spelling in prose
+	$(TYPOS_CONFIG_BUILDER) gate --repository .
 
 nixie:
 	nixie --no-sandbox
