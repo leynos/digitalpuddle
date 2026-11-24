@@ -174,9 +174,10 @@ exception to the repository's Bun-first scripting rule, because the shared
 implementation is maintained in `leynos/typos-config-builder` and reused by
 repositories with different application toolchains.
 
-The shared dictionary cache and its freshness metadata are untracked. A clean
-checkout with an unavailable network retains the reviewed, tracked `typos.toml`
-policy.
+The shared dictionary cache and its freshness metadata are untracked. When the
+authority is unavailable the gate reuses a valid cache, or bootstraps the
+dictionary bundled with the pinned builder release; either way it regenerates
+`typos.toml`, so commit any change it makes.
 
 Do not edit generated entries in `typos.toml`. Put only repository-specific
 proper nouns, quoted upstream titles, fixtures, stems or exclusions in
