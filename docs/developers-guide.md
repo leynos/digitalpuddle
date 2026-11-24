@@ -172,19 +172,25 @@ the pinned `typos-config-builder gate` (`TYPOS_CONFIG_BUILDER_VERSION` in the
 corrections. The builder is a Python tool run through `uv`, the documented
 exception to the repository's Bun-first scripting rule, because the shared
 implementation is maintained in `leynos/typos-config-builder` and reused by
-repositories with different application toolchains.
+repositories with different application toolchains. The `Makefile` runs it with
+`--python 3.14` because the builder requires Python 3.14 or newer.
 
 The shared dictionary cache and its freshness metadata are untracked. When the
 authority is unavailable the gate reuses a valid cache, or bootstraps the
 dictionary bundled with the pinned builder release; either way it regenerates
-`typos.toml`, so commit any change it makes.
+`typos.toml`, so commit any change it makes. The bundled dictionary adds an
+inline-code ignore that the shared authority's dictionary does not carry, and
+the local overlay does not remove it. When the gate ran offline, inspect the
+regenerated `typos.toml` before committing it, so an offline run does not
+silently widen the exemption.
 
 Do not edit generated entries in `typos.toml`. Put only repository-specific
 proper nouns, quoted upstream titles, fixtures, stems or exclusions in
 `typos.local.toml`, then regenerate with `make spelling`.
 
 Keep upstream API spellings in inline or fenced code where practical. Fenced
-code blocks are ignored, but **inline code spans are not**: the shared
+code blocks are ignored, but **inline code spans are not** when the gate uses
+the shared authority's dictionary (the offline bundle differs; see above): that
 dictionary stopped excluding them, so an identifier in backticks reaches the
 checker like any other word. Record it under `[patterns]` in `typos.local.toml`
 and include the backticks in the pattern, so the same letters in prose are
