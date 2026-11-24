@@ -165,31 +165,32 @@ make nixie 2>&1 | tee /tmp/nixie-digitalpuddle-${BRANCH}.out
 
 ### 3.1. Spelling policy
 
-`make all` and `make markdownlint` enforce en-GB-oxendict spelling with the
-`TYPOS_VERSION` pin in the `Makefile`. The gate first tests the policy helper,
-refreshes the shared base dictionary, generates `typos.toml`, and scans tracked
-Markdown files.
+`make all` and `make markdownlint` enforce en-GB-oxendict spelling by running
+the pinned `typos-config-builder gate` (`TYPOS_CONFIG_BUILDER_VERSION` in the
+`Makefile`), which refreshes the shared base dictionary, generates
+`typos.toml`, scans tracked Markdown files and enforces the shared phrase
+corrections. The builder is a Python tool run through `uv`, the documented
+exception to the repository's Bun-first scripting rule, because the shared
+implementation is maintained in `leynos/typos-config-builder` and reused by
+repositories with different application toolchains. The `Makefile` runs it with
+`--python 3.14` because the builder requires Python 3.14 or newer.
 
-The cross-estate policy helper is the documented exception to the repository's
-Bun-first scripting rule. It uses Python 3.13 through `uv` because the shared
-implementation is maintained in `leynos/agent-helper-scripts` and reused by
-repositories with different application toolchains.
-
-The shared dictionary cache and its freshness metadata are untracked. The
-helper replaces the cache only when the authoritative copy is newer and can
-reuse a valid cached copy while offline. A clean checkout with an unavailable
-network retains the reviewed, tracked `typos.toml` policy.
+The shared dictionary cache and its freshness metadata are untracked. When the
+authority is unavailable the gate reuses a valid cache, or bootstraps the
+dictionary bundled with the pinned builder release; either way it regenerates
+`typos.toml`, so commit any change it makes. The bundled dictionary adds an
+inline-code ignore that the shared authority's dictionary does not carry, and
+the local overlay does not remove it. When the gate ran offline, inspect the
+regenerated `typos.toml` before committing it, so an offline run does not
+silently widen the exemption.
 
 Do not edit generated entries in `typos.toml`. Put only repository-specific
 proper nouns, quoted upstream titles, fixtures, stems or exclusions in
-`typos.local.toml`, then regenerate with:
-
-```bash
-uv run scripts/generate_typos_config.py
-```
+`typos.local.toml`, then regenerate with `make spelling`.
 
 Keep upstream API spellings in inline or fenced code where practical. Fenced
-code blocks are ignored, but **inline code spans are not**: the shared
+code blocks are ignored, but **inline code spans are not** when the gate uses
+the shared authority's dictionary (the offline bundle differs; see above): that
 dictionary stopped excluding them, so an identifier in backticks reaches the
 checker like any other word. Record it under `[patterns]` in `typos.local.toml`
 and include the backticks in the pattern, so the same letters in prose are
